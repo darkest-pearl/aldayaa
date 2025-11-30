@@ -18,18 +18,18 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id           String       @id @default(cuid())
-  name         String
-  description  String?
-  price        Float
-  isAvailable  Boolean      @default(true)
-  imageUrl     String?
-  recommended  Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  categoryId   String
-  category     MenuCategory @relation(fields: [categoryId], references: [id])
-  orders       OrderItem[]
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  isAvailable Boolean      @default(true)
+  imageUrl    String?
+  recommended Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  orders      OrderItem[]
 }
 
 model GalleryCategory {
@@ -72,19 +72,21 @@ model Order {
   address      String?
   notes        String?
   totalPrice   Float
-  status       String   @default("NEW")
-  createdAt    DateTime @default(now())
+  status       String      @default("NEW")
+  createdAt    DateTime    @default(now())
   items        OrderItem[]
 }
 
 model OrderItem {
-  id       String  @id @default(cuid())
-  orderId  String
-  order    Order   @relation(fields: [orderId], references: [id])
-  itemId   String?
-  name     String
-  price    Float
-  quantity Int
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id])
+  itemId     String?
+  name       String
+  price      Float
+  quantity   Int
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId String?
 }
 
 model AdminUser {
