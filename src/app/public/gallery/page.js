@@ -1,6 +1,6 @@
-import Section from '../../components/Section';
-import GalleryClient from '../../components/GalleryClient';
-import { prisma } from '../../lib/prisma';
+import Section from '../../../components/Section';
+import GalleryClient from '../../../components/GalleryClient';
+import { prisma } from '../../../lib/prisma';
 
 export const metadata = { title: 'Gallery | Al Dayaa Al Shamiah' };
 

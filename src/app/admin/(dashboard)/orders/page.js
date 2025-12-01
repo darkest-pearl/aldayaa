@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import AdminLayout from '../../../components/AdminLayout';
 
 async function fetchJson(url, options) {
   const res = await fetch(url, options);
@@ -21,7 +20,7 @@ export default function AdminOrdersPage() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <h1 className="text-2xl font-semibold mb-4">Orders</h1>
       <div className="space-y-3 text-sm">
         {orders.map((o) => (
@@ -46,6 +45,6 @@ export default function AdminOrdersPage() {
           </div>
         ))}
       </div>
-    </AdminLayout>
+    </>
   );
 }

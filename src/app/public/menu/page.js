@@ -1,13 +1,13 @@
-import Section from '../../components/Section';
+import Section from '../../../components/Section';
 import dynamic from 'next/dynamic';
-import { prisma } from '../../lib/prisma';
+import { prisma } from '../../../lib/prisma';
 
 export const metadata = {
   title: 'Menu | Al Dayaa Al Shamiah',
 };
 
 // Import client component correctly
-const MenuClient = dynamic(() => import('../../components/MenuClient'), {
+const MenuClient = dynamic(() => import('../../../components/MenuClient'), {
   ssr: false,
 });
 

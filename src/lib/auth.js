@@ -1,42 +1,67 @@
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { prisma } from './prisma';
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { prisma } from "./prisma";
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'aldayaa-secret';
+const COOKIE_NAME = "aldayaa_admin";
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "aldayaa-secret";
+const TOKEN_EXPIRY = "7d";
 
-export async function verifyAdmin(request) {
-  const cookie = request.cookies.get('aldayaa_admin');
-  if (!cookie) return null;
+export function createToken(admin) {
+  return jwt.sign(
+    { id: admin.id, email: admin.email, role: admin.role },
+    JWT_SECRET,
+    { expiresIn: TOKEN_EXPIRY }
+  );
+}
+
+export function setSessionCookie(response, admin) {
+  const token = createToken(admin);
+  response.cookies.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+    domain: process.env.NODE_ENV === "production" ? process.env.COOKIE_DOMAIN : undefined,
+  });
+}
+
+export async function getAdminFromRequest(request) {
+  const cookieSource =
+    request?.cookies?.get
+      ? request.cookies
+      : request?.get
+      ? request
+      : null;
+
+  const token = cookieSource?.get(COOKIE_NAME)?.value;
+  if (!token) return null;
   try {
-    const decoded = jwt.verify(cookie.value, JWT_SECRET);
-    return decoded;
-  } catch (e) {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
     return null;
   }
 }
 
-export async function requireAdmin(request) {
-  const admin = await verifyAdmin(request);
-  if (!admin) throw new Error('Unauthorized');
+export async function requireAdmin(request, allowedRoles = []) {
+  const admin = await getAdminFromRequest(request);
+  if (!admin) {
+    throw new Error('Unauthorized');
+  }
+
+  if (allowedRoles.length && !allowedRoles.includes(admin.role)) {
+    const error = new Error('Forbidden');
+    error.code = 'FORBIDDEN';
+    throw error;
+  }
   return admin;
 }
 
 export async function authenticateAdmin(email, password) {
-  const envEmail = process.env.ADMIN_EMAIL;
-  const envPassword = process.env.ADMIN_PASSWORD;
-
-  if (envEmail && envPassword && email === envEmail && password === envPassword) {
-    return { id: 'env-admin', email };
-  }
-
   const user = await prisma.adminUser.findUnique({ where: { email } });
   if (!user) return null;
+
   const match = await bcrypt.compare(password, user.passwordHash);
   if (!match) return null;
-  return { id: user.id, email: user.email };
-}
-
-export function setSessionCookie(response, admin) {
-  const token = jwt.sign({ id: admin.id, email: admin.email }, JWT_SECRET, { expiresIn: '7d' });
-  response.cookies.set('aldayaa_admin', token, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' });
+  return { id: user.id, email: user.email, role: user.role };
 }

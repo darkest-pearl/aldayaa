@@ -94,4 +94,5 @@ model AdminUser {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  role         String   @default("ADMIN")
 }

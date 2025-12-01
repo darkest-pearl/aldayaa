@@ -3,20 +3,20 @@ import Image from 'next/image';
 import { strings } from '../lib/strings';
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/menu', label: 'Menu' },
-  { href: '/reservations', label: 'Reservations' },
-  { href: '/order', label: 'Order Online' },
-  { href: '/gallery', label: 'Gallery' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' }
+  { href: '/public', label: 'Home' },
+  { href: '/public/menu', label: 'Menu' },
+  { href: '/public/reservations', label: 'Reservations' },
+  { href: '/public/order', label: 'Order Online' },
+  { href: '/public/gallery', label: 'Gallery' },
+  { href: '/public/about', label: 'About' },
+  { href: '/public/contact', label: 'Contact' }
 ];
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-beige/90 backdrop-blur shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/public" className="flex items-center gap-3">
           <Image src="/images/logo-al-dayaa.png" alt={strings.restaurantName} width={48} height={48} className="rounded-full" />
           <div>
             <p className="font-semibold text-lg leading-tight">{strings.restaurantName}</p>
@@ -29,7 +29,7 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
-          <Link href="/reservations" className="bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform">
+          <Link href="/public/reservations" className="bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform">
             Reserve
           </Link>
         </nav>

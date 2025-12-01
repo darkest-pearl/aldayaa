@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import AdminLayout from '../../../components/AdminLayout';
-import Button from '../../../components/Button';
+import Button from '../../../../components/Button';
 
 async function fetchJson(url, options) {
   const res = await fetch(url, options);
@@ -45,7 +44,8 @@ export default function AdminMenuPage() {
   };
 
   return (
-    <AdminLayout>
+    <>
+      <h1 className="text-2xl font-semibold mb-6">Menu Management</h1>
       <div className="grid md:grid-cols-2 gap-6">
         <div className="section-bg p-4">
           <h3 className="font-semibold mb-3">Add Category</h3>
@@ -94,6 +94,6 @@ export default function AdminMenuPage() {
           </div>
         ))}
       </div>
-    </AdminLayout>
+    </>
   );
 }

@@ -5,11 +5,12 @@ import { requireAdmin } from '../../../lib/auth';
 
 export async function GET(request) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'STAFF']);
     const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true } });
     return NextResponse.json({ orders });
   } catch (error) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
+    return NextResponse.json({ error: 'Unauthorized' }, { status });
   }
 }
 
@@ -41,11 +42,12 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    await requireAdmin(request);
+    await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const { id, status } = await request.json();
     const order = await prisma.order.update({ where: { id }, data: { status } });
     return NextResponse.json({ success: true, order });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
+    return NextResponse.json({ success: false, error: error.message }, { status });
   }
 }

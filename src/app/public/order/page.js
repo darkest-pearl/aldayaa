@@ -1,6 +1,6 @@
-import Section from '../../components/Section';
-import OrderClient from '../../components/OrderClient';
-import { prisma } from '../../lib/prisma';
+import Section from '../../../components/Section';
+import OrderClient from '../../../components/OrderClient';
+import { prisma } from '../../../lib/prisma';
 
 export const metadata = { title: 'Order Online | Al Dayaa Al Shamiah' };
 

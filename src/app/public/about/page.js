@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Section from '../../components/Section';
+import Section from '../../../components/Section';
 
 export const metadata = { title: 'About | Al Dayaa Al Shamiah' };
 

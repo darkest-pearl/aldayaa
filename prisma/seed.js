@@ -56,8 +56,9 @@ async function main() {
   });
 
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+    console.log(process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD);
     const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 10);
-    await prisma.adminUser.create({ data: { email: process.env.ADMIN_EMAIL, passwordHash: hash } });
+    await prisma.adminUser.create({ data: { email: process.env.ADMIN_EMAIL, passwordHash: hash, role: 'ADMIN' } });
   }
 
   console.log('Database seeded');

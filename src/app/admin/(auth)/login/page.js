@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Section from '../../../components/Section';
-import Button from '../../../components/Button';
+import Section from '../../../../components/Section';
+import Button from '../../../../components/Button';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -11,14 +11,37 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
 
   const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-    const data = await res.json();
-    setLoading(false);
-    if (data.success) router.push('/admin/dashboard');
-    else setError(data.error || 'Login failed');
-  };
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
+
+
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (res.ok && data?.success) {
+        router.replace("/admin/dashboard");
+        return;
+      }
+
+      setError(data?.error || "Login failed");
+    } catch (err) {
+      console.error("Login error:", err);
+      setLoading(false);
+      setError("Unable to login. Please try again.");
+    }
+
+    };
 
   return (
     <Section>
