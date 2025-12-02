@@ -1,5 +1,7 @@
 'use client';
+
 import { useEffect, useState } from 'react';
+import AdminLayout from '../../../components/AdminLayout';
 
 async function fetchJson(url, options) {
   const res = await fetch(url, options);
@@ -14,15 +16,21 @@ export default function AdminReservationsPage() {
     setReservations(data.reservations || []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const updateStatus = async (id, status) => {
-    await fetchJson('/api/reservations', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) });
+    await fetchJson('/api/reservations', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
     load();
   };
 
   return (
-    <>
+    <AdminLayout>
       <h1 className="text-2xl font-semibold mb-4">Reservations</h1>
       <div className="space-y-3 text-sm">
         {reservations.map((r) => (
@@ -33,12 +41,16 @@ export default function AdminReservationsPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs px-2 py-1 rounded-full bg-secondary/20 text-secondary">{r.status}</span>
-              <button className="text-primary" onClick={() => updateStatus(r.id, 'CONFIRMED')}>Confirm</button>
-              <button className="text-red-600" onClick={() => updateStatus(r.id, 'CANCELLED')}>Cancel</button>
+              <button className="text-primary" onClick={() => updateStatus(r.id, 'CONFIRMED')}>
+                Confirm
+              </button>
+              <button className="text-red-600" onClick={() => updateStatus(r.id, 'CANCELLED')}>
+                Cancel
+              </button>
             </div>
           </div>
         ))}
       </div>
-    </>
+    </AdminLayout>
   );
 }

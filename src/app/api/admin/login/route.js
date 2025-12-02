@@ -20,7 +20,7 @@ export async function POST(request) {
         { status: 401 }
       );
     }
-
+    console.log("LOGIN ROUTE SECRET:", process.env.ADMIN_JWT_SECRET);
     const response = NextResponse.json({ success: true });
     setSessionCookie(response, admin);
 
