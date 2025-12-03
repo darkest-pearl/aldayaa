@@ -7,6 +7,7 @@ const navLinks = [
   { href: '/public/menu', label: 'Menu' },
   { href: '/public/reservations', label: 'Reservations' },
   { href: '/public/order', label: 'Order Online' },
+  { href: '/public/order-cancel', label: 'Cancel Order' },
   { href: '/public/gallery', label: 'Gallery' },
   { href: '/public/about', label: 'About' },
   { href: '/public/contact', label: 'Contact' }

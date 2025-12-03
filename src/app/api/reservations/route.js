@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
+import { getRestaurantSettings } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
 
 const createSchema = z.object({
@@ -15,6 +16,12 @@ const createSchema = z.object({
 
 const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
 const deleteSchema = z.object({ id: z.string().min(3) });
+
+function timeToMinutes(time) {
+  const [hours, minutes] = (time || '').split(':').map((v) => Number(v));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  return hours * 60 + minutes;
+}
 
 export async function GET(request) {
   try {
@@ -31,6 +38,21 @@ export async function POST(request) {
     const body = await request.json();
     const parsed = createSchema.safeParse({ ...body, guests: Number(body.guests) });
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
+
+    const settings = await getRestaurantSettings();
+    const reservationMinutes = timeToMinutes(parsed.data.time);
+    const openingMinutes = timeToMinutes(settings.openingTime);
+    const closingMinutes = timeToMinutes(settings.closingTime);
+
+    if (
+      reservationMinutes === null ||
+      openingMinutes === null ||
+      closingMinutes === null ||
+      reservationMinutes < openingMinutes ||
+      reservationMinutes > closingMinutes
+    ) {
+      return failure('Restaurant is closed at this time', 400);
+    }
 
     const reservation = await prisma.reservation.create({ data: parsed.data });
     return success({ reservation });

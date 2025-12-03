@@ -66,6 +66,7 @@ model Reservation {
 
 model Order {
   id           String      @id @default(cuid())
+  reference    String      @unique
   name         String
   phone        String
   deliveryType String
@@ -73,6 +74,7 @@ model Order {
   notes        String?
   totalPrice   Float
   status       String      @default("NEW")
+  paidOnline   Boolean     @default(false)
   createdAt    DateTime    @default(now())
   items        OrderItem[]
 }
@@ -95,4 +97,13 @@ model AdminUser {
   passwordHash String
   createdAt    DateTime @default(now())
   role         String   @default("ADMIN")
+}
+
+model RestaurantSettings {
+  id                    Int     @id @default(1)
+  openingTime           String
+  closingTime           String
+  allowCancelPaid       Boolean @default(false)
+  allowCancelInProgress Boolean @default(false)
+  cancellationFee       Float   @default(0)
 }
