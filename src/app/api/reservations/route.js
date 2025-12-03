@@ -1,40 +1,67 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
-import { sendWhatsAppMessage } from '../../../lib/whatsapp';
 import { requireAdmin } from '../../../lib/auth';
+import { handleApiError, success, failure } from '../../../lib/api-response';
+
+const createSchema = z.object({
+  name: z.string().min(2),
+  phone: z.string().min(4),
+  email: z.string().email().optional().nullable(),
+  date: z.string().min(1),
+  time: z.string().min(1),
+  guests: z.number().int().min(1),
+  specialRequests: z.string().optional().nullable(),
+});
+
+const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
+const deleteSchema = z.object({ id: z.string().min(3) });
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
-    return NextResponse.json({ reservations });
+    return success({ reservations });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, phone, email, date, time, guests, specialRequests } = body;
-    if (!name || !phone || !date || !time) return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
-    const reservation = await prisma.reservation.create({ data: { name, phone, email, date, time, guests: guests || 1, specialRequests, status: 'PENDING' } });
-    await sendWhatsAppMessage(`New reservation from ${name} on ${date} at ${time} for ${guests || 1} guests. Phone: ${phone}`);
-    return NextResponse.json({ success: true, reservation });
+    const parsed = createSchema.safeParse({ ...body, guests: Number(body.guests) });
+    if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
+
+    const reservation = await prisma.reservation.create({ data: parsed.data });
+    return success({ reservation });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message });
+    return failure('Unable to create reservation', 500);
   }
 }
 
 export async function PUT(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const { id, status } = await request.json();
-    const updated = await prisma.reservation.update({ where: { id }, data: { status } });
-    return NextResponse.json({ success: true, reservation: updated });
+    const body = await request.json();
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid reservation update', 400, { details: parsed.error.flatten() });
+
+    const reservation = await prisma.reservation.update({ where: { id: parsed.data.id }, data: { status: parsed.data.status } });
+    return success({ reservation });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    await requireAdmin(request, ['ADMIN']);
+    const body = await request.json();
+    const parsed = deleteSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid reservation id', 400);
+    await prisma.reservation.delete({ where: { id: parsed.data.id } });
+    return success({});
+  } catch (error) {
+    return handleApiError(error);
   }
 }

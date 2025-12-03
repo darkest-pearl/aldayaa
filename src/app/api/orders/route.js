@@ -1,53 +1,94 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
-import { sendWhatsAppMessage } from '../../../lib/whatsapp';
 import { requireAdmin } from '../../../lib/auth';
+import { handleApiError, success, failure } from '../../../lib/api-response';
+
+const itemSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  quantity: z.number().int().min(1),
+});
+
+const orderSchema = z.object({
+  name: z.string().min(2),
+  phone: z.string().min(4),
+  deliveryType: z.enum(['DELIVERY', 'PICKUP']),
+  address: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  items: z.array(itemSchema).min(1),
+});
+
+const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
+const deleteSchema = z.object({ id: z.string().min(3) });
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER', 'STAFF']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const orders = await prisma.order.findMany({ orderBy: { createdAt: 'desc' }, include: { items: true } });
-    return NextResponse.json({ orders });
+    return success({ orders });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, phone, deliveryType, address, notes, items } = body;
-    if (!name || !phone || !deliveryType || !items?.length) return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
-    const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const parsed = orderSchema.safeParse({ ...body, items: (body.items || []).map((i) => ({ ...i, price: Number(i.price) })) });
+    if (!parsed.success) return failure('Invalid order data', 400, { details: parsed.error.flatten() });
+
+    const totalPrice = parsed.data.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     const order = await prisma.order.create({
       data: {
-        name,
-        phone,
-        deliveryType,
-        address: deliveryType === 'DELIVERY' ? address : '',
-        notes,
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        deliveryType: parsed.data.deliveryType,
+        address: parsed.data.deliveryType === 'DELIVERY' ? parsed.data.address : null,
+        notes: parsed.data.notes || null,
         totalPrice,
-        status: 'NEW',
-        items: { create: items.map((item) => ({ itemId: item.id, name: item.name, price: item.price, quantity: item.quantity })) }
+        items: {
+          create: parsed.data.items.map((item) => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            menuItemId: item.id,
+          })),
+        },
       },
-      include: { items: true }
+      include: { items: true },
     });
-    await sendWhatsAppMessage(`New order from ${name}. Total AED ${totalPrice.toFixed(2)}.`);
-    return NextResponse.json({ success: true, order });
+    return success({ order });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message });
+    return failure('Unable to place order', 500);
   }
 }
 
 export async function PUT(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const { id, status } = await request.json();
-    const order = await prisma.order.update({ where: { id }, data: { status } });
-    return NextResponse.json({ success: true, order });
+    const body = await request.json();
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid order update', 400, { details: parsed.error.flatten() });
+
+    const order = await prisma.order.update({ where: { id: parsed.data.id }, data: { status: parsed.data.status } });
+    return success({ order });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    await requireAdmin(request, ['ADMIN']);
+    const body = await request.json();
+    const parsed = deleteSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid order id', 400);
+    await prisma.orderItem.deleteMany({ where: { orderId: parsed.data.id } });
+    await prisma.order.delete({ where: { id: parsed.data.id } });
+    return success({});
+  } catch (error) {
+    return handleApiError(error);
   }
 }

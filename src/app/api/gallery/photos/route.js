@@ -1,15 +1,22 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../lib/api-response';
+
+const schema = z.object({
+  title: z.string().min(2),
+  description: z.string().optional().nullable(),
+  imageUrl: z.string().url(),
+  categoryId: z.string().min(3),
+});
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const photos = await prisma.photo.findMany({ include: { category: true } });
-    return NextResponse.json({ photos });
+    return success({ photos });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
@@ -17,11 +24,11 @@ export async function POST(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    if (!body.imageUrl && !body.file) return NextResponse.json({ success: false, error: 'Image URL required' }, { status: 400 });
-    const photo = await prisma.photo.create({ data: { title: body.title, description: body.description, imageUrl: body.imageUrl, categoryId: body.categoryId } });
-    return NextResponse.json({ success: true, photo });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) return failure('Invalid photo payload', 400, { details: parsed.error.flatten() });
+    const photo = await prisma.photo.create({ data: parsed.data });
+    return success({ photo });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }

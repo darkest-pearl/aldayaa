@@ -1,15 +1,20 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../lib/api-response';
 
+const categorySchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const categories = await prisma.menuCategory.findMany({ orderBy: { sortOrder: 'asc' }, include: { items: true } });
-    return NextResponse.json({ categories });
+    return success({ categories });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
@@ -17,10 +22,20 @@ export async function POST(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    const category = await prisma.menuCategory.create({ data: { name: body.name, description: body.description, sortOrder: body.sortOrder || 0 } });
-    return NextResponse.json({ success: true, category });
+    const parsed = categorySchema.safeParse(body);
+    if (!parsed.success) {
+      return failure('Invalid category payload', 400, { details: parsed.error.flatten() });
+    }
+    const category = await prisma.menuCategory.create({
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description || '',
+        sortOrder: parsed.data.sortOrder || 0,
+      },
+    });
+    return success({ category });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error
+    );
   }
 }

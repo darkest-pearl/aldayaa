@@ -1,15 +1,24 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../lib/api-response';
+
+const itemSchema = z.object({
+  name: z.string().min(2),
+  description: z.string().optional().nullable(),
+  price: z.number().min(0),
+  categoryId: z.string().min(3),
+  isAvailable: z.boolean().optional(),
+  imageUrl: z.string().url().optional().nullable(),
+});
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const items = await prisma.menuItem.findMany({ include: { category: true } });
-    return NextResponse.json({ items });
+    return success({ items });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
@@ -17,10 +26,21 @@ export async function POST(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    const item = await prisma.menuItem.create({ data: { name: body.name, description: body.description, price: body.price || 0, categoryId: body.categoryId, isAvailable: body.isAvailable !== false, imageUrl: body.imageUrl } });
-    return NextResponse.json({ success: true, item });
+    const parsed = itemSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid item payload', 400, { details: parsed.error.flatten() });
+
+    const item = await prisma.menuItem.create({
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description || '',
+        price: parsed.data.price,
+        categoryId: parsed.data.categoryId,
+        isAvailable: parsed.data.isAvailable !== false,
+        imageUrl: parsed.data.imageUrl || null,
+      },
+    });
+    return success({ item });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }

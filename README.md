@@ -52,3 +52,16 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Seed data populates menu categories/items and gallery categories/photos.
 - Admin credentials from `.env` seed automatically; you can also create records in the AdminUser table.
 - Image placeholders reference `/public/images/...` paths; add your assets there.
+
+## Admin system
+- Admin area lives under `src/app/admin` with route groups for authentication and protected pages. Shared UI lives in `src/app/admin/components`.
+- Role-based access:
+  - **ADMIN**: full control including managing other admin users.
+  - **MANAGER**: manage menu, gallery, orders, and reservations (no admin user creation).
+  - **SUPPORT**: read-only access to data.
+- All admin API routes return a consistent `{ success, data, error }` shape. Validation uses Zod and RBAC checks via `requireAdmin`.
+- CRUD coverage:
+  - Menu and gallery include category/item creation, editing, and deletion with confirmation prompts.
+  - Orders and reservations support status changes and protected deletes.
+  - Admin users can be created, updated (role/password), and removed from `/admin/users` (ADMIN only).
+- Layout uses `AdminShell` for navigation, responsive design, and session-aware controls. Confirmation dialogs are provided for destructive actions.

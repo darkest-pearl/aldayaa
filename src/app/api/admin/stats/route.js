@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
-import { requireAdmin } from "../../../../lib/auth";
+import { prisma } from '../../../../lib/prisma';
+import { requireAdmin } from '../../../../lib/auth';
+import { handleApiError, success } from '../../../../lib/api-response';
 
 export async function GET(request) {
-  await requireAdmin(request);
-
-  const stats = await getStats();
-  return NextResponse.json(stats);
+  try {
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
+    const stats = await getStats();
+    return success({ stats });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 async function getStats() {

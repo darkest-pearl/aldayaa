@@ -1,35 +1,30 @@
-import { NextResponse } from "next/server";
-import { authenticateAdmin, setSessionCookie } from "../../../../lib/auth";
+import { z } from 'zod';
+import { authenticateAdmin, setSessionCookie } from '../../../../lib/auth';
+import { success, failure } from '../../../../lib/api-response';
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
 
 export async function POST(request) {
   try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: "Email and password are required" },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      return failure('Email and password are required', 400);
     }
 
-    const admin = await authenticateAdmin(email, password);
+    const admin = await authenticateAdmin(parsed.data.email, parsed.data.password);
 
     if (!admin) {
-      return NextResponse.json(
-        { success: false, error: "Invalid credentials" },
-        { status: 401 }
-      );
+      return failure('Invalid credentials', 401);
     }
-    console.log("LOGIN ROUTE SECRET:", process.env.ADMIN_JWT_SECRET);
-    const response = NextResponse.json({ success: true });
-    setSessionCookie(response, admin);
+    const response = success({ admin: { id: admin.id, email: admin.email, role: admin.role } });
+    setSessionCookie(response, admin);  
 
     return response;
-
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Server error" },
-      { status: 500 }
-    );
+    return failure('Server error', 500);
   }
 }

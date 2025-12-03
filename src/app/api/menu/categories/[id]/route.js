@@ -1,26 +1,35 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { requireAdmin } from '../../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../../lib/api-response';
+
+const updateSchema = z.object({
+  name: z.string().min(2).optional(),
+  description: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
 
 export async function PUT(request, { params }) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    const category = await prisma.menuCategory.update({ where: { id: params.id }, data: body });
-    return NextResponse.json({ success: true, category });
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid category payload', 400, { details: parsed.error.flatten() });
+
+    const category = await prisma.menuCategory.update({ where: { id: params.id }, data: parsed.data });
+    return success({ category });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    await requireAdmin(request, ['ADMIN']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await prisma.menuItem.deleteMany({ where: { categoryId: params.id } });
     await prisma.menuCategory.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
+    return success({});
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }

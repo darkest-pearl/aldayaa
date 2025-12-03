@@ -1,26 +1,34 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { requireAdmin } from '../../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../../lib/api-response';
+
+const updateSchema = z.object({
+  title: z.string().min(2).optional(),
+  description: z.string().optional().nullable(),
+  imageUrl: z.string().url().optional(),
+  categoryId: z.string().optional(),
+});
 
 export async function PUT(request, { params }) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    const photo = await prisma.photo.update({ where: { id: params.id }, data: body });
-    return NextResponse.json({ success: true, photo });
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) return failure('Invalid photo payload', 400, { details: parsed.error.flatten() });
+    const photo = await prisma.photo.update({ where: { id: params.id }, data: parsed.data });
+    return success({ photo });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    await requireAdmin(request, ['ADMIN']);
+    await requireAdmin(request, ['ADMIN', 'MANAGER']);
     await prisma.photo.delete({ where: { id: params.id } });
-    return NextResponse.json({ success: true });
+    return success({});
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }

@@ -1,15 +1,17 @@
-import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
+import { handleApiError, success, failure } from '../../../../lib/api-response';
+
+const schema = z.object({ name: z.string().min(2) });
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const categories = await prisma.galleryCategory.findMany({ include: { photos: true } });
-    return NextResponse.json({ categories });
+    await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
+    const categories = await prisma.galleryCategory.findMany({ include: { photos: true }, orderBy: { createdAt: 'asc' } });
+    return success({ categories });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ error: 'Unauthorized' }, { status });
+    return handleApiError(error);
   }
 }
 
@@ -17,10 +19,11 @@ export async function POST(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const body = await request.json();
-    const category = await prisma.galleryCategory.create({ data: { name: body.name } });
-    return NextResponse.json({ success: true, category });
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) return failure('Invalid category payload', 400, { details: parsed.error.flatten() });
+    const category = await prisma.galleryCategory.create({ data: { name: parsed.data.name } });
+    return success({ category });
   } catch (error) {
-    const status = error.message === 'Unauthorized' ? 401 : error.code === 'FORBIDDEN' ? 403 : 400;
-    return NextResponse.json({ success: false, error: error.message }, { status });
+    return handleApiError(error);
   }
 }

@@ -6,6 +6,20 @@ const COOKIE_NAME = "aldayaa_admin";
 const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "aldayaa-secret";
 const TOKEN_EXPIRY = "7d";
 
+export const ROLES = {
+  ADMIN: "ADMIN",
+  MANAGER: "MANAGER",
+  SUPPORT: "SUPPORT",
+};
+
+export class AuthError extends Error {
+  constructor(message, status = 401, code = "UNAUTHORIZED") {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export function createToken(admin) {
   return jwt.sign(
     { id: admin.id, email: admin.email, role: admin.role },
@@ -46,13 +60,11 @@ export async function getAdminFromRequest(request) {
 export async function requireAdmin(request, allowedRoles = []) {
   const admin = await getAdminFromRequest(request);
   if (!admin) {
-    throw new Error('Unauthorized');
+    throw new AuthError('Unauthorized', 401, 'UNAUTHORIZED');
   }
 
   if (allowedRoles.length && !allowedRoles.includes(admin.role)) {
-    const error = new Error('Forbidden');
-    error.code = 'FORBIDDEN';
-    throw error;
+    throw new AuthError('Forbidden', 403, 'FORBIDDEN');
   }
   return admin;
 }
@@ -64,4 +76,8 @@ export async function authenticateAdmin(email, password) {
   const match = await bcrypt.compare(password, user.passwordHash);
   if (!match) return null;
   return { id: user.id, email: user.email, role: user.role };
+}
+
+export async function hashPassword(password) {
+  return bcrypt.hash(password, 10);
 }
