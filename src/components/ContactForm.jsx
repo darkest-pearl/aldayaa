@@ -27,34 +27,37 @@ export default function ContactForm() {
 
     setLoading(true);
 
-    const res = await fetch("/api/contact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
-
-    let data = null;
     try {
-      data = await res.json();
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (err) {
+        console.error("JSON parse error", err);
+      }
+
+      if (data?.success) {
+        setStatus({
+          type: "success",
+          message: "Message sent. Thank you!",
+        });
+        setForm({ name: "", email: "", message: "" });
+      } else {
+        setStatus({
+          type: "error",
+          message: data?.error || "Something went wrong",
+        });
+      }
     } catch (err) {
-      console.error("JSON parse error", err);
-    }
-
-    setLoading(false);
-
-    if (data?.success) {
-      setStatus({
-        type: "success",
-        message: "Message sent. Thank you!",
-      });
-      setForm({ name: "", email: "", message: "" });
-    } else {
-      setStatus({
-        type: "error",
-        message: data?.error || "Something went wrong",
-      });
+      setStatus({ type: "error", message: "Unable to send message. Please try again." });
+    } finally {
+      setLoading(false);
     }
   };
 
