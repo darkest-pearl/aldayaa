@@ -43,9 +43,9 @@ export default function HomePage() {
       </section>
 
       <Section>
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold">Our Highlights</h2>
-          <p className="text-textdark/70">Signature plates guests love.</p>
+        <div className="text-center mb-10">
+          <h2 className="text-xl md:text-2xl font-semibold">Our Highlights</h2>
+          <p className="text-base leading-relaxed text-textdark/70">Signature plates guests love.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {highlights.map((item) => (
@@ -54,7 +54,7 @@ export default function HomePage() {
                 <Image src={item.image} alt={item.title} fill className="object-cover" />
               </div>
               <h3 className="font-semibold text-lg">{item.title}</h3>
-              <p className="text-sm text-textdark/70 mb-3">{item.desc}</p>
+              <p className="text-base leading-relaxed text-textdark/70 mb-3">{item.desc}</p>
               <Link href="/public/menu" className="text-primary font-semibold">View Menu →</Link>
             </motion.div>
           ))}
@@ -75,8 +75,8 @@ export default function HomePage() {
       <Section>
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <h3 className="text-2xl font-semibold mb-3">About Al Dayaa Al Shamiah</h3>
-            <p className="text-textdark/80 mb-4">We bring the warmth of Levantine hospitality with a menu spanning shawarma, grills, biryani, mezze, and fresh juices. Late-night diners and families alike gather here for flame-kissed meats and vibrant flavors.</p>
+            <h3 className="text-xl md:text-2xl font-semibold mb-3">About Al Dayaa Al Shamiah</h3>
+            <p className="text-base leading-relaxed text-textdark/80 mb-4">We bring the warmth of Levantine hospitality with a menu spanning shawarma, grills, biryani, mezze, and fresh juices. Late-night diners and families alike gather here for flame-kissed meats and vibrant flavors.</p>
             <Link href="/public/about" className="text-primary font-semibold">Read our story →</Link>
           </div>
           <div className="grid grid-cols-2 gap-4">

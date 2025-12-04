@@ -62,10 +62,10 @@ export default function ContactForm() {
     <div className="grid md:grid-cols-2 gap-8">
       {/* LEFT SIDE — Info */}
       <div className="space-y-3">
-        <h1 className="text-3xl font-semibold">Contact Us</h1>
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold">Contact Us</h1>
 
         {/* Correct address */}
-        <p>{strings.address}</p>
+        <p className="text-base leading-relaxed text-textdark/80">{strings.address}</p>
 
         {/* Correct clickable Google Maps link */}
         <a
@@ -91,8 +91,8 @@ export default function ContactForm() {
         {/* Hours */}
         <div>
           <p className="font-semibold">Opening Hours</p>
-          <p>{strings.hours.weekday}</p>
-          <p>{strings.hours.friday}</p>
+          <p className="text-base leading-relaxed text-textdark/80">{strings.hours.weekday}</p>
+          <p className="text-base leading-relaxed text-textdark/80">{strings.hours.friday}</p>
         </div>
 
         {/* Updated Google Maps iframe */}
