@@ -196,32 +196,37 @@ export default function OrderClient({ categories }) {
 
   return (
     <>
-    <div className="grid gap-4 sm:grid-cols-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setShowTrackModal(true)}
-          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-        >
-          <div>
-            <p className="text-sm text-amber-900/80">Check on an order</p>
-            <p className="text-lg font-semibold text-amber-900">Track Order</p>
-          </div>
-          <span className="text-amber-700 text-xl">→</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowCancelModal(true)}
-          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-        >
-          <div>
-            <p className="text-sm text-amber-900/80">Change of plans?</p>
-            <p className="text-lg font-semibold text-amber-900">Cancel Order</p>
-          </div>
-          <span className="text-amber-700 text-xl">→</span>
-        </button>
-      </div>
       <div className="flex flex-col gap-6 lg:gap-8">
+        <div className="space-y-1 text-xs text-neutral-500">
+          <p>
+            Need to track your order?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setShowTrackModal(true);
+                setTrackResult(null);
+                setTrackError("");
+              }}
+              className="font-semibold text-neutral-500 underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
+            >
+              Track here
+            </button>
+          </p>
+          <p>
+            Want to cancel your order?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setShowCancelModal(true);
+                setCancelResult(null);
+                setCancelError("");
+              }}
+              className="font-semibold text-neutral-500 underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
+            >
+              Cancel here
+            </button>
+          </p>
+        </div>
         <div className="grid gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
           {/* LEFT: MENU */}
           <div className="space-y-6">
@@ -572,7 +577,11 @@ export default function OrderClient({ categories }) {
             </button>
           </div>
 
-            <form className="space-y-3" onSubmit={handleTrack}>
+            <p className="mb-3 text-sm text-white/80">
+            Enter your reference number to check the latest status.
+          </p>
+
+          <form className="space-y-3 text-sm" onSubmit={handleTrack}>
             <input
               className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               placeholder="Enter reference number"
@@ -587,22 +596,22 @@ export default function OrderClient({ categories }) {
                   <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
                     {trackResult.status}
                   </span>
-              </div>
-            {trackResult.deliveryType && (
+                </div>
+                {trackResult.deliveryType && (
                   <div className="flex items-center justify-between text-sm">
                     <span>Type</span>
                     <span className="font-semibold">{trackResult.deliveryType}</span>
                   </div>
-            )}
+              )}
 
-                  <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm">
                   <span>Placed on</span>
                   <span className="font-semibold">{formatDateTime(trackResult.createdAt)}</span>
                 </div>
               </div>
             )}
 
-              <Button
+            <Button
               type="submit"
               disabled={trackLoading}
               className="w-full justify-center shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
@@ -648,7 +657,11 @@ export default function OrderClient({ categories }) {
             </button>
           </div>
 
-            <form className="space-y-3" onSubmit={handleCancel}>
+          <p className="mb-3 text-sm text-white/80">
+            Enter your reference number below to request a cancellation.
+          </p>
+
+          <form className="space-y-3 text-sm" onSubmit={handleCancel}>
             <input
               className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               placeholder="Enter reference number"
@@ -671,7 +684,7 @@ export default function OrderClient({ categories }) {
               </div>
             )}
 
-              <Button
+            <Button
               type="submit"
               disabled={cancelLoading}
               className="w-full justify-center shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
@@ -679,9 +692,8 @@ export default function OrderClient({ categories }) {
               {cancelLoading ? "Cancelling..." : "Cancel Order"}
             </Button>
           </form>
-          </div>
         </div>
-      
+      </div>
     </>
   );
 }
