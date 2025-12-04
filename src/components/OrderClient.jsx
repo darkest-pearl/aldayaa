@@ -494,180 +494,190 @@ export default function OrderClient({ categories }) {
       )}
 
       {/* POPUP DIALOG */}
-      {showDialog && (
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
+          showDialog ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => showDialog && setShowDialog(false)}
+      >
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
-          onClick={() => setShowDialog(false)}
+          className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 transform transition-all duration-200 text-white ${
+            showDialog ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          }`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-2xl text-white max-w-sm w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold mb-3">Order Placed!</h2>
+          <h2 className="text-xl font-bold mb-3">Order Placed!</h2>
 
-            <p className="text-sm mb-3 text-white/90">Your reference number:</p>
+          <p className="text-sm mb-3 text-white/90">Your reference number:</p>
 
-            <div className="flex items-center justify-between bg-white/10 px-3 py-2 rounded-lg border border-white/20">
-              <span className="font-mono">{reference}</span>
-
-              <button
-                onClick={() => navigator.clipboard.writeText(reference)}
-                className="text-sm font-semibold text-yellow-200 hover:text-yellow-300"
-              >
-                Copy
-              </button>
-            </div>
-
-            <p className="text-xs text-white/70 mt-2">
-              Keep this number safe — you will need it to cancel your order.
-            </p>
+        <div className="flex items-center justify-between bg-white/10 px-3 py-2 rounded-lg border border-white/20">
+        <span className="font-mono">{reference}</span>
 
             <button
-              onClick={() => setShowDialog(false)}
-              className="w-full mt-4 py-2 rounded-lg bg-white/30 text-white backdrop-blur-lg font-semibold hover:bg-white/40"
+              onClick={() => navigator.clipboard.writeText(reference)}
+              className="text-sm font-semibold text-yellow-200 hover:text-yellow-300"
             >
-              Close
+              Copy
             </button>
           </div>
-        </div>
-      )}
-      {/* TRACK ORDER MODAL */}
-      {showTrackModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => {
-            setShowTrackModal(false);
-            setTrackResult(null);
-            setTrackError("");
-          }}
-        >
-          <div
-            className="bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-2xl text-white max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
+
+           <p className="text-xs text-white/70 mt-2">
+            Keep this number safe — you will need it to track your order.
+          </p>
+
+          <button
+            onClick={() => setShowDialog(false)}
+            className="w-full mt-4 py-2 rounded-lg bg-white/30 text-white backdrop-blur-lg font-semibold hover:bg-white/40 transition"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
-                <h2 className="text-xl font-bold">Track Your Order</h2>
-              </div>
-              <button
-                className="text-white/70 hover:text-white"
-                onClick={() => {
-                  setShowTrackModal(false);
-                  setTrackResult(null);
-                  setTrackError("");
-                }}
-              >
-                ×
-              </button>
+            Close
+          </button>
+        </div>
+      </div>
+      {/* TRACK ORDER MODAL */}
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
+          showTrackModal ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => {
+          if (!showTrackModal) return;
+          setShowTrackModal(false);
+          setTrackResult(null);
+          setTrackError("");
+        }}
+      >
+        <div
+          className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 transform transition-all duration-200 text-white ${
+            showTrackModal ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
+              <h2 className="text-xl font-bold">Track Your Order</h2>
             </div>
+            <button
+              className="text-white/70 hover:text-white"
+              onClick={() => {
+                setShowTrackModal(false);
+                setTrackResult(null);
+                setTrackError("");
+              }}
+            >
+              ×
+            </button>
+          </div>
 
             <form className="space-y-3" onSubmit={handleTrack}>
-              <input
-                className="w-full rounded-lg border border-white/40 bg-white/20 px-3 py-2 text-white placeholder:text-white/60"
-                placeholder="Enter reference number"
-                value={trackRef}
-                onChange={(e) => setTrackRef(e.target.value)}
-              />
+            <input
+              className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Enter reference number"
+              value={trackRef}
+              onChange={(e) => setTrackRef(e.target.value)}
+            />
 
-              {trackError && (
-                <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">
-                  {trackError}
-                </div>
-              )}
-
-              {trackResult && (
-                <div className="rounded-xl border border-white/30 bg-white/10 p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-white/80">Status</p>
-                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                      {trackResult.status}
-                    </span>
+            {trackResult && (
+              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-3 space-y-2 text-sm text-emerald-900 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm">Status</p>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                    {trackResult.status}
+                  </span>
+              </div>
+            {trackResult.deliveryType && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Type</span>
+                    <span className="font-semibold">{trackResult.deliveryType}</span>
                   </div>
+            )}
 
-                  {trackResult.deliveryType && (
-                    <div className="flex items-center justify-between text-sm text-white/80">
-                      <span>Type</span>
-                      <span className="font-semibold">{trackResult.deliveryType}</span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm text-white/80">
-                    <span>Placed on</span>
-                    <span className="font-semibold">{formatDateTime(trackResult.createdAt)}</span>
-                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                  <span>Placed on</span>
+                  <span className="font-semibold">{formatDateTime(trackResult.createdAt)}</span>
                 </div>
-              )}
+              </div>
+            )}
 
-              <Button type="submit" disabled={trackLoading} className="w-full justify-center">
-                {trackLoading ? "Checking..." : "Check Status"}
-              </Button>
-            </form>
-          </div>
+              <Button
+              type="submit"
+              disabled={trackLoading}
+              className="w-full justify-center shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
+            >
+              {trackLoading ? "Checking..." : "Check Status"}
+            </Button>
+          </form>
         </div>
-      )}
+      </div>
 
       {/* CANCEL ORDER MODAL */}
-      {showCancelModal && (
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
+          showCancelModal ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => {
+          if (!showCancelModal) return;
+          setShowCancelModal(false);
+          setCancelResult(null);
+          setCancelError("");
+        }}
+      >
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-          onClick={() => {
-            setShowCancelModal(false);
-            setCancelResult(null);
-            setCancelError("");
-          }}
+          className={`bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 transform transition-all duration-200 text-white ${
+            showCancelModal ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          }`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-2xl text-white max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
-                <h2 className="text-xl font-bold">Cancel Your Order</h2>
-              </div>
-              <button
-                className="text-white/70 hover:text-white"
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setCancelResult(null);
-                  setCancelError("");
-                }}
-              >
-                ×
-              </button>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
+              <h2 className="text-xl font-bold">Cancel Your Order</h2>
             </div>
+            <button
+              className="text-white/70 hover:text-white"
+              onClick={() => {
+                setShowCancelModal(false);
+                setCancelResult(null);
+                setCancelError("");
+              }}
+            >
+              ×
+            </button>
+          </div>
 
             <form className="space-y-3" onSubmit={handleCancel}>
-              <input
-                className="w-full rounded-lg border border-white/40 bg-white/20 px-3 py-2 text-white placeholder:text-white/60"
-                placeholder="Enter reference number"
-                value={cancelRef}
-                onChange={(e) => setCancelRef(e.target.value)}
-              />
+            <input
+              className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Enter reference number"
+              value={cancelRef}
+              onChange={(e) => setCancelRef(e.target.value)}
+            />
 
-              {cancelError && (
-                <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">
-                  {cancelError}
-                </div>
-              )}
+            {cancelError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 shadow-sm">
+                {cancelError}
+              </div>
+            )}
 
-              {cancelResult && (
-                <div className="rounded-xl border border-white/30 bg-white/10 p-3 space-y-2 text-sm text-white/90">
-                  <p className="font-semibold">Order cancelled successfully.</p>
-                  {cancelResult?.fee && (
-                    <p className="text-white/80">Cancellation fee: AED {cancelResult.fee}</p>
-                  )}
-                </div>
-              )}
+            {cancelResult && (
+              <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-3 space-y-2 text-sm text-emerald-900 shadow-sm">
+                <p className="font-semibold">Order cancelled successfully.</p>
+                {cancelResult?.fee && (
+                  <p className="text-emerald-800">Cancellation fee: AED {cancelResult.fee}</p>
+                )}
+              </div>
+            )}
 
-              <Button type="submit" disabled={cancelLoading} className="w-full justify-center">
-                {cancelLoading ? "Cancelling..." : "Cancel Order"}
-              </Button>
-            </form>
+              <Button
+              type="submit"
+              disabled={cancelLoading}
+              className="w-full justify-center shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
+            >
+              {cancelLoading ? "Cancelling..." : "Cancel Order"}
+            </Button>
+          </form>
           </div>
         </div>
-      )}
+      
     </>
   );
 }
