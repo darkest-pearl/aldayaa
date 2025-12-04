@@ -17,6 +17,10 @@ export default function ReservationForm() {
 
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelForm, setCancelForm] = useState({ reference: "", phone: "" });
+  const [cancelStatus, setCancelStatus] = useState(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -61,6 +65,49 @@ export default function ReservationForm() {
         type: "error",
         message: data.error || "Something went wrong",
       });
+    }
+  };
+
+  const submitCancellation = async (e) => {
+    e.preventDefault();
+    setCancelStatus(null);
+    if (!cancelForm.reference.trim()) {
+      setCancelStatus({
+        type: "error",
+        message: "Please enter your reservation reference.",
+      });
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      const res = await fetch("/api/reservations/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reference: cancelForm.reference.trim(),
+          phone: cancelForm.phone.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCancelStatus({
+          type: "success",
+          message: "Your reservation has been cancelled.",
+        });
+      } else {
+        setCancelStatus({
+          type: "error",
+          message: data.error || "Unable to cancel reservation.",
+        });
+      }
+    } catch (error) {
+      setCancelStatus({
+        type: "error",
+        message: "Unable to cancel reservation.",
+      });
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -207,7 +254,90 @@ export default function ReservationForm() {
         >
           WhatsApp {strings.whatsapp}
         </a>
+        <p className="text-xs text-neutral-500">
+          Need to cancel a reservation?{' '}
+          <button
+            type="button"
+            onClick={() => setShowCancelModal(true)}
+            className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
+          >
+            Click here
+          </button>
+          .
+        </p>
       </div>
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-white/60 bg-white/90 shadow-2xl p-6">
+            <button
+              type="button"
+              onClick={() => setShowCancelModal(false)}
+              className="absolute right-4 top-4 text-neutral-500 hover:text-neutral-800"
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="space-y-1 mb-4">
+              <h2 className="text-xl font-semibold text-textdark">Cancel your reservation</h2>
+              <p className="text-sm text-textdark/70">
+                Enter your reservation reference below to request a cancellation.
+              </p>
+            </div>
+            <form className="space-y-4" onSubmit={submitCancellation}>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-neutral-800">Reservation reference</label>
+                <input
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  placeholder="e.g. c123abc456"
+                  value={cancelForm.reference}
+                  onChange={(e) =>
+                    setCancelForm({ ...cancelForm, reference: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-neutral-800">Phone number (optional)</label>
+                <input
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  placeholder="Used for verification"
+                  value={cancelForm.phone}
+                  onChange={(e) =>
+                    setCancelForm({ ...cancelForm, phone: e.target.value })
+                  }
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={cancelLoading}
+                  className="flex-1 justify-center"
+                >
+                  {cancelLoading ? "Cancelling..." : "Cancel Reservation"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelModal(false)}
+                  className="px-4 py-2 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
+            {cancelStatus && (
+              <div
+                className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+                  cancelStatus.type === "success"
+                    ? "border-green-100 bg-green-50 text-green-700"
+                    : "border-red-100 bg-red-50 text-red-700"
+                }`}
+              >
+                {cancelStatus.message}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
