@@ -8,14 +8,13 @@ export default function OrderClient({ categories }) {
   const [form, setForm] = useState({
     name: "",
     phone: "",
-    deliveryType: "DELIVERY",
+    deliveryType: "DELIVERY", // default
     address: "",
-    notes: ""
+    notes: "",
+    notifyWhenReady: false, // <-- added
   });
 
   const [loading, setLoading] = useState(false);
-
-  // dialog popup state
   const [showDialog, setShowDialog] = useState(false);
   const [reference, setReference] = useState("");
 
@@ -35,9 +34,7 @@ export default function OrderClient({ categories }) {
   const updateQty = (id, qty) => {
     setCart((prev) =>
       prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, qty) }
-          : item
+        item.id === id ? { ...item, quantity: Math.max(1, qty) } : item
       )
     );
   };
@@ -61,7 +58,11 @@ export default function OrderClient({ categories }) {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, items: cart, paidOnline: false })
+        body: JSON.stringify({
+          ...form,
+          items: cart,
+          paidOnline: false,
+        }),
       });
 
       const data = await res.json();
@@ -77,14 +78,15 @@ export default function OrderClient({ categories }) {
       setReference(ref || "(missing reference)");
       setShowDialog(true);
 
-      // reset cart + form
+      // Reset cart + form
       setCart([]);
       setForm({
         name: "",
         phone: "",
         deliveryType: "DELIVERY",
         address: "",
-        notes: ""
+        notes: "",
+        notifyWhenReady: false,
       });
     } catch (err) {
       setLoading(false);
@@ -133,7 +135,7 @@ export default function OrderClient({ categories }) {
           ))}
         </div>
 
-        {/* RIGHT: CART */}
+        {/* RIGHT: CART + CHECKOUT FORM */}
         <div className="section-bg p-4 space-y-4 rounded-xl">
           <h3 className="font-semibold text-xl">Your Cart</h3>
 
@@ -223,7 +225,11 @@ export default function OrderClient({ categories }) {
                   className="hidden"
                   checked={form.deliveryType === "DELIVERY"}
                   onChange={() =>
-                    setForm({ ...form, deliveryType: "DELIVERY" })
+                    setForm({
+                      ...form,
+                      deliveryType: "DELIVERY",
+                      notifyWhenReady: false, // reset
+                    })
                   }
                 />
                 Delivery
@@ -242,13 +248,17 @@ export default function OrderClient({ categories }) {
                   className="hidden"
                   checked={form.deliveryType === "PICKUP"}
                   onChange={() =>
-                    setForm({ ...form, deliveryType: "PICKUP" })
+                    setForm({
+                      ...form,
+                      deliveryType: "PICKUP",
+                    })
                   }
                 />
                 Pickup
               </label>
             </div>
 
+            {/* DELIVERY address */}
             {form.deliveryType === "DELIVERY" && (
               <input
                 className="border rounded-lg p-2"
@@ -259,6 +269,29 @@ export default function OrderClient({ categories }) {
                 }
                 required
               />
+            )}
+
+            {/* PICKUP WhatsApp checkbox */}
+            {form.deliveryType === "PICKUP" && (
+              <div className="rounded-lg border p-3 space-y-2 bg-white">
+                <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+                  <input
+                    type="checkbox"
+                    checked={form.notifyWhenReady}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        notifyWhenReady: e.target.checked,
+                      })
+                    }
+                  />
+                  Notify me via WhatsApp when my order is ready
+                </label>
+
+                <p className="text-xs text-neutral-600">
+                  Please enter your WhatsApp number in the phone field.
+                </p>
+              </div>
             )}
 
             <textarea
@@ -278,7 +311,7 @@ export default function OrderClient({ categories }) {
         </div>
       </div>
 
-      {/* GLASSMORPHISM POPUP DIALOG */}
+      {/* POPUP DIALOG */}
       {showDialog && (
         <div
           className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50"
@@ -290,17 +323,13 @@ export default function OrderClient({ categories }) {
           >
             <h2 className="text-xl font-bold mb-3">Order Placed!</h2>
 
-            <p className="text-sm mb-3 text-white/90">
-              Your reference number:
-            </p>
+            <p className="text-sm mb-3 text-white/90">Your reference number:</p>
 
             <div className="flex items-center justify-between bg-white/10 px-3 py-2 rounded-lg border border-white/20">
               <span className="font-mono">{reference}</span>
 
               <button
-                onClick={() =>
-                  navigator.clipboard.writeText(reference)
-                }
+                onClick={() => navigator.clipboard.writeText(reference)}
                 className="text-sm font-semibold text-yellow-200 hover:text-yellow-300"
               >
                 Copy

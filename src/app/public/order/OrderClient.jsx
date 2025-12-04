@@ -11,18 +11,26 @@ export default function OrderClient({ categories }) {
     address: "",
     notes: "",
   });
+  const [notifyWhenReady, setNotifyWhenReady] = useState(false);
 
   const setAddress = (value) => {
     setForm((prev) => ({ ...prev, address: value }));
   };
 
   const handleDeliveryTypeChange = (value) => {
-    setForm((prev) => ({
-      ...prev,
-      deliveryType: value,
-      address: value === "PICKUP" ? "" : prev.address,
-    }));
-  };
+  const normalized = value.toUpperCase();
+
+  setForm((prev) => ({
+    ...prev,
+    deliveryType: normalized,
+    address: normalized === "PICKUP" ? "" : prev.address,
+  }));
+
+  if (normalized === "DELIVERY") {
+    setNotifyWhenReady(false);
+  }
+};
+
   
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +68,7 @@ export default function OrderClient({ categories }) {
           ...form,
           items: cart,
           paidOnline: false,
+          notifyWhenReady,
         }),
       });
 
@@ -85,6 +94,7 @@ export default function OrderClient({ categories }) {
         address: "",
         notes: "",
       });
+      setNotifyWhenReady(false);
 
     } catch (err) {
       setLoading(false);
@@ -172,14 +182,20 @@ export default function OrderClient({ categories }) {
                   }
                 />
 
+                <div className="text-xs text-red-500">
+                    DEBUG: {JSON.stringify(form.deliveryType)}
+                </div>
+<p>lkasjddfjhlkjhasdfkj</p>
+
                 <select
                   className="w-full p-2 border rounded-lg"
                   value={form.deliveryType}
-                  onChange={(e) => handleDeliveryTypeChange(e.target.value)}
+                  onChange={(e) => handleDeliveryTypeChange(e.target.value.toUpperCase())}
                 >
                   <option value="PICKUP">Pickup</option>
                   <option value="DELIVERY">Delivery</option>
                 </select>
+
 
                 {form.deliveryType === "DELIVERY" && (
                   <div className="space-y-1">
@@ -193,6 +209,23 @@ export default function OrderClient({ categories }) {
                       value={form.address}
                       onChange={(e) => setAddress(e.target.value)}
                     />
+                  </div>
+                )}
+
+                {form.deliveryType === "PICKUP" && (
+                  <div className="rounded-lg border p-3 space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+                      <input
+                        type="checkbox"
+                        checked={notifyWhenReady}
+                        onChange={(e) => setNotifyWhenReady(e.target.checked)}
+                      />
+                      Notify me via WhatsApp when my order is ready
+                    </label>
+                    <p className="text-xs text-neutral-600">
+                      Please enter your WhatsApp number in the phone number field.
+                      We will only use it to notify you when your pickup order is ready.
+                    </p>
                   </div>
                 )}
 

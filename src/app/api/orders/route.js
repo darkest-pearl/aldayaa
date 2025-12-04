@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
 import { handleApiError, success, failure } from '../../../lib/api-response';
-import { generateReference } from "../../../lib/reference"; 
+import { generateReference } from "../../../lib/reference";
+import { sendWhatsAppMessage } from "../../../lib/whatsapp";
 
 const itemSchema = z.object({
   id: z.string(),
@@ -19,6 +20,7 @@ const orderSchema = z.object({
   notes: z.string().optional().nullable(),
   items: z.array(itemSchema).min(1),
   paidOnline: z.boolean().optional(),
+  notifyWhenReady: z.boolean().optional(),
 });
 
 const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
@@ -50,6 +52,8 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const orderType = body.deliveryType;
+    const notifyWhenReady =
+      orderType === "DELIVERY" ? false : Boolean(body.notifyWhenReady);
 
     if (
       orderType === 'DELIVERY' &&
@@ -62,6 +66,7 @@ export async function POST(request) {
     const parsed = orderSchema.safeParse({
       ...body,
       items: (body.items || []).map((i) => ({ ...i, price: Number(i.price) })),
+      notifyWhenReady,
     });
     if (!parsed.success) {
       return failure("Invalid order data", 400, { details: parsed.error.flatten() });
@@ -89,6 +94,7 @@ export async function POST(request) {
             : null,
         notes: parsed.data.notes || null,
         paidOnline: Boolean(parsed.data.paidOnline),
+        notifyWhenReady,
         totalPrice,
         items: {
           create: parsed.data.items.map((item) => ({
@@ -128,6 +134,22 @@ export async function PUT(request) {
       where: { id: parsed.data.id },
       data: { status: parsed.data.status },
     });
+
+    if (
+      order.status === 'COMPLETED' &&
+      order.deliveryType === 'PICKUP' &&
+      order.notifyWhenReady === true &&
+      order.phone
+    ) {
+      try {
+        await sendWhatsAppMessage(
+          order.phone,
+          `Your order ${order.reference} is ready for pickup at Al Dayaa Al Shamiah.`
+        );
+      } catch (err) {
+        console.error('Failed to send WhatsApp notification:', err);
+      }
+    }
 
     return success({
       reference: order.reference,

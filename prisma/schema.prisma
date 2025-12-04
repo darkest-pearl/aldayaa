@@ -75,6 +75,7 @@ model Order {
   totalPrice   Float
   status       String      @default("NEW")
   paidOnline   Boolean     @default(false)
+  notifyWhenReady Boolean  @default(false)
   createdAt    DateTime    @default(now())
   items        OrderItem[]
 }
