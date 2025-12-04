@@ -15,16 +15,44 @@ export default function AboutPage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="relative h-40 md:h-48">
-            <Image src="/images/interior-2.jpg" alt="Dining room" fill className="rounded-xl object-cover" />
+            <Image
+              src="/images/interior-2.jpg"
+              alt="Dining room"
+              fill
+              sizes="(max-width: 768px) 48vw, 300px"
+              loading="lazy"
+              className="rounded-xl object-cover"
+            />
           </div>
           <div className="relative h-40 md:h-48">
-            <Image src="/images/vibes-family.jpg" alt="Guests" fill className="rounded-xl object-cover" />
+            <Image
+              src="/images/vibes-family.jpg"
+              alt="Guests"
+              fill
+              sizes="(max-width: 768px) 48vw, 300px"
+              loading="lazy"
+              className="rounded-xl object-cover"
+            />
           </div>
           <div className="relative h-40 md:h-48">
-            <Image src="/images/food-desserts.jpg" alt="Desserts" fill className="rounded-xl object-cover" />
+            <Image
+              src="/images/food-desserts.jpg"
+              alt="Desserts"
+              fill
+              sizes="(max-width: 768px) 48vw, 300px"
+              loading="lazy"
+              className="rounded-xl object-cover"
+            />
           </div>
           <div className="relative h-40 md:h-48">
-            <Image src="/images/vibes-night.jpg" alt="Night vibe" fill className="rounded-xl object-cover" />
+            <Image
+              src="/images/vibes-night.jpg"
+              alt="Night vibe"
+              fill
+              sizes="(max-width: 768px) 48vw, 300px"
+              loading="lazy"
+              className="rounded-xl object-cover"
+            />
           </div>
         </div>
       </div>

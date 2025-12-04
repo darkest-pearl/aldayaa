@@ -22,7 +22,14 @@ export default function HomePage() {
   return (
     <div>
       <section className="relative h-[70vh] flex items-center justify-center overflow-hidden">
-        <Image src="/images/hero-exterior.jpg" alt="Restaurant exterior" fill className="object-cover" />
+        <Image
+          src="/images/hero-exterior.jpg"
+          alt="Restaurant exterior"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-primary/30" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -31,7 +38,14 @@ export default function HomePage() {
           className="relative z-10 text-center text-white px-4"
         >
           <div className="flex items-center justify-center mb-4">
-            <Image src="/images/logo-al-dayaa.png" alt="Logo" width={96} height={96} className="rounded-full shadow-lg" />
+            <Image
+              src="/images/logo-al-dayaa.png"
+              alt="Logo"
+              width={96}
+              height={96}
+              priority
+              className="rounded-full shadow-lg"
+            />
           </div>
           <h1 className="text-3xl md:text-5xl font-bold mb-3">{strings.restaurantName}</h1>
           <p className="text-lg md:text-2xl max-w-2xl mx-auto mb-6">{strings.tagline}</p>
@@ -51,7 +65,14 @@ export default function HomePage() {
           {highlights.map((item) => (
             <motion.div key={item.title} whileHover={{ translateY: -6 }} className="section-bg p-4">
               <div className="relative h-40 mb-3 overflow-hidden rounded-xl">
-                <Image src={item.image} alt={item.title} fill className="object-cover" />
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 33vw, 400px"
+                  loading="lazy"
+                  className="object-cover"
+                />
               </div>
               <h3 className="font-semibold text-lg">{item.title}</h3>
               <p className="text-base leading-relaxed text-textdark/70 mb-3">{item.desc}</p>
@@ -81,10 +102,24 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="relative h-32 md:h-40">
-              <Image src="/images/interior-1.jpg" alt="Interior" fill className="rounded-xl object-cover" />
+              <Image
+                src="/images/interior-1.jpg"
+                alt="Interior"
+                fill
+                sizes="(max-width: 768px) 48vw, 280px"
+                loading="lazy"
+                className="rounded-xl object-cover"
+              />
             </div>
             <div className="relative h-32 md:h-40">
-              <Image src="/images/food-drinks.jpg" alt="Drinks" fill className="rounded-xl object-cover" />
+              <Image
+                src="/images/food-drinks.jpg"
+                alt="Drinks"
+                fill
+                sizes="(max-width: 768px) 48vw, 280px"
+                loading="lazy"
+                className="rounded-xl object-cover"
+              />
             </div>
           </div>
         </div>

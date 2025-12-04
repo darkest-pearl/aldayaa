@@ -37,6 +37,7 @@ export default function GalleryClient({ categories }) {
               alt={photo.title}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              loading="lazy"
               className="object-cover transition-transform duration-300 ease-out group-hover:scale-105 group-focus-visible:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-3 flex items-end">
