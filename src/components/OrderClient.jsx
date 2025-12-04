@@ -34,7 +34,7 @@ export default function OrderClient({ categories }) {
   useEffect(() => {
     if (!cartPulse) return;
 
-    const timer = setTimeout(() => setCartPulse(false), 700);
+    const timer = setTimeout(() => setCartPulse(false), 220);
     return () => clearTimeout(timer);
   }, [cartPulse]);
 
@@ -200,7 +200,7 @@ export default function OrderClient({ categories }) {
         <button
           type="button"
           onClick={() => setShowTrackModal(true)}
-          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <div>
             <p className="text-sm text-amber-900/80">Check on an order</p>
@@ -212,7 +212,7 @@ export default function OrderClient({ categories }) {
         <button
           type="button"
           onClick={() => setShowCancelModal(true)}
-          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <div>
             <p className="text-sm text-amber-900/80">Change of plans?</p>
@@ -263,7 +263,7 @@ export default function OrderClient({ categories }) {
                         </p>
 
                         <Button
-                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 hover:shadow-md"
+                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
                           onClick={() => addToCart(item)}
                         >
                           Add to cart
@@ -279,13 +279,17 @@ export default function OrderClient({ categories }) {
           {/* RIGHT: CART + CHECKOUT FORM */}
           <div
             ref={cartRef}
-            className={`section-bg p-4 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 ${
+            className={`section-bg p-4 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 transition-all duration-200 ${
               cartPulse ? "ring-2 ring-primary/30" : ""
             }`}
           >
             <div className="flex items-center justify-between gap-3">
               <h3 className="font-semibold text-xl">Your Cart</h3>
-              <span className="rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium">
+              <span
+                className={`rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium transition ${
+                  cartPulse ? 'animate-pulse' : ''
+                }`}
+              >
                 {cart.length} item{cart.length !== 1 ? "s" : ""}
               </span>
             </div>
@@ -309,7 +313,7 @@ export default function OrderClient({ categories }) {
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <button
-                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                           onClick={() => updateQty(item.id, item.quantity - 1)}
                         >
                           -
@@ -318,7 +322,7 @@ export default function OrderClient({ categories }) {
                         <span className="px-2 text-sm font-medium">{item.quantity}</span>
 
                         <button
-                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                           onClick={() => updateQty(item.id, item.quantity + 1)}
                         >
                           +
@@ -485,7 +489,7 @@ export default function OrderClient({ categories }) {
             <button
               type="button"
               onClick={handleScrollToCart}
-              className="rounded-full bg-primary px-4 py-2 text-white text-sm font-semibold shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              className="rounded-full bg-primary px-4 py-2 text-white text-sm font-semibold shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               View cart
             </button>

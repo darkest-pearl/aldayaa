@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 
 export default function MenuClient({ categories }) {
   const [active, setActive] = useState('all');
@@ -40,10 +39,9 @@ export default function MenuClient({ categories }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => (
-          <motion.div
+          <div
             key={item.id}
-            whileHover={{ translateY: -4 }}
-            className="section-bg flex h-full flex-col justify-between rounded-2xl border border-neutral-200/80 bg-white/80 p-4 shadow-sm"
+            className="section-bg flex h-full flex-col justify-between rounded-2xl border border-neutral-200/80 bg-white/80 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-3">
@@ -70,7 +68,7 @@ export default function MenuClient({ categories }) {
                 </span>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
