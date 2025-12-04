@@ -12,6 +12,18 @@ export default function OrderClient({ categories }) {
     notes: "",
   });
 
+  const setAddress = (value) => {
+    setForm((prev) => ({ ...prev, address: value }));
+  };
+
+  const handleDeliveryTypeChange = (value) => {
+    setForm((prev) => ({
+      ...prev,
+      deliveryType: value,
+      address: value === "PICKUP" ? "" : prev.address,
+    }));
+  };
+  
   const [loading, setLoading] = useState(false);
 
   // Dialog state
@@ -163,23 +175,25 @@ export default function OrderClient({ categories }) {
                 <select
                   className="w-full p-2 border rounded-lg"
                   value={form.deliveryType}
-                  onChange={(e) =>
-                    setForm({ ...form, deliveryType: e.target.value })
-                  }
+                  onChange={(e) => handleDeliveryTypeChange(e.target.value)}
                 >
                   <option value="PICKUP">Pickup</option>
                   <option value="DELIVERY">Delivery</option>
                 </select>
 
                 {form.deliveryType === "DELIVERY" && (
-                  <input
-                    className="w-full p-2 border rounded-lg"
-                    placeholder="Delivery Address"
-                    value={form.address}
-                    onChange={(e) =>
-                      setForm({ ...form, address: e.target.value })
-                    }
-                  />
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-neutral-700">
+                      Delivery Address
+                    </label>
+                    <input
+                      required
+                      className="w-full p-2 border rounded-lg"
+                      placeholder="e.g. Al Nahda 2, Building 14, Apartment 202"
+                      value={form.address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
                 )}
 
                 <textarea

@@ -49,6 +49,14 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
+    const orderType = body.deliveryType;
+
+    if (
+      orderType === 'DELIVERY' &&
+      (!body.address || !body.address.trim())
+    ) {
+      return failure('Delivery address is required for delivery orders', 400);
+    }
 
     // validate incoming data
     const parsed = orderSchema.safeParse({
@@ -76,8 +84,8 @@ export async function POST(request) {
         phone: parsed.data.phone,
         deliveryType: parsed.data.deliveryType,
         address:
-          parsed.data.deliveryType === "DELIVERY"
-            ? parsed.data.address
+          orderType === "DELIVERY"
+            ? body.address.trim()
             : null,
         notes: parsed.data.notes || null,
         paidOnline: Boolean(parsed.data.paidOnline),

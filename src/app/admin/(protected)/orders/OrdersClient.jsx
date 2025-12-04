@@ -176,7 +176,20 @@ export default function OrdersClient() {
         <AdminTable
           columns={[
             { key: 'createdAt', header: 'When' },
-            { key: 'name', header: 'Customer' },
+             {
+              key: 'name',
+              header: 'Customer',
+              render: (_val, order) => (
+                <div>
+                  <div>{order.name}</div>
+                  {order.address && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      {order.address}
+                    </p>
+                  )}
+                </div>
+              ),
+            },
             { key: 'phone', header: 'Phone' },
             { key: 'deliveryType', header: 'Type' },
             { key: 'totalPrice', header: 'Total (AED)' },
