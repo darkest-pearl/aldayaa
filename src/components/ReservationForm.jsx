@@ -65,97 +65,141 @@ export default function ReservationForm() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto section-bg p-6">
-      <h1 className="text-3xl font-semibold mb-4 text-center">
-        Reserve a Table
-      </h1>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="rounded-xl border bg-white/80 shadow-sm p-6 sm:p-8">
+        <h1 className="text-3xl font-semibold mb-2 text-center">
+          Reserve a Table
+        </h1>
 
-      <p className="text-center text-textdark/70 mb-6">
-        We are open late for families and friends. Fill in your
-        details and we will confirm over WhatsApp.
-      </p>
-
-      <form className="grid gap-4" onSubmit={submit}>
-        <input
-          className="border rounded-lg p-3"
-          placeholder="Full name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          required
-        />
-
-        <input
-          className="border rounded-lg p-3"
-          placeholder="Phone number"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          required
-        />
-
-        <input
-          className="border rounded-lg p-3"
-          placeholder="Email (optional)"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            type="date"
-            className="border rounded-lg p-3"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-            required
-          />
-          <input
-            type="time"
-            className="border rounded-lg p-3"
-            value={form.time}
-            onChange={(e) => setForm({ ...form, time: e.target.value })}
-            required
-          />
-        </div>
-
-        <input
-          type="number"
-          min="1"
-          className="border rounded-lg p-3"
-          value={form.guests}
-          onChange={(e) =>
-            setForm({ ...form, guests: Number(e.target.value) })
-          }
-          placeholder="Guests"
-        />
-
-        <textarea
-          className="border rounded-lg p-3"
-          rows="3"
-          placeholder="Special requests"
-          value={form.specialRequests}
-          onChange={(e) =>
-            setForm({ ...form, specialRequests: e.target.value })
-          }
-        />
-
-        <Button type="submit" disabled={loading}>
-          {loading ? "Submitting..." : "Submit Reservation"}
-        </Button>
-      </form>
-
-      {status && (
-        <p
-          className={`mt-4 text-sm ${
-            status.type === "success"
-              ? "text-green-700"
-              : "text-red-600"
-          }`}
-        >
-          {status.message}
+        <p className="text-center text-textdark/70 mb-6 text-sm">
+          We are open late for families and friends. Fill in your details and
+          we will confirm over WhatsApp.
         </p>
-      )}
+        <form className="grid gap-4" onSubmit={submit}>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">
+              Full name
+            </label>
+            <p className="text-xs text-textdark/70">Required for booking confirmation.</p>
+            <input
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              placeholder="Enter your full name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+          </div>
 
-      <div className="mt-6 text-center">
-        <p className="text-sm">Prefer WhatsApp? Message us directly.</p>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">
+              Phone number
+            </label>
+            <p className="text-xs text-textdark/70">We will confirm over WhatsApp.</p>
+            <input
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              placeholder="Your phone number"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">Email</label>
+            <p className="text-xs text-textdark/70">Optional, for additional updates.</p>
+            <input
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-textdark">Date</label>
+              <p className="text-xs text-textdark/70">Choose your preferred day.</p>
+              <input
+                type="date"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-textdark">Time</label>
+              <p className="text-xs text-textdark/70">Let us know when to expect you.</p>
+              <input
+                type="time"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+                value={form.time}
+                onChange={(e) => setForm({ ...form, time: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">
+              Number of guests
+            </label>
+            <p className="text-xs text-textdark/70">Tell us how many seats you need.</p>
+            <input
+              type="number"
+              min="1"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              value={form.guests}
+              onChange={(e) =>
+                setForm({ ...form, guests: Number(e.target.value) })
+              }
+              placeholder="Guests"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">
+              Special requests
+            </label>
+            <p className="text-xs text-textdark/70">Birthdays, allergies, seating preferences.</p>
+            <textarea
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              rows="3"
+              placeholder="Anything we should know?"
+              value={form.specialRequests}
+              onChange={(e) =>
+                setForm({ ...form, specialRequests: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:justify-end">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full sm:w-auto justify-center"
+            >
+              {loading ? "Submitting..." : "Submit Reservation"}
+            </Button>
+          </div>
+        </form>
+
+        {status && (
+          <div
+            className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+              status.type === "success"
+                ? "border-green-100 bg-green-50 text-green-700"
+                : "border-red-100 bg-red-50 text-red-600"
+            }`}
+          >
+            {status.message}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border bg-white/80 shadow-sm p-5 text-center space-y-1">
+        <p className="text-sm text-textdark/80">Prefer WhatsApp? Message us directly.</p>
         <a
           href={strings.whatsappLink}
           target="_blank"

@@ -61,43 +61,55 @@ export default function ContactForm() {
   return (
     <div className="grid md:grid-cols-2 gap-8">
       {/* LEFT SIDE — Info */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold">Contact Us</h1>
 
-        {/* Correct address */}
-        <p className="text-base leading-relaxed text-textdark/80">{strings.address}</p>
+        <div className="rounded-xl border bg-white/80 shadow-sm p-4 space-y-3">
+          {/* Correct address */}
+          <div className="flex gap-3">
+            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg">📍</span>
+            <div>
+              <p className="font-semibold text-textdark">Visit us</p>
+              <p className="text-sm leading-relaxed text-textdark/80">{strings.address}</p>
+              <a
+                href={strings.googleMaps}
+                className="text-primary font-semibold text-sm"
+                target="_blank"
+              >
+                View on Google Maps
+              </a>
+            </div>
+          </div>
 
-        {/* Correct clickable Google Maps link */}
-        <a
-          href={strings.googleMaps}
-          className="text-primary font-semibold"
-          target="_blank"
-        >
-          View on Google Maps
-        </a>
+          {/* WhatsApp */}
+          <div className="flex gap-3">
+            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg">💬</span>
+            <div>
+              <p className="font-semibold text-textdark">WhatsApp</p>
+              <a
+                href={strings.whatsappLink}
+                target="_blank"
+                className="text-primary text-sm font-semibold"
+              >
+                {strings.whatsapp}
+              </a>
+            </div>
+          </div>
 
-        {/* WhatsApp */}
-        <div>
-          <p className="font-semibold">WhatsApp</p>
-          <a
-            href={strings.whatsappLink}
-            target="_blank"
-            className="text-primary"
-          >
-            {strings.whatsapp}
-          </a>
-        </div>
-
-        {/* Hours */}
-        <div>
-          <p className="font-semibold">Opening Hours</p>
-          <p className="text-base leading-relaxed text-textdark/80">{strings.hours.weekday}</p>
-          <p className="text-base leading-relaxed text-textdark/80">{strings.hours.friday}</p>
+          {/* Hours */}
+          <div className="flex gap-3">
+            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg">⏰</span>
+            <div>
+              <p className="font-semibold text-textdark">Opening Hours</p>
+              <p className="text-sm leading-relaxed text-textdark/80">{strings.hours.weekday}</p>
+              <p className="text-sm leading-relaxed text-textdark/80">{strings.hours.friday}</p>
+            </div>
+          </div>
         </div>
 
         {/* Updated Google Maps iframe */}
         <iframe
-          className="w-full h-48 rounded-xl"
+          className="w-full h-48 rounded-xl border"
           src={strings.googleMapsEmbed}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -105,55 +117,69 @@ export default function ContactForm() {
       </div>
 
       {/* RIGHT SIDE — Form */}
-      <div className="section-bg p-4">
-        <h3 className="text-xl font-semibold mb-3">Send a message</h3>
+      <div className="rounded-xl border bg-white/80 shadow-sm p-5 sm:p-6 lg:p-8">
+        <h3 className="text-xl font-semibold mb-4">Send a message</h3>
 
-        <form className="grid gap-3" onSubmit={submit}>
-          <input
-            className="border rounded-lg p-2"
-            placeholder="Name"
-            value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-            required
-          />
+        <form className="grid gap-4" onSubmit={submit}>
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">Name</label>
+            <p className="text-xs text-textdark/70">Tell us who we are replying to.</p>
+            <input
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              placeholder="Your name"
+              value={form.name}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
+              required
+            />
+          </div>
 
-          <input
-            className="border rounded-lg p-2"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">Email</label>
+            <p className="text-xs text-textdark/70">Optional, if you prefer email replies.</p>
+            <input
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={(e) =>
+                setForm({ ...form, email: e.target.value })
+              }
+            />
+          </div>
 
-          <textarea
-            className="border rounded-lg p-2"
-            rows="4"
-            placeholder="Message"
-            value={form.message}
-            onChange={(e) =>
-              setForm({ ...form, message: e.target.value })
-            }
-            required
-          />
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-textdark">Message</label>
+            <p className="text-xs text-textdark/70">Share your question or feedback.</p>
+            <textarea
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              rows="4"
+              placeholder="How can we help?"
+              value={form.message}
+              onChange={(e) =>
+                setForm({ ...form, message: e.target.value })
+              }
+              required
+            />
+          </div>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send"}
-          </Button>
+          <div className="flex flex-col sm:flex-row sm:justify-end">
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto justify-center">
+              {loading ? "Sending..." : "Send"}
+            </Button>
+          </div>
         </form>
 
         {status && (
-          <p
-            className={`mt-3 text-sm ${
+          <div
+            className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
               status.type === "success"
-                ? "text-green-700"
-                : "text-red-600"
+                ? "border-green-100 bg-green-50 text-green-700"
+                : "border-red-100 bg-red-50 text-red-600"
             }`}
           >
             {status.message}
-          </p>
+          </div>
         )}
       </div>
     </div>
