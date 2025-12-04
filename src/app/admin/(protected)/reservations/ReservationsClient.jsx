@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminCard from '../../components/AdminCard.jsx';
 import AdminPageHeader from '../../components/AdminPageHeader.jsx';
 import AdminTable from '../../components/AdminTable.jsx';
@@ -37,8 +37,8 @@ export default function ReservationsClient() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL'); // ALL | TODAY | FUTURE | PAST
 
-  const load = async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const data = await apiRequest('/api/reservations');
@@ -48,11 +48,19 @@ export default function ReservationsClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [load]);
 
   const updateStatus = async (id, status) => {
     try {
