@@ -126,7 +126,7 @@ export default function OrdersClient() {
       )}
 
       <AdminCard title="Filters">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-neutral-700">
               Search
@@ -181,81 +181,89 @@ export default function OrdersClient() {
           ) : null
         }
       >
-        <AdminTable
-          columns={[
-            { key: 'createdAt', header: 'When' },
-             {
-              key: 'name',
-              header: 'Customer',
-              render: (_val, order) => (
-                <div>
-                  <div>{order.name}</div>
-                  {order.address && (
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {order.address}
-                    </p>
-                  )}
-                </div>
-              ),
-            },
-            { key: 'phone', header: 'Phone' },
-            { key: 'deliveryType', header: 'Type' },
-            { key: 'totalPrice', header: 'Total (AED)' },
-            {
-              key: 'status',
-              header: 'Status',
-              render: (val, row) => (
-                <select
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
-                  value={row.status}
-                  onChange={(e) => updateStatus(row.id, e.target.value)}
-                >
-                  <option value="NEW">New</option>
-                  <option value="IN_PROGRESS">In progress</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              ),
-            },
-            {
-              key: 'items',
-              header: 'Items',
-              render: (_val, row) => (
-                <div className="text-xs text-neutral-700">
-                  {row.items?.map((it) => (
-                    <div key={it.id}>
-                      {it.quantity} × {it.name} (AED {it.price})
-                    </div>
-                  )) || <span className="text-neutral-400">None</span>}
-                </div>
-              ),
-            },
-            {
-              key: 'actions',
-              header: 'Actions',
-              render: (_val, row) => (
-                <div className="flex flex-wrap gap-2 text-xs font-semibold">
-                  <ConfirmDialog
-                    confirmLabel="Delete"
-                    description={`Delete order from ${row.name}?`}
-                    onConfirm={() => deleteOrder(row.id)}
-                  />
-                </div>
-              ),
-            },
-          ]}
-          rows={filteredOrders.map((o) => ({
-            ...o,
-            createdAt: o.createdAt
-              ? new Date(o.createdAt).toLocaleString()
-              : '',
-            totalPrice:
-              typeof o.totalPrice === 'number'
-                ? o.totalPrice.toFixed(2)
+        <div className="-mx-4 overflow-x-auto sm:mx-0">
+          <AdminTable
+            columns={[
+              { key: 'createdAt', header: 'When' },
+               {
+                key: 'name',
+                header: 'Customer',
+                render: (_val, order) => (
+                  <div>
+                    <div>{order.name}</div>
+                    {order.address && (
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {order.address}
+                      </p>
+                    )}
+                  </div>
+                ),
+              },
+              { key: 'phone', header: 'Phone' },
+              { key: 'deliveryType', header: 'Type' },
+              { key: 'totalPrice', header: 'Total (AED)' },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (val, row) => (
+                  <select
+                    className="min-h-[36px] rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                    value={row.status}
+                    onChange={(e) => updateStatus(row.id, e.target.value)}
+                  >
+                    <option value="NEW">New</option>
+                    <option value="IN_PROGRESS">In progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                ),
+              },
+              {
+                key: 'items',
+                header: 'Items',
+                render: (_val, row) => (
+                  <div className="text-xs text-neutral-700">
+                    {row.items?.map((it) => (
+                      <div key={it.id}>
+                        {it.quantity} × {it.name} (AED {it.price})
+                      </div>
+                    )) || <span className="text-neutral-400">None</span>}
+                  </div>
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (_val, row) => (
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                    <ConfirmDialog
+                      confirmLabel="Delete"
+                      description={`Delete order from ${row.name}?`}
+                      onConfirm={() => deleteOrder(row.id)}
+                      trigger={
+                        <button className="min-h-[36px] rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50">
+                          Delete
+                        </button>
+                      }
+                    />
+                  </div>
+                ),
+              },
+            ]}
+            rows={filteredOrders.map((o) => ({
+              ...o,
+              createdAt: o.createdAt
+                ? new Date(o.createdAt).toLocaleString()
                 : '',
-          }))}
-          emptyMessage={loading ? 'Loading orders…' : 'No orders found'}
-        />
+          totalPrice:
+                typeof o.totalPrice === 'number'
+                  ? o.totalPrice.toFixed(2)
+                  : '',
+            }))}
+            emptyMessage={loading ? 'Loading orders…' : 'No orders found'}
+            dense
+          />
+        </div>
       </AdminCard>
 
     </div>
