@@ -17,6 +17,16 @@ export default function OrderClient({ categories }) {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [reference, setReference] = useState("");
+  const [showTrackModal, setShowTrackModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [trackRef, setTrackRef] = useState("");
+  const [cancelRef, setCancelRef] = useState("");
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackError, setTrackError] = useState("");
+  const [trackLoading, setTrackLoading] = useState(false);
+  const [cancelResult, setCancelResult] = useState(null);
+  const [cancelError, setCancelError] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // CART LOGIC
   const addToCart = (item) => {
@@ -94,8 +104,105 @@ export default function OrderClient({ categories }) {
     }
   };
 
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    return date.toLocaleString(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    setTrackError("");
+    setTrackResult(null);
+
+    const trimmed = trackRef.trim();
+    if (trimmed.length < 3) {
+      setTrackError("Please enter a valid reference number.");
+      return;
+    }
+
+    setTrackLoading(true);
+    try {
+      const res = await fetch(`/api/orders/track?reference=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+      if (!data?.success) {
+        setTrackError(data?.error || "Unable to find order.");
+        setTrackLoading(false);
+        return;
+      }
+
+      setTrackResult(data.data?.order || null);
+    } catch (err) {
+      setTrackError("Unable to reach the server. Please try again.");
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
+  const handleCancel = async (e) => {
+    e.preventDefault();
+    setCancelError("");
+    setCancelResult(null);
+
+    const trimmed = cancelRef.trim();
+    if (trimmed.length < 3) {
+      setCancelError("Please enter a valid reference number.");
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      const res = await fetch("/api/orders/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: trimmed }),
+      });
+      const data = await res.json();
+
+      if (!data?.success) {
+        setCancelError(data?.error || "Unable to cancel order.");
+        setCancelLoading(false);
+        return;
+      }
+
+      setCancelResult(data.data || { cancelled: true });
+    } catch (err) {
+      setCancelError("Unable to reach the server. Please try again.");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   return (
     <>
+    <div className="grid md:grid-cols-2 gap-4 mb-6">
+        <button
+          type="button"
+          onClick={() => setShowTrackModal(true)}
+          className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div>
+            <p className="text-sm text-amber-900/80">Check on an order</p>
+            <p className="text-lg font-semibold text-amber-900">Track Order</p>
+          </div>
+          <span className="text-amber-700 text-xl">→</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowCancelModal(true)}
+          className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div>
+            <p className="text-sm text-amber-900/80">Change of plans?</p>
+            <p className="text-lg font-semibold text-amber-900">Cancel Order</p>
+          </div>
+          <span className="text-amber-700 text-xl">→</span>
+        </button>
+      </div>
       <div className="grid md:grid-cols-3 gap-8">
         {/* LEFT: MENU */}
         <div className="md:col-span-2 space-y-6">
@@ -346,6 +453,143 @@ export default function OrderClient({ categories }) {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+      {/* TRACK ORDER MODAL */}
+      {showTrackModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => {
+            setShowTrackModal(false);
+            setTrackResult(null);
+            setTrackError("");
+          }}
+        >
+          <div
+            className="bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-2xl text-white max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
+                <h2 className="text-xl font-bold">Track Your Order</h2>
+              </div>
+              <button
+                className="text-white/70 hover:text-white"
+                onClick={() => {
+                  setShowTrackModal(false);
+                  setTrackResult(null);
+                  setTrackError("");
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form className="space-y-3" onSubmit={handleTrack}>
+              <input
+                className="w-full rounded-lg border border-white/40 bg-white/20 px-3 py-2 text-white placeholder:text-white/60"
+                placeholder="Enter reference number"
+                value={trackRef}
+                onChange={(e) => setTrackRef(e.target.value)}
+              />
+
+              {trackError && (
+                <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">
+                  {trackError}
+                </div>
+              )}
+
+              {trackResult && (
+                <div className="rounded-xl border border-white/30 bg-white/10 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-white/80">Status</p>
+                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                      {trackResult.status}
+                    </span>
+                  </div>
+
+                  {trackResult.deliveryType && (
+                    <div className="flex items-center justify-between text-sm text-white/80">
+                      <span>Type</span>
+                      <span className="font-semibold">{trackResult.deliveryType}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-sm text-white/80">
+                    <span>Placed on</span>
+                    <span className="font-semibold">{formatDateTime(trackResult.createdAt)}</span>
+                  </div>
+                </div>
+              )}
+
+              <Button type="submit" disabled={trackLoading} className="w-full justify-center">
+                {trackLoading ? "Checking..." : "Check Status"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CANCEL ORDER MODAL */}
+      {showCancelModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => {
+            setShowCancelModal(false);
+            setCancelResult(null);
+            setCancelError("");
+          }}
+        >
+          <div
+            className="bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-2xl text-white max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/70">Support</p>
+                <h2 className="text-xl font-bold">Cancel Your Order</h2>
+              </div>
+              <button
+                className="text-white/70 hover:text-white"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setCancelResult(null);
+                  setCancelError("");
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form className="space-y-3" onSubmit={handleCancel}>
+              <input
+                className="w-full rounded-lg border border-white/40 bg-white/20 px-3 py-2 text-white placeholder:text-white/60"
+                placeholder="Enter reference number"
+                value={cancelRef}
+                onChange={(e) => setCancelRef(e.target.value)}
+              />
+
+              {cancelError && (
+                <div className="rounded-lg border border-red-300/60 bg-red-500/20 px-3 py-2 text-sm text-red-50">
+                  {cancelError}
+                </div>
+              )}
+
+              {cancelResult && (
+                <div className="rounded-xl border border-white/30 bg-white/10 p-3 space-y-2 text-sm text-white/90">
+                  <p className="font-semibold">Order cancelled successfully.</p>
+                  {cancelResult?.fee && (
+                    <p className="text-white/80">Cancellation fee: AED {cancelResult.fee}</p>
+                  )}
+                </div>
+              )}
+
+              <Button type="submit" disabled={cancelLoading} className="w-full justify-center">
+                {cancelLoading ? "Cancelling..." : "Cancel Order"}
+              </Button>
+            </form>
           </div>
         </div>
       )}
