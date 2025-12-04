@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react"
 import Button from "./Button";
 
 export default function OrderClient({ categories }) {
@@ -27,6 +27,16 @@ export default function OrderClient({ categories }) {
   const [cancelResult, setCancelResult] = useState(null);
   const [cancelError, setCancelError] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [cartPulse, setCartPulse] = useState(false);
+
+  const cartRef = useRef(null);
+
+  useEffect(() => {
+    if (!cartPulse) return;
+
+    const timer = setTimeout(() => setCartPulse(false), 700);
+    return () => clearTimeout(timer);
+  }, [cartPulse]);
 
   // CART LOGIC
   const addToCart = (item) => {
@@ -39,6 +49,8 @@ export default function OrderClient({ categories }) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
+
+    setCartPulse(true);
   };
 
   const updateQty = (id, qty) => {
@@ -56,6 +68,12 @@ export default function OrderClient({ categories }) {
     () => cart.reduce((sum, i) => sum + i.price * i.quantity, 0),
     [cart]
   );
+
+  const handleScrollToCart = () => {
+    if (cartRef.current) {
+      cartRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   // SUBMIT ORDER
   const submitOrder = async (e) => {
@@ -178,11 +196,11 @@ export default function OrderClient({ categories }) {
 
   return (
     <>
-    <div className="grid md:grid-cols-2 gap-4 mb-6">
+    <div className="grid gap-4 sm:grid-cols-2 mb-6">
         <button
           type="button"
           onClick={() => setShowTrackModal(true)}
-          className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <div>
             <p className="text-sm text-amber-900/80">Check on an order</p>
@@ -194,7 +212,7 @@ export default function OrderClient({ categories }) {
         <button
           type="button"
           onClick={() => setShowCancelModal(true)}
-          className="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50/80 px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <div>
             <p className="text-sm text-amber-900/80">Change of plans?</p>
@@ -203,220 +221,277 @@ export default function OrderClient({ categories }) {
           <span className="text-amber-700 text-xl">→</span>
         </button>
       </div>
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* LEFT: MENU */}
-        <div className="md:col-span-2 space-y-6">
-          {categories.map((cat) => (
-            <div key={cat.id} className="section-bg p-4 rounded-xl">
-              <h3 className="font-semibold text-xl mb-2">{cat.name}</h3>
-              <p className="text-sm text-textdark/70 mb-3">{cat.description}</p>
-
-              <div className="space-y-3">
-                {cat.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between items-start border-b pb-3"
-                  >
-                    <div>
-                      <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-textdark/70">
-                        {item.description}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-primary">
-                        AED {item.price.toFixed(2)}
-                      </p>
-
-                      <Button
-                        className="mt-2 text-sm px-3 py-1"
-                        onClick={() => addToCart(item)}
-                      >
-                        Add to cart
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* RIGHT: CART + CHECKOUT FORM */}
-        <div className="section-bg p-4 space-y-4 rounded-xl">
-          <h3 className="font-semibold text-xl">Your Cart</h3>
-
-          {cart.length === 0 ? (
-            <p className="text-sm text-textdark/70">No items yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {cart.map((item) => (
-                <div key={item.id} className="border-b pb-2">
-                  <div className="flex justify-between">
-                    <p className="font-semibold">{item.name}</p>
-                    <button
-                      className="text-xs text-red-600"
-                      onClick={() => removeItem(item.id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-
-                  <div className="flex justify-between items-center mt-1">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="px-2 py-1 border"
-                        onClick={() => updateQty(item.id, item.quantity - 1)}
-                      >
-                        -
-                      </button>
-
-                      <span>{item.quantity}</span>
-
-                      <button
-                        className="px-2 py-1 border"
-                        onClick={() => updateQty(item.id, item.quantity + 1)}
-                      >
-                        +
-                      </button>
-                    </div>
-
-                    <p className="font-semibold">
-                      AED {(item.price * item.quantity).toFixed(2)}
+      <div className="flex flex-col gap-6 lg:gap-8">
+        <div className="grid gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
+          {/* LEFT: MENU */}
+          <div className="space-y-6">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="section-bg p-4 sm:p-5 rounded-2xl shadow-sm border border-neutral-200/70"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-xl mb-1 text-neutral-900">
+                      {cat.name}
+                    </h3>
+                    <p className="text-sm text-textdark/70 mb-3">
+                      {cat.description}
                     </p>
                   </div>
+                <span className="hidden text-xs rounded-full bg-primary/10 text-primary px-3 py-1 sm:inline-flex items-center">
+                    {cat.items.length} items
+                  </span>
                 </div>
+
+        <div className="space-y-3">
+                  {cat.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-xl border border-neutral-200/60 bg-white/70 p-3"
+                    >
+                      <div className="space-y-1">
+                        <p className="font-semibold text-neutral-900">{item.name}</p>
+                        <p className="text-sm text-textdark/70 leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+
+                      <div className="flex items-end justify-between gap-3 sm:flex-col sm:items-end">
+                        <p className="font-semibold text-primary">
+                          AED {item.price.toFixed(2)}
+                        </p>
+
+                        <Button
+                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60 hover:shadow-md"
+                          onClick={() => addToCart(item)}
+                        >
+                          Add to cart
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* RIGHT: CART + CHECKOUT FORM */}
+          <div
+            ref={cartRef}
+            className={`section-bg p-4 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 ${
+              cartPulse ? "ring-2 ring-primary/30" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold text-xl">Your Cart</h3>
+              <span className="rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium">
+                {cart.length} item{cart.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
+            {cart.length === 0 ? (
+              <p className="text-sm text-textdark/70">No items yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {cart.map((item) => (
+                  <div key={item.id} className="rounded-lg border border-neutral-200/70 p-3 bg-white/80">
+                    <div className="flex justify-between gap-3">
+                      <p className="font-semibold text-neutral-900">{item.name}</p>
+                      <button
+                        className="text-xs text-red-600 hover:text-red-700 focus-visible:outline-none focus-visible:underline"
+                        onClick={() => removeItem(item.id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          onClick={() => updateQty(item.id, item.quantity - 1)}
+                        >
+                          -
+                        </button>
+
+                        <span className="px-2 text-sm font-medium">{item.quantity}</span>
+
+                        <button
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          onClick={() => updateQty(item.id, item.quantity + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <p className="font-semibold text-neutral-900">
+                        AED {(item.price * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
               ))}
 
               <div className="flex justify-between font-semibold text-lg">
-                <span>Total</span>
-                <span>AED {total.toFixed(2)}</span>
+                  <span>Total</span>
+                  <span>AED {total.toFixed(2)}</span>
+                </div>
               </div>
-            </div>
-          )}
-
-          {/* CUSTOMER FORM */}
-          <form className="grid gap-3" onSubmit={submitOrder}>
-            <input
-              className="border rounded-lg p-2"
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
-              required
-            />
-
-            <input
-              className="border rounded-lg p-2"
-              placeholder="Phone number"
-              value={form.phone}
-              onChange={(e) =>
-                setForm({ ...form, phone: e.target.value })
-              }
-              required
-            />
-
-            {/* delivery / pickup */}
-            <div className="flex gap-2 text-sm">
-              <label
-                className={`flex-1 text-center border rounded-full py-2 cursor-pointer ${
-                  form.deliveryType === "DELIVERY"
-                    ? "border-primary bg-primary/10"
-                    : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="delivery"
-                  className="hidden"
-                  checked={form.deliveryType === "DELIVERY"}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      deliveryType: "DELIVERY",
-                      notifyWhenReady: false, // reset
-                    })
-                  }
-                />
-                Delivery
-              </label>
-
-              <label
-                className={`flex-1 text-center border rounded-full py-2 cursor-pointer ${
-                  form.deliveryType === "PICKUP"
-                    ? "border-primary bg-primary/10"
-                    : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="delivery"
-                  className="hidden"
-                  checked={form.deliveryType === "PICKUP"}
-                  onChange={() =>
-                    setForm({
-                      ...form,
-                      deliveryType: "PICKUP",
-                    })
-                  }
-                />
-                Pickup
-              </label>
-            </div>
-
-            {/* DELIVERY address */}
-            {form.deliveryType === "DELIVERY" && (
-              <input
-                className="border rounded-lg p-2"
-                placeholder="Delivery address"
-                value={form.address}
-                onChange={(e) =>
-                  setForm({ ...form, address: e.target.value })
-                }
-                required
-              />
             )}
 
-            {/* PICKUP WhatsApp checkbox */}
-            {form.deliveryType === "PICKUP" && (
-              <div className="rounded-lg border p-3 space-y-2 bg-white">
-                <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+            {/* CUSTOMER FORM */}
+            <form className="grid gap-3" onSubmit={submitOrder}>
+              <input
+                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Full name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+              />
+
+              <input
+                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Phone number"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                required
+              />
+
+              {/* delivery / pickup */}
+              <div className="flex gap-2 text-sm">
+                <label
+                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-sm ${
+                    form.deliveryType === "DELIVERY"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "bg-white"
+                  }`}
+                >
                   <input
-                    type="checkbox"
-                    checked={form.notifyWhenReady}
-                    onChange={(e) =>
+                    type="radio"
+                    name="delivery"
+                    className="hidden"
+                    checked={form.deliveryType === "DELIVERY"}
+                    onChange={() =>
                       setForm({
                         ...form,
-                        notifyWhenReady: e.target.checked,
+                        deliveryType: "DELIVERY",
+                        notifyWhenReady: false, // reset
                       })
                     }
                   />
-                  Notify me via WhatsApp when my order is ready
+                  Delivery
                 </label>
 
-                <p className="text-xs text-neutral-600">
-                  Please enter your WhatsApp number in the phone field.
-                </p>
+                <label
+                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-sm ${
+                    form.deliveryType === "PICKUP"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "bg-white"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="delivery"
+                    className="hidden"
+                    checked={form.deliveryType === "PICKUP"}
+                    onChange={() =>
+                      setForm({
+                        ...form,
+                        deliveryType: "PICKUP",
+                      })
+                    }
+                  />
+                  Pickup
+                </label>
               </div>
-            )}
 
-            <textarea
-              className="border rounded-lg p-2"
-              rows="3"
-              placeholder="Order notes"
-              value={form.notes}
-              onChange={(e) =>
-                setForm({ ...form, notes: e.target.value })
-              }
-            />
+            {/* DELIVERY address */}
+              {form.deliveryType === "DELIVERY" && (
+                <input
+                  className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder="Delivery address"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  required
+                />
+              )}
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Placing order..." : "Checkout"}
-            </Button>
-          </form>
+              {/* PICKUP WhatsApp checkbox */}
+              {form.deliveryType === "PICKUP" && (
+                <div className="rounded-lg border p-3 space-y-2 bg-white">
+                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+                    <input
+                      type="checkbox"
+                      checked={form.notifyWhenReady}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          notifyWhenReady: e.target.checked,
+                        })
+                      }
+                    />
+                    Notify me via WhatsApp when my order is ready
+                  </label>
+
+                  <p className="text-xs text-neutral-600">
+                    Please enter your WhatsApp number in the phone field.
+                  </p>
+                  <p className="text-xs text-neutral-600">
+                    You will receive a confirmation message when your order is ready for pickup.
+                  </p>
+                </div>
+              )}
+
+              <textarea
+                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                rows="3"
+                placeholder="Order notes"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full justify-center min-h-[44px] text-base font-semibold focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
+              >
+                {loading ? "Placing order..." : "Checkout"}
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
+
+      {/* Floating cart summary for mobile */}
+      {cart.length > 0 && (
+        <div className="md:hidden fixed inset-x-4 bottom-4 z-40">
+          <div
+            className={`flex items-center gap-3 rounded-2xl border border-primary/20 bg-white/95 px-4 py-3 shadow-lg backdrop-blur ${
+              cartPulse ? "animate-pulse" : ""
+            }`}
+          >
+            <div className="flex flex-1 items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                {cart.reduce((sum, item) => sum + item.quantity, 0)}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Cart total</p>
+                <p className="text-base font-bold text-primary">
+                  AED {total.toFixed(2)}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleScrollToCart}
+              className="rounded-full bg-primary px-4 py-2 text-white text-sm font-semibold shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              View cart
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* POPUP DIALOG */}
       {showDialog && (
