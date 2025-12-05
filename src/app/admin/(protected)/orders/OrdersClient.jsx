@@ -36,6 +36,8 @@ export default function OrdersClient() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const load = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -108,9 +110,26 @@ export default function OrdersClient() {
       if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
       if (typeFilter !== 'ALL' && o.deliveryType !== typeFilter) return false;
 
+      if (fromDate || toDate) {
+        const createdAtTime = o.createdAt ? new Date(o.createdAt).getTime() : null;
+        if (!createdAtTime) return false;
+
+        if (fromDate) {
+          const from = new Date(fromDate);
+          from.setHours(0, 0, 0, 0);
+          if (createdAtTime < from.getTime()) return false;
+        }
+
+        if (toDate) {
+          const to = new Date(toDate);
+          to.setHours(23, 59, 59, 999);
+          if (createdAtTime > to.getTime()) return false;
+        }
+      }
+      
       return true;
     });
-  }, [orders, search, statusFilter, typeFilter]);
+  }, [orders, search, statusFilter, typeFilter, fromDate, toDate]);
 
   return (
     <div className="space-y-6">
@@ -126,7 +145,7 @@ export default function OrdersClient() {
       )}
 
       <AdminCard title="Filters">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-neutral-700">
               Search
@@ -169,6 +188,30 @@ export default function OrdersClient() {
               <option value="DELIVERY">Delivery</option>
               <option value="PICKUP">Pickup</option>
             </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700">
+              From date
+            </label>
+            <input
+              type="date"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700">
+              To date
+            </label>
+            <input
+              type="date"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
           </div>
         </div>
       </AdminCard>

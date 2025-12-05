@@ -36,6 +36,8 @@ export default function ReservationsClient() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL'); // ALL | TODAY | FUTURE | PAST
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const load = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -108,9 +110,28 @@ export default function ReservationsClient() {
         if (dateFilter === 'PAST' && r.date >= todayStr) return false;
       }
 
+      if (fromDate || toDate) {
+        const createdAtTime = r.createdAt
+          ? new Date(r.createdAt).getTime()
+          : null;
+        if (!createdAtTime) return false;
+
+        if (fromDate) {
+          const from = new Date(fromDate);
+          from.setHours(0, 0, 0, 0);
+          if (createdAtTime < from.getTime()) return false;
+        }
+
+        if (toDate) {
+          const to = new Date(toDate);
+          to.setHours(23, 59, 59, 999);
+          if (createdAtTime > to.getTime()) return false;
+        }
+      }
+      
       return true;
     });
-  }, [reservations, search, statusFilter, dateFilter]);
+  }, [reservations, search, statusFilter, dateFilter, fromDate, toDate]);
 
   return (
     <div className="space-y-6">
@@ -126,7 +147,7 @@ export default function ReservationsClient() {
       )}
 
       <AdminCard title="Filters">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-neutral-700">
               Search
@@ -170,6 +191,30 @@ export default function ReservationsClient() {
               <option value="FUTURE">Upcoming only</option>
               <option value="PAST">Past only</option>
             </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700">
+              From date
+            </label>
+            <input
+              type="date"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700">
+              To date
+            </label>
+            <input
+              type="date"
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+            />
           </div>
         </div>
       </AdminCard>
