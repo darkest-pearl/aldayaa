@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
-import { getRestaurantSettings } from '../../../lib/restaurant-settings';
+import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
 
 const createSchema = z.object({
@@ -23,6 +23,16 @@ function timeToMinutes(time) {
   return hours * 60 + minutes;
 }
 
+const DAY_KEYS_BY_INDEX = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+function getDayKey(dateString) {
+  if (!dateString) return null;
+  const date = new Date(`${dateString}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const dayIndex = typeof date.getUTCDay === 'function' ? date.getUTCDay() : date.getDay();
+  return DAY_KEYS_BY_INDEX[dayIndex] || null;
+}
+
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
@@ -40,9 +50,28 @@ export async function POST(request) {
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
 
     const settings = await getRestaurantSettings();
+    const workingHoursByDay = normalizeWorkingHoursByDay(
+      settings.workingHoursByDay,
+      settings.openingTime,
+      settings.closingTime,
+    );
+
+    const reservationDayKey = getDayKey(parsed.data.date);
+    const daySettings =
+      workingHoursByDay.find((entry) => entry.day === reservationDayKey) ||
+      workingHoursByDay.find((entry) => entry.day === DAYS_OF_WEEK[0]) ||
+      {
+        openingTime: settings.openingTime,
+        closingTime: settings.closingTime,
+        closed: false,
+      };
+
+    if (daySettings.closed) {
+      return failure('Restaurant is closed on the selected day', 400);
+    }
     const reservationMinutes = timeToMinutes(parsed.data.time);
-    const openingMinutes = timeToMinutes(settings.openingTime);
-    const closingMinutes = timeToMinutes(settings.closingTime);
+    const openingMinutes = timeToMinutes(daySettings.openingTime ?? settings.openingTime);
+    const closingMinutes = timeToMinutes(daySettings.closingTime ?? settings.closingTime);
 
     if (
       reservationMinutes === null ||
