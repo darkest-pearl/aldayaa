@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -49,50 +49,56 @@ export default function Header() {
             aria-expanded={isMenuOpen}
           >
             <span className="sr-only">Menu</span>
-            <span
-              className={`block h-0.5 w-6 rounded-sm bg-current transition-transform duration-300 ${
-                isMenuOpen ? 'translate-y-1.5 rotate-45' : ''
-              }`}
-            />
-            <span
-              className={`mt-1 block h-0.5 w-6 rounded-sm bg-current transition-opacity duration-300 ${
-                isMenuOpen ? 'opacity-0' : 'opacity-100'
-              }`}
-            />
-            <span
-              className={`mt-1 block h-0.5 w-6 rounded-sm bg-current transition-transform duration-300 ${
-                isMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
-              }`}
-            />
+            <span className="flex h-5 w-6 flex-col justify-center gap-1.5">
+              <span
+                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 transform ${
+                  isMenuOpen ? 'translate-y-1.5 rotate-45' : ''
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 ${
+                  isMenuOpen ? 'opacity-0' : 'opacity-100'
+                }`}
+              />
+              <span
+                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 transform ${
+                  isMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
+                }`}
+              />
+            </span>
           </button>
         </div>
 
-        <div
-          className={`md:hidden absolute inset-x-0 top-full origin-top transform transition-all duration-300 ease-out ${
-            isMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0'
-          }`}
-        >
-          <div className="rounded-xl bg-white shadow-lg ring-1 ring-black/5 divide-y divide-beige/60 overflow-hidden">
-            <div className="flex flex-col space-y-1 px-4 py-3 text-sm">
-              {navLinks.map((link) => (
+        <div className="md:hidden relative">
+          <div
+            className={`absolute inset-x-0 top-full origin-top transform transition-all duration-300 ease-out ${
+              isMenuOpen
+                ? 'pointer-events-auto translate-y-0 opacity-100'
+                : 'pointer-events-none -translate-y-2 opacity-0'
+            }`}
+          >
+            <div className="rounded-xl bg-white shadow-lg ring-1 ring-black/5 divide-y divide-beige/60 overflow-hidden">
+              <div className="flex flex-col space-y-1 px-4 py-3 text-sm">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={closeMenu}
+                    className="block rounded-md px-2 py-2 hover:bg-beige/70 hover:text-primary transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="px-4 py-3 bg-beige/60">
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  href="/public/reservations"
                   onClick={closeMenu}
-                  className="block rounded-md px-2 py-2 hover:bg-beige/70 hover:text-primary transition-colors"
+                  className="block text-center bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform"
                 >
-                  {link.label}
+                  Reserve
                 </Link>
-              ))}
-            </div>
-            <div className="px-4 py-3 bg-beige/60">
-              <Link
-                href="/public/reservations"
-                onClick={closeMenu}
-                className="block text-center bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform"
-              >
-                Reserve
-              </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -102,7 +108,7 @@ export default function Header() {
           type="button"
           aria-label="Close menu"
           onClick={closeMenu}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur md:hidden"
         />
       )}
     </header>
