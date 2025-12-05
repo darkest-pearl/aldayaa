@@ -196,7 +196,7 @@ export default function OrderClient({ categories }) {
 
   return (
     <>
-      <div className="flex flex-col gap-6 lg:gap-8">
+      <div className="flex flex-col gap-4 md:gap-6 lg:gap-8">
         <div className="space-y-1 text-xs text-neutral-500">
           <p>
             Need to track your order?{" "}
@@ -227,20 +227,20 @@ export default function OrderClient({ categories }) {
             </button>
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
+        <div className="grid gap-5 md:gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
           {/* LEFT: MENU */}
-          <div className="space-y-6">
+          <div className="space-y-5 md:space-y-6">
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="section-bg p-4 sm:p-5 rounded-2xl shadow-sm border border-neutral-200/70"
+                className="section-bg p-3 sm:p-5 rounded-2xl shadow-sm border border-neutral-200/70"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-xl mb-1 text-neutral-900">
+                    <h3 className="font-semibold text-lg md:text-xl mb-1 text-neutral-900">
                       {cat.name}
                     </h3>
-                    <p className="text-sm text-textdark/70 mb-3">
+                    <p className="text-sm text-textdark/70 mb-2 md:mb-3">
                       {cat.description}
                     </p>
                   </div>
@@ -284,12 +284,12 @@ export default function OrderClient({ categories }) {
           {/* RIGHT: CART + CHECKOUT FORM */}
           <div
             ref={cartRef}
-            className={`section-bg p-4 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 transition-all duration-200 ${
+            className={`section-bg p-3 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 transition-all duration-200 ${
               cartPulse ? "ring-2 ring-primary/30" : ""
             }`}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-xl">Your Cart</h3>
+              <h3 className="font-semibold text-lg md:text-xl">Your Cart</h3>
               <span
                 className={`rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium transition ${
                   cartPulse ? 'animate-pulse' : ''

@@ -11,7 +11,7 @@ export default function MenuClient({ categories }) {
           .flatMap((c) => c.items.map((item) => ({ ...item, category: c.name })));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 sm:justify-center">
         <button
           onClick={() => setActive('all')}
@@ -41,12 +41,12 @@ export default function MenuClient({ categories }) {
         {items.map((item) => (
           <div
             key={item.id}
-            className="section-bg flex h-full flex-col justify-between rounded-2xl border border-neutral-200/80 bg-white/80 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            className="section-bg flex h-full flex-col justify-between rounded-2xl border border-neutral-200/80 bg-white/80 p-3 sm:p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="space-y-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <h3 className="font-semibold text-lg text-neutral-900">{item.name}</h3>
+                  <h3 className="font-semibold text-base md:text-lg text-neutral-900">{item.name}</h3>
                   <p className="text-sm text-textdark/70 leading-relaxed">{item.description}</p>
                 </div>
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

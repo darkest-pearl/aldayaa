@@ -112,9 +112,9 @@ export default function ReservationForm() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="rounded-xl border bg-white/80 shadow-sm p-6 sm:p-8">
-        <h1 className="text-3xl font-semibold mb-2 text-center">
+    <div className="max-w-3xl mx-auto space-y-5 md:space-y-6">
+      <div className="rounded-xl border bg-white/80 shadow-sm p-5 sm:p-6 lg:p-8">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2 text-center">
           Reserve a Table
         </h1>
 
@@ -245,7 +245,7 @@ export default function ReservationForm() {
         )}
       </div>
 
-      <div className="rounded-xl border bg-white/80 shadow-sm p-5 text-center space-y-1">
+      <div className="rounded-xl border bg-white/80 shadow-sm p-4 sm:p-5 text-center space-y-1">
         <p className="text-sm text-textdark/80">Prefer WhatsApp? Message us directly.</p>
         <a
           href={strings.whatsappLink}
@@ -278,7 +278,7 @@ export default function ReservationForm() {
               ×
             </button>
             <div className="space-y-1 mb-4">
-              <h2 className="text-xl font-semibold text-textdark">Cancel your reservation</h2>
+              <h2 className="text-lg md:text-xl font-semibold text-textdark">Cancel your reservation</h2>
               <p className="text-sm text-textdark/70">
                 Enter your reservation reference below to request a cancellation.
               </p>

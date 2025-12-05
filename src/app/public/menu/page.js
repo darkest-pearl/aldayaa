@@ -23,9 +23,9 @@ export default async function MenuPage() {
 
   return (
     <Section>
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-2">Our Menu</h1>
-        <p className="text-base leading-relaxed text-textdark/70">
+      <div className="mb-6 md:mb-8 text-center">
+        <h1 className="text-xl md:text-3xl lg:text-4xl font-semibold mb-2">Our Menu</h1>
+        <p className="text-sm md:text-base leading-relaxed text-textdark/70">
           Explore our curated selection of Levantine and Indian favorites.
         </p>
       </div>

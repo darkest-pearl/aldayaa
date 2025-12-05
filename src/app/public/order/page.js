@@ -18,9 +18,9 @@ export default async function OrderPage() {
 
   return (
     <Section>
-      <div className="mb-6 text-center">
-        <h1 className="text-3xl font-semibold mb-2">Order for Delivery or Pickup</h1>
-        <p className="text-textdark/70">
+      <div className="mb-5 md:mb-6 text-center">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2">Order for Delivery or Pickup</h1>
+        <p className="text-sm md:text-base text-textdark/70">
           Add your favorites to the cart and we will confirm via WhatsApp.
         </p>
       </div>

@@ -47,8 +47,8 @@ export default function HomePage() {
               className="rounded-full shadow-lg"
             />
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold mb-3">{strings.restaurantName}</h1>
-          <p className="text-lg md:text-2xl max-w-2xl mx-auto mb-6">{strings.tagline}</p>
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-3">{strings.restaurantName}</h1>
+          <p className="text-base md:text-xl lg:text-2xl max-w-2xl mx-auto mb-6">{strings.tagline}</p>
           <div className="flex justify-center gap-4">
             <Link href="/public/reservations"><Button>Reserve a Table</Button></Link>
             <Link href="/public/order"><Button className="bg-secondary">Order Online</Button></Link>
@@ -57,9 +57,9 @@ export default function HomePage() {
       </section>
 
       <Section>
-        <div className="text-center mb-10">
-          <h2 className="text-xl md:text-2xl font-semibold">Our Highlights</h2>
-          <p className="text-base leading-relaxed text-textdark/70">Signature plates guests love.</p>
+        <div className="text-center mb-8 md:mb-10">
+          <h2 className="text-lg md:text-2xl font-semibold">Our Highlights</h2>
+          <p className="text-sm md:text-base leading-relaxed text-textdark/70">Signature plates guests love.</p>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {highlights.map((item) => (
@@ -85,8 +85,8 @@ export default function HomePage() {
       <Section className="section-bg">
         <div className="grid md:grid-cols-3 gap-6">
           {pillars.map((pillar) => (
-            <motion.div key={pillar.title} whileHover={{ scale: 1.02 }} className="p-4">
-              <h3 className="font-semibold text-xl mb-2">{pillar.title}</h3>
+            <motion.div key={pillar.title} whileHover={{ scale: 1.02 }} className="p-3 md:p-4">
+              <h3 className="font-semibold text-lg md:text-xl mb-2">{pillar.title}</h3>
               <p className="text-textdark/70">{pillar.desc}</p>
             </motion.div>
           ))}
@@ -94,10 +94,10 @@ export default function HomePage() {
       </Section>
 
       <Section>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
+        <div className="grid md:grid-cols-2 gap-5 md:gap-8 items-center">
           <div>
-            <h3 className="text-xl md:text-2xl font-semibold mb-3">About Al Dayaa Al Shamiah</h3>
-            <p className="text-base leading-relaxed text-textdark/80 mb-4">We bring the warmth of Levantine hospitality with a menu spanning shawarma, grills, biryani, mezze, and fresh juices. Late-night diners and families alike gather here for flame-kissed meats and vibrant flavors.</p>
+            <h3 className="text-lg md:text-2xl font-semibold mb-3">About Al Dayaa Al Shamiah</h3>
+            <p className="text-sm md:text-base leading-relaxed text-textdark/80 mb-4">We bring the warmth of Levantine hospitality with a menu spanning shawarma, grills, biryani, mezze, and fresh juices. Late-night diners and families alike gather here for flame-kissed meats and vibrant flavors.</p>
             <Link href="/public/about" className="text-primary font-semibold">Read our story →</Link>
           </div>
           <div className="grid grid-cols-2 gap-4">
