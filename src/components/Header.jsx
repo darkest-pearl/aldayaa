@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { strings } from '../lib/strings';
+import { gentleEase } from '../lib/easings';
 
 const navLinks = [
   { href: '/public', label: 'Home' },
@@ -104,7 +105,7 @@ export default function Header() {
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25, ease: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
+              transition={{ duration: 0.25, ease: gentleEase }}
               className="fixed inset-x-3 top-2 z-50 overflow-hidden rounded-b-3xl border border-neutral-200/80 bg-beige/95 shadow-lifted backdrop-blur-xl"
             >
               <div className="site-container py-4">

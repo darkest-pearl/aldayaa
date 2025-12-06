@@ -212,20 +212,7 @@ export default function OrderClient({ categories }) {
               Track here
             </button>
           </p>
-          <p>
-            Want to cancel your order?{" "}
-            <button
-              type="button"
-              onClick={() => {
-                setShowCancelModal(true);
-                setCancelResult(null);
-                setCancelError("");
-              }}
-              className="font-semibold text-secondary underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
-            >
-              Cancel here
-            </button>
-          </p>
+          
         </div>
         <div className="grid gap-5 md:gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
           {/* LEFT: MENU */}
@@ -467,6 +454,22 @@ export default function OrderClient({ categories }) {
                 {loading ? "Placing order..." : "Checkout"}
               </Button>
             </form>
+            <div className="space-y-1 text-xs text-neutral-600">
+            <p>
+            Want to cancel your order?{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelModal(true);
+                  setCancelResult(null);
+                  setCancelError("");
+                }}
+                className="font-semibold text-secondary underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
+              >
+              Cancel here
+              </button>
+            </p>
+            </div>
           </div>
         </div>
       </div>
