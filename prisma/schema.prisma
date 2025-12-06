@@ -111,5 +111,5 @@ model RestaurantSettings {
   allowCancelInProgress Boolean @default(false)
   cancellationFee       Float   @default(0)
   workingHoursByDay     String?
-  displayHours          Json?
+  displayHours          String?
 }

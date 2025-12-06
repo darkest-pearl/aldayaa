@@ -99,6 +99,7 @@ export async function PUT(request) {
         cancellationFee: parsed.data.cancellationFee ?? 0,
         workingHoursByDay: JSON.stringify(normalizedWorkingHours),
         displayHours: nextDisplayHours,
+        displayHours: JSON.stringify(nextDisplayHours),
       },
     });
 

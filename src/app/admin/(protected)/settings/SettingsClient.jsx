@@ -47,10 +47,20 @@ const withWorkingHours = (settings = {}) => {
   });
 
   const fallbackDisplayHours = createDisplayHours(fallbackOpeningTime, fallbackClosingTime);
-  const providedDisplayHours =
-    settings.displayHours && typeof settings.displayHours === 'object'
-      ? settings.displayHours
-      : null;
+  const providedDisplayHours = (() => {
+    if (!settings.displayHours) return null;
+    if (typeof settings.displayHours === 'string') {
+      try {
+        const parsed = JSON.parse(settings.displayHours);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    if (typeof settings.displayHours === 'object') return settings.displayHours;
+    return null;
+  })();
       
   return {
     openingTime: fallbackOpeningTime,

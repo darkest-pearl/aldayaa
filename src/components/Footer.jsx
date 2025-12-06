@@ -19,7 +19,19 @@ async function fetchSettingsHours() {
 
     if (!response.ok) return fallbackHours;
     const payload = await response.json();
-    const displayHours = payload?.data?.settings?.displayHours;
+    const displayHoursRaw = payload?.data?.settings?.displayHours;
+    const displayHours = (() => {
+      if (!displayHoursRaw) return null;
+      if (typeof displayHoursRaw === 'string') {
+        try {
+          return JSON.parse(displayHoursRaw);
+        } catch (error) {
+          return null;
+        }
+      }
+      if (typeof displayHoursRaw === 'object') return displayHoursRaw;
+      return null;
+    })();
     if (!displayHours) return fallbackHours;
 
     return {
@@ -102,12 +114,12 @@ export default async function Footer() {
             <div className="mt-4 flex items-center gap-2 text-sm text-neutral-700">
               <span className="font-semibold text-secondary">Instagram:</span>
               <Link
-                href="https://www.instagram.com/aldayaa.rest/?hl=en"
+                href="https://linktr.ee/aldaya"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary transition hover:text-secondary"
               >
-                @aldaya
+                @Linktree/aldaya
               </Link>
             </div>
           </div>

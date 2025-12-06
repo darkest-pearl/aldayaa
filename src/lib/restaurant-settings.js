@@ -93,6 +93,7 @@ export async function getRestaurantSettings() {
     create: {
       ...defaultSettings,
       workingHoursByDay: JSON.stringify(defaultSettings.workingHoursByDay),
+      displayHours: JSON.stringify(defaultSettings.displayHours),
     },
   });
 
@@ -102,7 +103,7 @@ export async function getRestaurantSettings() {
     settings.closingTime || defaultSettings.closingTime,
   );
 
-   const displayHours = parseDisplayHours(
+  const displayHours = parseDisplayHours(
     settings.displayHours,
     settings.openingTime || defaultSettings.openingTime,
     settings.closingTime || defaultSettings.closingTime,
@@ -124,7 +125,7 @@ export async function getRestaurantSettings() {
   if (shouldPersistDisplayHours) {
     await prisma.restaurantSettings.update({
       where: { id: settings.id },
-      data: { displayHours },
+      data: { displayHours: serializedDisplayHours },
     });
   }
 
