@@ -112,7 +112,7 @@ export default async function Footer() {
               <p className="text-sm text-neutral-700">{hours.saturday}</p>
             )}
             <div className="mt-4 flex items-center gap-2 text-sm text-neutral-700">
-              <span className="font-semibold text-secondary">Instagram:</span>
+              <span className="font-semibold text-secondary">Linktree:</span>
               <Link
                 href="https://linktr.ee/aldaya"
                 target="_blank"
