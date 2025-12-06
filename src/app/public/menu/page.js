@@ -22,10 +22,11 @@ export default async function MenuPage() {
   const categories = await getMenu();
 
   return (
-    <Section>
-      <div className="mb-6 md:mb-8 text-center">
-        <h1 className="text-xl md:text-3xl lg:text-4xl font-semibold mb-2">Our Menu</h1>
-        <p className="text-sm md:text-base leading-relaxed text-textdark/70">
+    <Section className="space-y-6">
+      <div className="text-center space-y-2">
+        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Signature dishes</p>
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-secondary">Our Menu</h1>
+        <p className="text-sm md:text-base leading-relaxed text-neutral-600">
           Explore our curated selection of Levantine and Indian favorites.
         </p>
       </div>

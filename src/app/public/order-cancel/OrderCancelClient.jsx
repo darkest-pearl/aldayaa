@@ -39,18 +39,19 @@ export default function OrderCancelClient() {
 
   return (
     <Section>
-      <div className="mx-auto max-w-2xl space-y-6 rounded-2xl bg-white p-6 shadow-sm">
+      <div className="mx-auto max-w-2xl space-y-6 rounded-2xl section-bg p-6 sm:p-7">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-semibold">Cancel your order</h1>
-          <p className="text-textdark/70">
+          <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Support</p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-secondary">Cancel your order</h1>
+          <p className="text-neutral-600">
             Enter the order reference number you received when placing your order.
           </p>
         </div>
         <form className="space-y-4" onSubmit={submit}>
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-neutral-800">Order reference</label>
+            <label className="text-sm font-semibold text-secondary">Order reference</label>
             <input
-              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              className="w-full rounded-xl border border-neutral-200 px-3.5 py-3 text-sm bg-white shadow-sm focus:border-primary focus:outline-none"
               placeholder="e.g. c123abc456"
               value={reference}
               onChange={(e) => setReference(e.target.value)}

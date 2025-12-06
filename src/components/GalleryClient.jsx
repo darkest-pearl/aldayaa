@@ -18,9 +18,28 @@ export default function GalleryClient({ categories }) {
   return (
     <div>
       <div className="flex flex-wrap gap-2 md:gap-3 mb-5 md:mb-6">
-        <button onClick={() => setActive('all')} className={`px-3 py-2 rounded-full text-sm md:text-base ${active === 'all' ? 'bg-primary text-white' : 'bg-white border'}`}>All</button>
+        <button
+          onClick={() => setActive('all')}
+          className={`px-3 py-2 rounded-full text-sm md:text-base font-semibold shadow-soft transition duration-200 ease-gentle ${
+            active === 'all'
+              ? 'bg-primary text-secondary shadow-lifted'
+              : 'bg-white/90 border border-neutral-200 text-secondary hover:-translate-y-0.5 hover:shadow-soft'
+          }`}
+        >
+          All
+        </button>
         {categories.map((cat) => (
-          <button key={cat.id} onClick={() => setActive(cat.id)} className={`px-3 py-2 rounded-full text-sm md:text-base ${active === cat.id ? 'bg-primary text-white' : 'bg-white border'}`}>{cat.name}</button>
+          <button
+            key={cat.id}
+            onClick={() => setActive(cat.id)}
+            className={`px-3 py-2 rounded-full text-sm md:text-base font-semibold shadow-soft transition duration-200 ease-gentle ${
+              active === cat.id
+                ? 'bg-primary text-secondary shadow-lifted'
+                : 'bg-white/90 border border-neutral-200 text-secondary hover:-translate-y-0.5 hover:shadow-soft'
+            }`}
+          >
+            {cat.name}
+          </button>
         ))}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">

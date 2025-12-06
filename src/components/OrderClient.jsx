@@ -197,7 +197,7 @@ export default function OrderClient({ categories }) {
   return (
     <>
       <div className="flex flex-col gap-4 md:gap-6 lg:gap-8">
-        <div className="space-y-1 text-xs text-neutral-500">
+        <div className="space-y-1 text-xs text-neutral-600">
           <p>
             Need to track your order?{" "}
             <button
@@ -207,7 +207,7 @@ export default function OrderClient({ categories }) {
                 setTrackResult(null);
                 setTrackError("");
               }}
-              className="font-semibold text-neutral-500 underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
+              className="font-semibold text-secondary underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
             >
               Track here
             </button>
@@ -221,7 +221,7 @@ export default function OrderClient({ categories }) {
                 setCancelResult(null);
                 setCancelError("");
               }}
-              className="font-semibold text-neutral-500 underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
+              className="font-semibold text-secondary underline decoration-neutral-300 decoration-2 underline-offset-4 transition-colors hover:text-primary"
             >
               Cancel here
             </button>
@@ -233,42 +233,42 @@ export default function OrderClient({ categories }) {
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="section-bg p-3 sm:p-5 rounded-2xl shadow-sm border border-neutral-200/70"
+                className="section-bg p-4 sm:p-6 rounded-2xl"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-lg md:text-xl mb-1 text-neutral-900">
+                    <h3 className="font-semibold text-lg md:text-xl mb-1 text-secondary">
                       {cat.name}
                     </h3>
-                    <p className="text-sm text-textdark/70 mb-2 md:mb-3">
+                    <p className="text-sm text-neutral-700 mb-2 md:mb-3 leading-relaxed">
                       {cat.description}
                     </p>
                   </div>
-                <span className="hidden text-xs rounded-full bg-primary/10 text-primary px-3 py-1 sm:inline-flex items-center">
+                <span className="hidden text-xs rounded-full bg-primary/15 text-secondary px-3 py-1 sm:inline-flex items-center">
                     {cat.items.length} items
                   </span>
                 </div>
 
-        <div className="space-y-3">
+                <div className="space-y-3">
                   {cat.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-xl border border-neutral-200/60 bg-white/70 p-3"
+                      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-[14px] border border-neutral-200/70 bg-white/95 p-3 shadow-soft"
                     >
                       <div className="space-y-1">
-                        <p className="font-semibold text-neutral-900">{item.name}</p>
-                        <p className="text-sm text-textdark/70 leading-relaxed">
+                        <p className="font-semibold text-secondary">{item.name}</p>
+                        <p className="text-sm text-neutral-700 leading-relaxed">
                           {item.description}
                         </p>
                       </div>
 
                       <div className="flex items-end justify-between gap-3 sm:flex-col sm:items-end">
-                        <p className="font-semibold text-primary">
+                        <p className="font-semibold text-secondary">
                           AED {item.price.toFixed(2)}
                         </p>
 
                         <Button
-                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
+                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto shadow-soft hover:-translate-y-1 hover:shadow-lifted"
                           onClick={() => addToCart(item)}
                         >
                           Add to cart
@@ -284,14 +284,14 @@ export default function OrderClient({ categories }) {
           {/* RIGHT: CART + CHECKOUT FORM */}
           <div
             ref={cartRef}
-            className={`section-bg p-3 sm:p-5 space-y-4 rounded-2xl border border-neutral-200/70 shadow-sm md:sticky md:top-4 transition-all duration-200 ${
+            className={`section-bg p-4 sm:p-6 space-y-4 rounded-2xl md:sticky md:top-4 transition-all duration-200 ${
               cartPulse ? "ring-2 ring-primary/30" : ""
             }`}
           >
             <div className="flex items-center justify-between gap-3">
-              <h3 className="font-semibold text-lg md:text-xl">Your Cart</h3>
+              <h3 className="font-semibold text-lg md:text-xl text-secondary">Your Cart</h3>
               <span
-                className={`rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium transition ${
+                className={`rounded-full bg-primary/15 text-secondary px-3 py-1 text-sm font-medium transition ${
                   cartPulse ? 'animate-pulse' : ''
                 }`}
               >
@@ -300,13 +300,13 @@ export default function OrderClient({ categories }) {
             </div>
 
             {cart.length === 0 ? (
-              <p className="text-sm text-textdark/70">No items yet.</p>
+              <p className="text-sm text-neutral-600">No items yet.</p>
             ) : (
               <div className="space-y-3">
                 {cart.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-neutral-200/70 p-3 bg-white/80">
+                  <div key={item.id} className="rounded-xl border border-neutral-200/80 p-3 bg-white/95 shadow-sm">
                     <div className="flex justify-between gap-3">
-                      <p className="font-semibold text-neutral-900">{item.name}</p>
+                      <p className="font-semibold text-secondary">{item.name}</p>
                       <button
                         className="text-xs text-red-600 hover:text-red-700 focus-visible:outline-none focus-visible:underline"
                         onClick={() => removeItem(item.id)}
@@ -318,7 +318,7 @@ export default function OrderClient({ categories }) {
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <button
-                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                           onClick={() => updateQty(item.id, item.quantity - 1)}
                         >
                           -
@@ -327,31 +327,31 @@ export default function OrderClient({ categories }) {
                         <span className="px-2 text-sm font-medium">{item.quantity}</span>
 
                         <button
-                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                          className="h-9 w-9 rounded-full border border-neutral-200 bg-white text-lg font-semibold shadow-sm transition-transform duration-150 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                           onClick={() => updateQty(item.id, item.quantity + 1)}
                         >
                           +
                         </button>
                       </div>
 
-                      <p className="font-semibold text-neutral-900">
+                      <p className="font-semibold text-secondary">
                         AED {(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   </div>
               ))}
 
-              <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>AED {total.toFixed(2)}</span>
-                </div>
+               <div className="flex justify-between font-semibold text-lg text-secondary">
+                <span>Total</span>
+                <span>AED {total.toFixed(2)}</span>
+              </div>
               </div>
             )}
 
             {/* CUSTOMER FORM */}
             <form className="grid gap-3" onSubmit={submitOrder}>
               <input
-                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="rounded-xl border border-neutral-200/80 px-3.5 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Full name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -359,7 +359,7 @@ export default function OrderClient({ categories }) {
               />
 
               <input
-                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="rounded-xl border border-neutral-200/80 px-3.5 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Phone number"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -367,12 +367,12 @@ export default function OrderClient({ categories }) {
               />
 
               {/* delivery / pickup */}
-              <div className="flex gap-2 text-sm">
+              <div className="flex gap-3 text-sm font-semibold">
                 <label
-                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-sm ${
+                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-soft ${
                     form.deliveryType === "DELIVERY"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "bg-white"
+                      ? "border-transparent bg-primary text-secondary shadow-lifted"
+                      : "bg-white/90 border-neutral-200 text-neutral-700 hover:border-neutral-300"
                   }`}
                 >
                   <input
@@ -392,10 +392,10 @@ export default function OrderClient({ categories }) {
                 </label>
 
                 <label
-                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-sm ${
+                  className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-soft ${
                     form.deliveryType === "PICKUP"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "bg-white"
+                      ? "border-transparent bg-primary text-secondary shadow-lifted"
+                      : "bg-white/90 border-neutral-200 text-neutral-700 hover:border-neutral-300"
                   }`}
                 >
                   <input
@@ -417,7 +417,7 @@ export default function OrderClient({ categories }) {
             {/* DELIVERY address */}
               {form.deliveryType === "DELIVERY" && (
                 <input
-                  className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="rounded-xl border border-neutral-200/80 px-3.5 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Delivery address"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
@@ -427,8 +427,8 @@ export default function OrderClient({ categories }) {
 
               {/* PICKUP WhatsApp checkbox */}
               {form.deliveryType === "PICKUP" && (
-                <div className="rounded-lg border p-3 space-y-2 bg-white">
-                  <label className="flex items-center gap-2 text-sm font-medium text-neutral-800">
+                <div className="rounded-xl border border-neutral-200/80 p-3 space-y-2 bg-white/90 shadow-sm">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-secondary">
                     <input
                       type="checkbox"
                       checked={form.notifyWhenReady}
@@ -452,7 +452,7 @@ export default function OrderClient({ categories }) {
               )}
 
               <textarea
-                className="border rounded-lg p-3 bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="rounded-xl border border-neutral-200/80 px-3.5 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 rows="3"
                 placeholder="Order notes"
                 value={form.notes}
@@ -475,17 +475,17 @@ export default function OrderClient({ categories }) {
       {cart.length > 0 && (
         <div className="md:hidden fixed inset-x-4 bottom-4 z-40">
           <div
-            className={`flex items-center gap-3 rounded-2xl border border-primary/20 bg-white/95 px-4 py-3 shadow-lg backdrop-blur ${
+            className={`flex items-center gap-3 rounded-2xl border border-neutral-200/80 bg-beige/95 px-4 py-3 shadow-lifted backdrop-blur ${
               cartPulse ? "animate-pulse" : ""
             }`}
           >
             <div className="flex flex-1 items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-secondary font-semibold shadow-soft">
                 {cart.reduce((sum, item) => sum + item.quantity, 0)}
               </span>
               <div>
-                <p className="text-sm font-semibold text-neutral-900">Cart total</p>
-                <p className="text-base font-bold text-primary">
+                <p className="text-sm font-semibold text-secondary">Cart total</p>
+                <p className="text-base font-bold text-secondary">
                   AED {total.toFixed(2)}
                 </p>
               </div>
@@ -494,7 +494,7 @@ export default function OrderClient({ categories }) {
             <button
               type="button"
               onClick={handleScrollToCart}
-              className="rounded-full bg-primary px-4 py-2 text-white text-sm font-semibold shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              className="rounded-full bg-primary px-4 py-2 text-secondary text-sm font-semibold shadow-soft transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lifted active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
               View cart
             </button>

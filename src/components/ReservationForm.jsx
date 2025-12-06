@@ -113,23 +113,22 @@ export default function ReservationForm() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5 md:space-y-6">
-      <div className="rounded-xl border bg-white/80 shadow-sm p-5 sm:p-6 lg:p-8">
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2 text-center">
+      <div className="section-bg p-5 sm:p-6 lg:p-7">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2 text-center text-secondary">
           Reserve a Table
         </h1>
 
-        <p className="text-center text-textdark/70 mb-6 text-sm">
-          We are open late for families and friends. Fill in your details and
-          we will confirm over WhatsApp.
+        <p className="text-center text-neutral-600 mb-6 text-sm">
+          We are open late for families and friends. Fill in your details and we will confirm over WhatsApp.
         </p>
         <form className="grid gap-4" onSubmit={submit}>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">
+            <label className="text-sm font-semibold text-secondary">
               Full name
             </label>
-            <p className="text-xs text-textdark/70">Required for booking confirmation.</p>
+            <p className="text-xs text-neutral-600">Required for booking confirmation.</p>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               placeholder="Enter your full name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -138,12 +137,12 @@ export default function ReservationForm() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">
+            <label className="text-sm font-semibold text-secondary">
               Phone number
             </label>
-            <p className="text-xs text-textdark/70">We will confirm over WhatsApp.</p>
+            <p className="text-xs text-neutral-600">We will confirm over WhatsApp.</p>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               placeholder="Your phone number"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -152,10 +151,10 @@ export default function ReservationForm() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">Email</label>
-            <p className="text-xs text-textdark/70">Optional, for additional updates.</p>
+            <label className="text-sm font-semibold text-secondary">Email</label>
+            <p className="text-xs text-neutral-600">Optional, for additional updates.</p>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               placeholder="you@example.com"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -164,11 +163,11 @@ export default function ReservationForm() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-textdark">Date</label>
-              <p className="text-xs text-textdark/70">Choose your preferred day.</p>
+              <label className="text-sm font-semibold text-secondary">Date</label>
+              <p className="text-xs text-neutral-600">Choose your preferred day.</p>
               <input
                 type="date"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+                className="bg-white"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 required
@@ -176,11 +175,11 @@ export default function ReservationForm() {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-textdark">Time</label>
-              <p className="text-xs text-textdark/70">Let us know when to expect you.</p>
+              <label className="text-sm font-semibold text-secondary">Time</label>
+              <p className="text-xs text-neutral-600">Let us know when to expect you.</p>
               <input
                 type="time"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+                className="bg-white"
                 value={form.time}
                 onChange={(e) => setForm({ ...form, time: e.target.value })}
                 required
@@ -189,7 +188,7 @@ export default function ReservationForm() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">
+            <label className="text-sm font-semibold text-secondary">
               Number of guests
             </label>
             <p className="text-xs text-textdark/70">Tell us how many seats you need.</p>
@@ -209,9 +208,9 @@ export default function ReservationForm() {
             <label className="text-sm font-medium text-textdark">
               Special requests
             </label>
-            <p className="text-xs text-textdark/70">Birthdays, allergies, seating preferences.</p>
+             <p className="text-xs text-neutral-600">Birthdays, allergies, seating preferences.</p>
             <textarea
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               rows="3"
               placeholder="Anything we should know?"
               value={form.specialRequests}
@@ -245,8 +244,8 @@ export default function ReservationForm() {
         )}
       </div>
 
-      <div className="rounded-xl border bg-white/80 shadow-sm p-4 sm:p-5 text-center space-y-1">
-        <p className="text-sm text-textdark/80">Prefer WhatsApp? Message us directly.</p>
+      <div className="section-bg p-4 sm:p-5 text-center space-y-1">
+        <p className="text-sm text-neutral-700">Prefer WhatsApp? Message us directly.</p>
         <a
           href={strings.whatsappLink}
           target="_blank"
@@ -268,26 +267,26 @@ export default function ReservationForm() {
       </div>
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="relative w-full max-w-md rounded-2xl border border-white/60 bg-white/90 shadow-2xl p-6">
+          <div className="relative w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white/95 shadow-lifted p-6">
             <button
               type="button"
               onClick={() => setShowCancelModal(false)}
-              className="absolute right-4 top-4 text-neutral-500 hover:text-neutral-800"
+              className="absolute right-4 top-4 text-neutral-500 hover:text-secondary"
               aria-label="Close"
             >
               ×
             </button>
             <div className="space-y-1 mb-4">
-              <h2 className="text-lg md:text-xl font-semibold text-textdark">Cancel your reservation</h2>
-              <p className="text-sm text-textdark/70">
+              <h2 className="text-lg md:text-xl font-semibold text-secondary">Cancel your reservation</h2>
+              <p className="text-sm text-neutral-600">
                 Enter your reservation reference below to request a cancellation.
               </p>
             </div>
             <form className="space-y-4" onSubmit={submitCancellation}>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-neutral-800">Reservation reference</label>
+                <label className="text-sm font-semibold text-secondary">Reservation reference</label>
                 <input
-                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                   placeholder="e.g. c123abc456"
                   value={cancelForm.reference}
                   onChange={(e) =>
@@ -297,9 +296,9 @@ export default function ReservationForm() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-neutral-800">Phone number (optional)</label>
+                <label className="text-sm font-semibold text-secondary">Phone number (optional)</label>
                 <input
-                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                   placeholder="Used for verification"
                   value={cancelForm.phone}
                   onChange={(e) =>

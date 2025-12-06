@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AnimatePresence, motion } from 'framer-motion';
 import { strings } from '../lib/strings';
 
 const navLinks = [
@@ -11,7 +12,7 @@ const navLinks = [
   { href: '/public/order', label: 'Order Online' },
   { href: '/public/gallery', label: 'Gallery' },
   { href: '/public/about', label: 'About' },
-  { href: '/public/contact', label: 'Contact' }
+  { href: '/public/contact', label: 'Contact' },
 ];
 
 export default function Header() {
@@ -21,96 +22,133 @@ export default function Header() {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-beige/90 backdrop-blur shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 py-3 relative">
-        <div className="flex items-center justify-between">
-          <Link href="/public" className="flex items-center gap-3">
-            <Image src="/images/logo-al-dayaa.png" alt={strings.restaurantName} width={48} height={48} className="rounded-full" />
-            <div>
-              <p className="font-semibold text-lg leading-tight">{strings.restaurantName}</p>
-              <p className="text-sm text-textdark/70">{strings.tagline}</p>
+    <header className="sticky top-0 z-50 border-b border-neutral-200/70 bg-beige/85 backdrop-blur-xl shadow-soft">
+      <div className="site-container py-3">
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/public" className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-white/60">
+            <Image
+              src="/images/logo-al-dayaa.png"
+              alt={strings.restaurantName}
+              width={48}
+              height={48}
+              className="rounded-full border border-white/60 shadow-sm"
+            />
+            <div className="leading-tight">
+              <p className="text-base md:text-lg font-semibold text-secondary">{strings.restaurantName}</p>
+              <p className="text-xs md:text-sm text-neutral-700">{strings.tagline}</p>
             </div>
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+          
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-700">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-primary transition-colors">
+              <Link
+                key={link.href}
+                href={link.href}
+                className="transition hover:text-secondary"
+              >
                 {link.label}
               </Link>
             ))}
-            <Link href="/public/reservations" className="bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform">
+            <Link
+              href="/public/reservations"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
+            >
               Reserve
             </Link>
           </nav>
+
           <button
             type="button"
             onClick={toggleMenu}
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-textdark hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-beige"
+            className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             aria-label="Toggle navigation menu"
             aria-expanded={isMenuOpen}
           >
             <span className="sr-only">Menu</span>
-            <span className="flex h-5 w-6 flex-col justify-center gap-1.5">
-              <span
-                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 transform ${
-                  isMenuOpen ? 'translate-y-1.5 rotate-45' : ''
-                }`}
+            <span className="relative block h-5 w-6">
+              <motion.span
+                animate={isMenuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className="absolute left-0 top-0 h-0.5 w-full rounded-full bg-secondary"
               />
-              <span
-                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 ${
-                  isMenuOpen ? 'opacity-0' : 'opacity-100'
-                }`}
+              <motion.span
+                animate={isMenuOpen ? { opacity: 0 } : { opacity: 1 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 top-2 h-0.5 w-full rounded-full bg-secondary"
               />
-              <span
-                className={`block h-0.5 w-full rounded-sm bg-current transition duration-300 transform ${
-                  isMenuOpen ? '-translate-y-1.5 -rotate-45' : ''
-                }`}
+              <motion.span
+                animate={isMenuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className="absolute left-0 bottom-0 h-0.5 w-full rounded-full bg-secondary"
               />
             </span>
           </button>
         </div>
-
-        <div className="md:hidden relative">
-          <div
-            className={`absolute inset-x-0 top-full origin-top transform transition-all duration-300 ease-out ${
-              isMenuOpen
-                ? 'pointer-events-auto translate-y-0 opacity-100'
-                : 'pointer-events-none -translate-y-2 opacity-0'
-            }`}
-          >
-            <div className="rounded-xl bg-white shadow-lg ring-1 ring-black/5 divide-y divide-beige/60 overflow-hidden">
-              <div className="flex flex-col space-y-1 px-4 py-3 text-sm">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={closeMenu}
-                    className="block rounded-md px-2 py-2 hover:bg-beige/70 hover:text-primary transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-              <div className="px-4 py-3 bg-beige/60">
-                <Link
-                  href="/public/reservations"
-                  onClick={closeMenu}
-                  className="block text-center bg-primary text-white px-4 py-2 rounded-full shadow hover:scale-105 transition-transform"
-                >
-                  Reserve
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-      {isMenuOpen && (
-        <button
-          type="button"
-          aria-label="Close menu"
-          onClick={closeMenu}
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur md:hidden"
-        />
-      )}
+
+        <AnimatePresence>
+        {isMenuOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close menu"
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+              onClick={closeMenu}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: 'linear' }}
+            />
+
+            <motion.nav
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: 'cubic-bezier(0.22, 1, 0.36, 1)' }}
+              className="fixed inset-x-3 top-2 z-50 overflow-hidden rounded-b-3xl border border-neutral-200/80 bg-beige/95 shadow-lifted backdrop-blur-xl"
+            >
+              <div className="site-container py-4">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="leading-tight">
+                    <p className="text-sm font-semibold text-secondary">{strings.restaurantName}</p>
+                    <p className="text-xs text-neutral-600">{strings.tagline}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeMenu}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white/80 text-secondary shadow-soft transition hover:-translate-y-0.5 hover:shadow-md"
+                    aria-label="Close menu"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="flex flex-col divide-y divide-neutral-200/70 text-sm font-medium text-secondary/80">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className="flex items-center justify-between py-3 transition hover:text-secondary"
+                    >
+                      <span>{link.label}</span>
+                      <span className="text-xs text-neutral-500">→</span>
+                    </Link>
+                  ))}
+                </div>
+                <div className="pt-4">
+                  <Link
+                    href="/public/reservations"
+                    onClick={closeMenu}
+                    className="flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
+                  >
+                    Reserve a table
+                  </Link>
+                </div>
+              </div>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

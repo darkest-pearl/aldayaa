@@ -62,18 +62,22 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="grid md:grid-cols-2 gap-5 md:gap-8">
+    <div className="grid md:grid-cols-2 gap-6 md:gap-8 items-start">
       {/* LEFT SIDE — Info */}
       <div className="space-y-4">
-        <h1 className="text-xl md:text-3xl lg:text-4xl font-semibold">Contact Us</h1>
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">We’d love to hear from you</p>
+          <h1 className="text-2xl md:text-3xl font-semibold text-secondary">Contact Us</h1>
+          <p className="text-sm text-neutral-700 leading-relaxed">Reach out for bookings, questions, or collaborations.</p>
+        </div>
 
-        <div className="rounded-xl border bg-white/80 shadow-sm p-3 md:p-4 space-y-3">
+        <div className="section-bg p-4 md:p-5 space-y-4">
           {/* Correct address */}
           <div className="flex gap-3">
-            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base md:text-lg">📍</span>
+            <span className="h-10 w-10 rounded-full bg-primary/15 text-secondary flex items-center justify-center text-base md:text-lg">📍</span>
             <div>
-              <p className="font-semibold text-textdark">Visit us</p>
-              <p className="text-sm leading-relaxed text-textdark/80">{strings.address}</p>
+              <p className="font-semibold text-secondary">Visit us</p>
+              <p className="text-sm leading-relaxed text-neutral-700">{strings.address}</p>
               <a
                 href={strings.googleMaps}
                 className="text-primary font-semibold text-sm"
@@ -86,9 +90,9 @@ export default function ContactForm() {
 
           {/* WhatsApp */}
           <div className="flex gap-3">
-            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base md:text-lg">💬</span>
+            <span className="h-10 w-10 rounded-full bg-primary/15 text-secondary flex items-center justify-center text-base md:text-lg">💬</span>
             <div>
-              <p className="font-semibold text-textdark">WhatsApp</p>
+              <p className="font-semibold text-secondary">WhatsApp</p>
               <a
                 href={strings.whatsappLink}
                 target="_blank"
@@ -101,18 +105,18 @@ export default function ContactForm() {
 
           {/* Hours */}
           <div className="flex gap-3">
-            <span className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-base md:text-lg">⏰</span>
+            <span className="h-10 w-10 rounded-full bg-primary/15 text-secondary flex items-center justify-center text-base md:text-lg">⏰</span>
             <div>
-              <p className="font-semibold text-textdark">Opening Hours</p>
-              <p className="text-sm leading-relaxed text-textdark/80">{strings.hours.weekday}</p>
-              <p className="text-sm leading-relaxed text-textdark/80">{strings.hours.friday}</p>
+              <p className="font-semibold text-secondary">Opening Hours</p>
+              <p className="text-sm leading-relaxed text-neutral-700">{strings.hours.weekday}</p>
+              <p className="text-sm leading-relaxed text-neutral-700">{strings.hours.friday}</p>
             </div>
           </div>
         </div>
 
         {/* Updated Google Maps iframe */}
         <iframe
-          className="w-full h-48 rounded-xl border"
+          className="w-full h-48 rounded-2xl border border-neutral-200/80 shadow-soft"
           src={strings.googleMapsEmbed}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
@@ -120,15 +124,15 @@ export default function ContactForm() {
       </div>
 
       {/* RIGHT SIDE — Form */}
-      <div className="rounded-xl border bg-white/80 shadow-sm p-4 sm:p-6 lg:p-8">
-        <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">Send a message</h3>
+      <div className="section-bg p-5 sm:p-6 lg:p-7">
+        <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4 text-secondary">Send a message</h3>
 
         <form className="grid gap-4" onSubmit={submit}>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">Name</label>
-            <p className="text-xs text-textdark/70">Tell us who we are replying to.</p>
+            <label className="text-sm font-semibold text-secondary">Name</label>
+            <p className="text-xs text-neutral-600">Tell us who we are replying to.</p>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               placeholder="Your name"
               value={form.name}
               onChange={(e) =>
@@ -139,10 +143,10 @@ export default function ContactForm() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">Email</label>
-            <p className="text-xs text-textdark/70">Optional, if you prefer email replies.</p>
+            <label className="text-sm font-semibold text-secondary">Email</label>
+            <p className="text-xs text-neutral-600">Optional, if you prefer email replies.</p>
             <input
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               placeholder="you@example.com"
               value={form.email}
               onChange={(e) =>
@@ -152,10 +156,10 @@ export default function ContactForm() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-textdark">Message</label>
-            <p className="text-xs text-textdark/70">Share your question or feedback.</p>
+            <label className="text-sm font-semibold text-secondary">Message</label>
+            <p className="text-xs text-neutral-600">Share your question or feedback.</p>
             <textarea
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 bg-white/90 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"
+              className="bg-white"
               rows="4"
               placeholder="How can we help?"
               value={form.message}
