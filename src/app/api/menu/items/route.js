@@ -10,6 +10,8 @@ const itemSchema = z.object({
   categoryId: z.string().min(3),
   isAvailable: z.boolean().optional(),
   imageUrl: z.string().url().optional().nullable(),
+  recommended: z.boolean().optional(),
+  isSignature: z.boolean().optional(),
 });
 
 export async function GET(request) {
@@ -37,6 +39,8 @@ export async function POST(request) {
         categoryId: parsed.data.categoryId,
         isAvailable: parsed.data.isAvailable !== false,
         imageUrl: parsed.data.imageUrl || null,
+        recommended: Boolean(parsed.data.recommended),
+        isSignature: Boolean(parsed.data.isSignature),
       },
     });
     return success({ item });

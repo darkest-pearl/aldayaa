@@ -21,6 +21,15 @@ const DEFAULT_CLOSING_TIME = '23:00';
 const createWorkingHours = (openingTime = DEFAULT_OPENING_TIME, closingTime = DEFAULT_CLOSING_TIME) =>
   DAY_ORDER.map(({ key }) => ({ day: key, openingTime, closingTime, closed: false }));
 
+const createDisplayHours = (openingTime = DEFAULT_OPENING_TIME, closingTime = DEFAULT_CLOSING_TIME) => {
+  const range = `${openingTime} – ${closingTime}`;
+  return {
+    weekday: `Sunday–Thursday: ${range}`,
+    friday: `Friday: ${range}`,
+    saturday: `Saturday: ${range}`,
+  };
+};
+
 const withWorkingHours = (settings = {}) => {
   const fallbackOpeningTime = settings.openingTime || DEFAULT_OPENING_TIME;
   const fallbackClosingTime = settings.closingTime || DEFAULT_CLOSING_TIME;
@@ -37,6 +46,12 @@ const withWorkingHours = (settings = {}) => {
     };
   });
 
+  const fallbackDisplayHours = createDisplayHours(fallbackOpeningTime, fallbackClosingTime);
+  const providedDisplayHours =
+    settings.displayHours && typeof settings.displayHours === 'object'
+      ? settings.displayHours
+      : null;
+      
   return {
     openingTime: fallbackOpeningTime,
     closingTime: fallbackClosingTime,
@@ -45,6 +60,11 @@ const withWorkingHours = (settings = {}) => {
     cancellationFee: 0,
     ...settings,
     workingHoursByDay,
+    displayHours: {
+      weekday: providedDisplayHours?.weekday || fallbackDisplayHours.weekday,
+      friday: providedDisplayHours?.friday || fallbackDisplayHours.friday,
+      saturday: providedDisplayHours?.saturday || fallbackDisplayHours.saturday,
+    },
   };
 };
 
@@ -100,7 +120,7 @@ export default function SettingsClient({ initialSettings }) {
     setError(null);
     setMessage(null);
     try {
-        const workingHours = form.workingHoursByDay?.length
+      const workingHours = form.workingHoursByDay?.length
         ? form.workingHoursByDay
         : createWorkingHours(form.openingTime, form.closingTime);
       const primaryDay = workingHours.find((entry) => entry.day === 'monday') || workingHours[0];
@@ -113,6 +133,7 @@ export default function SettingsClient({ initialSettings }) {
           closingTime: primaryDay?.closingTime || form.closingTime,
           workingHoursByDay: workingHours,
           cancellationFee: Number(form.cancellationFee || 0),
+          displayHours: form.displayHours,
         }),
       });
       setMessage('Settings updated successfully');
@@ -127,6 +148,17 @@ export default function SettingsClient({ initialSettings }) {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleDisplayHoursChange = (key, value) => {
+    setForm((prev) => ({
+      ...prev,
+      displayHours: {
+        ...createDisplayHours(prev.openingTime, prev.closingTime),
+        ...(prev.displayHours || {}),
+        [key]: value,
+      },
+    }));
+  };
+  
   const handleWorkingHoursChange = (dayKey, key, value) => {
     setForm((prev) => {
       const baseHours = prev.workingHoursByDay?.length
@@ -150,7 +182,7 @@ export default function SettingsClient({ initialSettings }) {
     ? form.workingHoursByDay
     : createWorkingHours(form.openingTime, form.closingTime);
     
-    return (
+  return (
     <div className="space-y-6">
       <AdminPageHeader
         title="Restaurant settings"
@@ -247,6 +279,39 @@ export default function SettingsClient({ initialSettings }) {
             </div>
           </div>
 
+           <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Weekday hours (Sun–Thu)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={form.displayHours?.weekday || ''}
+                onChange={(e) => handleDisplayHoursChange('weekday', e.target.value)}
+                placeholder="Sunday–Thursday: 12:00 PM – 2:00 AM"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Friday hours</label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={form.displayHours?.friday || ''}
+                onChange={(e) => handleDisplayHoursChange('friday', e.target.value)}
+                placeholder="Friday: 1:00 PM – 2:00 AM"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Saturday hours (optional)</label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={form.displayHours?.saturday || ''}
+                onChange={(e) => handleDisplayHoursChange('saturday', e.target.value)}
+                placeholder="Saturday: 12:00 PM – 2:00 AM"
+              />
+            </div>
+          </div>
+          
           <div className="grid gap-4 md:grid-cols-3">
             <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-800">
               <input

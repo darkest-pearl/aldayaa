@@ -10,6 +10,8 @@ const updateSchema = z.object({
   categoryId: z.string().optional(),
   isAvailable: z.boolean().optional(),
   imageUrl: z.string().url().optional().nullable(),
+  recommended: z.boolean().optional(),
+  isSignature: z.boolean().optional(),
 });
 
 export async function PUT(request, { params }) {
@@ -30,7 +32,7 @@ export async function DELETE(request, { params }) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
     await prisma.menuItem.delete({ where: { id: params.id } });
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    return success({ deleted: true });
   } catch (error) {
     return handleApiError(error);
   }

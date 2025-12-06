@@ -18,5 +18,6 @@ export const strings = {
   hours: {
     weekday: "Saturday–Thursday: 12:00 PM – 2:00 AM",
     friday: "Friday: 1:00 PM – 2:00 AM",
+    saturday: "Saturday: 12:00 PM – 2:00 AM",
   },
 };
