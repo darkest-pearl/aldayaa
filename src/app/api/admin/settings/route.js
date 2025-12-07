@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';

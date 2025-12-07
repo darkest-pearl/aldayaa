@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { failure, success } from "../../../lib/api-response";
 import { sendWhatsAppMessage } from "../../../lib/whatsapp";
 import { strings } from "../../../lib/strings";

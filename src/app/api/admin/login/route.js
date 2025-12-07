@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { authenticateAdmin, setSessionCookie } from '../../../../lib/auth';
 import { success, failure } from '../../../../lib/api-response';

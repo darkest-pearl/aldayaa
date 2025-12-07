@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { prisma } from '../../../../../lib/prisma';
 import { hashPassword, requireAdmin } from '../../../../../lib/auth';

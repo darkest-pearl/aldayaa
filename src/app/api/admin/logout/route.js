@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { success } from '../../../../lib/api-response';
 
 const COOKIE_NAME = 'aldayaa_admin';

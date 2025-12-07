@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { handleApiError, success } from '../../../lib/api-response';
 import { getDisplayHours, getRestaurantSettings } from '../../../lib/restaurant-settings';
 
