@@ -1,5 +1,4 @@
 node_modules/
-.env
 .next/
 prisma/dev.db
 node_modules/.package-lock.json
