@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
-import { success, failure } from '@/lib/api-response';
+import { prisma } from '../../../../lib/prisma';
+import { success, failure } from '../../../../lib/api-response';
 
 const cancelSchema = z.object({
   reference: z.string().min(3),
