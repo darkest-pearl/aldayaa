@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model MenuCategory {
@@ -17,19 +18,21 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id           String       @id @default(cuid())
-  name         String
-  description  String?
-  price        Float
-  isAvailable  Boolean      @default(true)
-  imageUrl     String?
-  recommended  Boolean      @default(false)
-  isSignature  Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  categoryId   String
-  category     MenuCategory @relation(fields: [categoryId], references: [id])
-  orders       OrderItem[]
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  isAvailable Boolean      @default(true)
+  imageUrl    String?
+  recommended Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  categoryId  String
+  isSignature Boolean      @default(false)
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  orders      OrderItem[]
+
+  @@index([isSignature])
 }
 
 model GalleryCategory {
@@ -65,28 +68,31 @@ model Reservation {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  name         String
-  phone        String
-  deliveryType String
-  address      String?
-  notes        String?
-  totalPrice   Float
-  status       String   @default("NEW")
-  createdAt    DateTime @default(now())
-  items        OrderItem[]
+  id              String      @id @default(cuid())
+  name            String
+  phone           String
+  deliveryType    String
+  address         String?
+  notes           String?
+  totalPrice      Float
+  status          String      @default("NEW")
+  createdAt       DateTime    @default(now())
+  notifyWhenReady Boolean     @default(false)
+  paidOnline      Boolean     @default(false)
+  reference       String      @unique @default("")
+  items           OrderItem[]
 }
 
 model OrderItem {
-  id       String  @id @default(cuid())
-  orderId  String
-  order    Order   @relation(fields: [orderId], references: [id])
-  itemId   String?
-  name     String
-  price    Float
-  quantity Int
-
-  menuItems MenuItem[]
+  id         String    @id @default(cuid())
+  orderId    String
+  itemId     String?
+  name       String
+  price      Float
+  quantity   Int
+  menuItemId String?
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  order      Order     @relation(fields: [orderId], references: [id])
 }
 
 model AdminUser {
@@ -94,4 +100,16 @@ model AdminUser {
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  role         String   @default("ADMIN")
+}
+
+model RestaurantSettings {
+  id                    Int     @id @default(1)
+  openingTime           String
+  closingTime           String
+  allowCancelPaid       Boolean @default(false)
+  allowCancelInProgress Boolean @default(false)
+  cancellationFee       Float   @default(0)
+  workingHoursByDay     String?
+  displayHours          String?
 }
