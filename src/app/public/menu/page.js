@@ -1,15 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import Section from '../../../components/Section';
-import dynamicImport from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { prisma } from '../../../lib/prisma';
 
 export const metadata = {
   title: 'Menu | Al Dayaa Al Shamiah',
 };
 
-// Client component (no SSR)
-const MenuClient = dynamicImport(
+const MenuClient = nextDynamic(
   () => import('../../../components/MenuClient'),
   { ssr: false }
 );
