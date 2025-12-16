@@ -1,4 +1,4 @@
-// src/lib/prisma.js
+import "server-only";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis;
@@ -6,7 +6,7 @@ const globalForPrisma = globalThis;
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ["error"], // 👈 only errors
+    log: process.env.NODE_ENV === "development" ? ["error"] : [],
   });
 
 if (process.env.NODE_ENV !== "production") {
