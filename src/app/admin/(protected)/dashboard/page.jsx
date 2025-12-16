@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 // src/app/admin/(protected)/dashboard/page.jsx
 import { prisma } from '../../../../lib/prisma';
 import DashboardClient from './DashboardClient.jsx';

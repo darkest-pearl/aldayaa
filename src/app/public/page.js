@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import HomeClient from './HomeClient';
 import { prisma } from '../../lib/prisma';
 
