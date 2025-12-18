@@ -40,6 +40,7 @@ export async function GET(request) {
     const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
     return success({ reservations });
   } catch (error) {
+    console.error('Reservations GET error:', error);
     return handleApiError(error);
   }
 }
@@ -87,6 +88,7 @@ export async function POST(request) {
     const reservation = await prisma.reservation.create({ data: parsed.data });
     return success({ reservation });
   } catch (error) {
+    console.error('Reservations POST error:', error);
     return failure('Unable to create reservation', 500);
   }
 }

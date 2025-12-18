@@ -75,7 +75,7 @@ export default function HomeClient({ signatureDishes = [] }) {
               <span>Modern Levantine Luxury</span>
             </div>
 
-            <h1 className="text-2xl md:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight font-serif">
+            <h1 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-white/90 tracking-tight leading-tight font-serif">
               Authentic Levantine flavors, elevated
             </h1>
 
