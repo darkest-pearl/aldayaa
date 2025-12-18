@@ -59,7 +59,7 @@ model Reservation {
   name            String
   phone           String
   email           String?
-  date            String
+  date            DateTime
   time            String
   guests          Int      @default(1)
   specialRequests String?

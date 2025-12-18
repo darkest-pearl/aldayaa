@@ -34,11 +34,26 @@ function getDayKey(dateString) {
   return DAY_KEYS_BY_INDEX[dayIndex] || null;
 }
 
+function formatDateOnly(dateValue) {
+  if (!dateValue) return null;
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
-    return success({ reservations });
+    const serializedReservations = reservations.map((reservation) => ({
+      ...reservation,
+      date: formatDateOnly(reservation.date),
+      createdAt: reservation.createdAt?.toISOString?.(),
+    }));
+    return success({ reservations: serializedReservations });
   } catch (error) {
     console.error('Reservations GET error:', error);
     return handleApiError(error);
@@ -85,8 +100,28 @@ export async function POST(request) {
       return failure('Restaurant is closed at this time', 400);
     }
 
-    const reservation = await prisma.reservation.create({ data: parsed.data });
-    return success({ reservation });
+    const reservationDate = new Date(`${parsed.data.date}T${parsed.data.time}:00`);
+
+    if (Number.isNaN(reservationDate.getTime())) {
+      return failure('Invalid reservation date or time', 400);
+    }
+
+    const { date, ...reservationPayload } = parsed.data;
+
+    const reservation = await prisma.reservation.create({
+      data: {
+        ...reservationPayload,
+        date: reservationDate,
+      },
+    });
+
+    const serializedReservation = {
+      ...reservation,
+      date: formatDateOnly(reservation.date),
+      createdAt: reservation.createdAt?.toISOString?.(),
+    };
+
+    return success({ reservation: serializedReservation });
   } catch (error) {
     console.error('Reservations POST error:', error);
     return failure('Unable to create reservation', 500);

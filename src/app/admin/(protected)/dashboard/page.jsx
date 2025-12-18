@@ -12,13 +12,21 @@ async function getStats() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
+  const endOfToday = new Date();
+  endOfToday.setHours(23, 59, 59, 999);
+  
   const [reservationsToday, ordersToday, menuCount, photoCount] = await Promise.all([
     prisma.reservation.count({
-      where: { date: new Date().toISOString().slice(0, 10) },
+      where: {
+        date: {
+          gte: startOfToday,
+          lte: endOfToday,
+        },
+      },
     }),
     prisma.order.count({
       where: {
-        createdAt: { gte: startOfToday },
+        createdAt: { gte: startOfToday, lte: endOfToday },
       },
     }),
     prisma.menuItem.count(),
@@ -47,7 +55,7 @@ async function getStats() {
       id: r.id,
       name: r.name,
       phone: r.phone,
-      date: r.date,
+      date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
       time: r.time,
       status: r.status,
     })),

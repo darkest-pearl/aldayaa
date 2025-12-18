@@ -10,8 +10,15 @@ const cancelSchema = z.object({
 
 function parseReservationDateTime(date, time) {
   if (!date || !time) return null;
-  const dateTime = new Date(`${date}T${time}`);
-  return Number.isNaN(dateTime.getTime()) ? null : dateTime;
+  const baseDate = date instanceof Date ? new Date(date) : new Date(`${date}T00:00:00`);
+  if (Number.isNaN(baseDate.getTime())) return null;
+
+  const [hours, minutes] = `${time}`.split(':').map((value) => Number(value));
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+  baseDate.setHours(hours, minutes, 0, 0);
+
+  return Number.isNaN(baseDate.getTime()) ? null : baseDate;
 }
 
 export async function POST(request) {
