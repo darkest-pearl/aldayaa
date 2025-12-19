@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "node": ">=18 <=22"
   },
   "scripts": {
     "dev": "next dev",
@@ -14,7 +14,6 @@
     "prisma": "prisma",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "postinstall": "prisma generate",
     "db:seed": "prisma db seed"
   },
   "dependencies": {
