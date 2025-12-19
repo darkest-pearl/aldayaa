@@ -17,6 +17,7 @@ export default function ReservationForm() {
 
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [reservationReference, setReservationReference] = useState(null)
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelForm, setCancelForm] = useState({ reference: "", phone: "" });
   const [cancelStatus, setCancelStatus] = useState(null);
@@ -42,13 +43,17 @@ export default function ReservationForm() {
     });
 
     const data = await res.json();
+    console.log("API response:", data);
+
     setLoading(false);
 
     if (data.success) {
+      setReservationReference(data.data.reservation.reference);
+
       setStatus({
         type: "success",
         message:
-          "Reservation received! We will confirm shortly.",
+          "Reservation received! Please save your reference number in case you need to cancel.",
       });
 
       setForm({
@@ -108,6 +113,18 @@ export default function ReservationForm() {
       });
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  const copyReference = async () => {
+    if (!reservationReference) return;
+
+    try {
+      await navigator.clipboard.writeText(reservationReference);
+      alert("Reference copied to clipboard");
+    } catch (err) {
+      console.error("Clipboard copy failed", err);
+      alert("Unable to copy reference");
     }
   };
 
@@ -239,7 +256,25 @@ export default function ReservationForm() {
                 : "border-red-100 bg-red-50 text-red-600"
             }`}
           >
-            {status.message}
+            <p>{status.message}</p>
+
+            {status.type === "success" && reservationReference && (
+              <div className="mt-2 flex items-center gap-2 font-mono">
+                <span className="px-2 py-1 rounded bg-white border text-sm">
+                  {reservationReference}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={copyReference}
+                  className="text-primary hover:text-primary/80 transition"
+                  aria-label="Copy reservation reference"
+                  title="Copy reference"
+                >
+                  📋
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

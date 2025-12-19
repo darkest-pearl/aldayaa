@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
+import { generateReservationReference } from "../../../lib/reference";
 import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
 
@@ -63,7 +64,12 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const parsed = createSchema.safeParse({ ...body, guests: Number(body.guests) });
+    const parsed = createSchema.safeParse({
+      ...body,
+      guests: Number(body.guests),
+      email: body.email?.trim() || null, // ✅ FIX
+    });
+
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
 
     const settings = await getRestaurantSettings();
@@ -100,7 +106,7 @@ export async function POST(request) {
       return failure('Restaurant is closed at this time', 400);
     }
 
-    const reservationDate = new Date(`${parsed.data.date}T${parsed.data.time}:00`);
+    const reservationDate = new Date(`${parsed.data.date}T${parsed.data.time}:00+04:00`);
 
     if (Number.isNaN(reservationDate.getTime())) {
       return failure('Invalid reservation date or time', 400);
@@ -108,17 +114,25 @@ export async function POST(request) {
 
     const { date, ...reservationPayload } = parsed.data;
 
+    const reference = generateReservationReference();
+
     const reservation = await prisma.reservation.create({
       data: {
         ...reservationPayload,
         date: reservationDate,
+        reference, // ✅ WRITE IT EXPLICITLY
       },
     });
 
     const serializedReservation = {
-      ...reservation,
+      id: reservation.id,
+      name: reservation.name,
+      phone: reservation.phone,
       date: formatDateOnly(reservation.date),
-      createdAt: reservation.createdAt?.toISOString?.(),
+      time: reservation.time,
+      status: reservation.status,
+      reference: reservation.reference, // ✅ ADD THIS
+      createdAt: reservation.createdAt?.toISOString(),
     };
 
     return success({ reservation: serializedReservation });

@@ -64,6 +64,7 @@ model Reservation {
   guests          Int      @default(1)
   specialRequests String?
   status          String   @default("PENDING")
+  reference       String   @unique
   createdAt       DateTime @default(now())
 }
 

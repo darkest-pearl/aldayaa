@@ -32,7 +32,7 @@ export async function POST(request) {
 
     const { reference, phone } = parsed.data;
 
-    const reservation = await prisma.reservation.findUnique({ where: { id: reference } });
+    const reservation = await prisma.reservation.findUnique({ where: { reference: reference } });
 
     if (!reservation) return failure('Reservation not found', 404);
 

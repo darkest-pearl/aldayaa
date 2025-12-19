@@ -8,27 +8,52 @@ export const metadata = {
   title: 'Admin Dashboard',
 };
 
-async function getStats() {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+function getDubaiDayRange() {
+  const now = new Date();
 
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
+  // Dubai is UTC+4
+  const dubaiOffsetMs = 4 * 60 * 60 * 1000;
+
+  // Convert "now" to Dubai time
+  const dubaiNow = new Date(now.getTime() + dubaiOffsetMs);
+
+  // Start of Dubai day
+  const dubaiStart = new Date(dubaiNow);
+  dubaiStart.setHours(0, 0, 0, 0);
+
+  // End of Dubai day
+  const dubaiEnd = new Date(dubaiNow);
+  dubaiEnd.setHours(23, 59, 59, 999);
+
+  // Convert back to UTC for database comparison
+  const startUtc = new Date(dubaiStart.getTime() - dubaiOffsetMs);
+  const endUtc = new Date(dubaiEnd.getTime() - dubaiOffsetMs);
+
+  return { startUtc, endUtc };
+}
+
+
+async function getStats() {
+  const { startUtc, endUtc } = getDubaiDayRange();
   
   const [reservationsToday, ordersToday, menuCount, photoCount] = await Promise.all([
     prisma.reservation.count({
       where: {
         date: {
-          gte: startOfToday,
-          lte: endOfToday,
+          gte: startUtc,
+          lte: endUtc,
         },
       },
     }),
     prisma.order.count({
       where: {
-        createdAt: { gte: startOfToday, lte: endOfToday },
+        createdAt: {
+          gte: startUtc,
+          lte: endUtc,
+        },
       },
     }),
+
     prisma.menuItem.count(),
     prisma.photo.count(),
   ]);
