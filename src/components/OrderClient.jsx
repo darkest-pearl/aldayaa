@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import Button from "./Button";
+import MenuItemImage from "./MenuItemImage";
 
 export default function OrderClient({ categories }) {
   const [cart, setCart] = useState([]);
@@ -240,26 +241,33 @@ export default function OrderClient({ categories }) {
                   {cat.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 rounded-[14px] border border-neutral-200/70 bg-white/95 p-3 shadow-soft"
+                      className="flex flex-col gap-3 rounded-[14px] border border-neutral-200/70 bg-white/95 p-3 shadow-soft sm:flex-row sm:items-start sm:justify-between"
                     >
-                      <div className="space-y-1">
-                        <p className="font-semibold text-secondary">{item.name}</p>
-                        <p className="text-sm text-neutral-700 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
+                      <MenuItemImage
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="h-32 w-full sm:h-24 sm:w-24 sm:shrink-0"
+                      />
+                      <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <p className="font-semibold text-secondary">{item.name}</p>
+                          <p className="text-sm text-neutral-700 leading-relaxed">
+                            {item.description}
+                          </p>
+                        </div>
 
-                      <div className="flex items-end justify-between gap-3 sm:flex-col sm:items-end">
-                        <p className="font-semibold text-secondary">
-                          AED {item.price.toFixed(2)}
-                        </p>
+                        <div className="flex items-end justify-between gap-3 sm:flex-col sm:items-end">
+                          <p className="font-semibold text-secondary">
+                            AED {item.price.toFixed(2)}
+                          </p>
 
-                        <Button
-                          className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto shadow-soft hover:-translate-y-1 hover:shadow-lifted"
-                          onClick={() => addToCart(item)}
-                        >
-                          Add to cart
-                        </Button>
+                          <Button
+                            className="mt-auto text-sm px-4 py-2 min-h-[44px] w-full sm:w-auto shadow-soft hover:-translate-y-1 hover:shadow-lifted"
+                            onClick={() => addToCart(item)}
+                          >
+                            Add to cart
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

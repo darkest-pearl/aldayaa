@@ -98,12 +98,27 @@ const defaultState = withWorkingHours({
   cancellationFee: 0,
 });
 
-export default function SettingsClient({ initialSettings }) {
+const defaultAnnouncement = {
+  message: '',
+  isActive: false,
+};
+
+export default function SettingsClient({ initialSettings, initialAnnouncement }) {
   const [form, setForm] = useState(() => withWorkingHours(initialSettings || defaultState));
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [announcementForm, setAnnouncementForm] = useState(
+    () => ({
+      ...defaultAnnouncement,
+      ...(initialAnnouncement || {}),
+    }),
+  );
+  const [announcementLoading, setAnnouncementLoading] = useState(false);
+  const [announcementFetching, setAnnouncementFetching] = useState(false);
+  const [announcementError, setAnnouncementError] = useState(null);
+  const [announcementMessage, setAnnouncementMessage] = useState(null);
 
   const load = async () => {
     setFetching(true);
@@ -119,9 +134,31 @@ export default function SettingsClient({ initialSettings }) {
     }
   };
 
+  const loadAnnouncement = async () => {
+    setAnnouncementFetching(true);
+    setAnnouncementError(null);
+    setAnnouncementMessage(null);
+    try {
+      const data = await apiRequest('/api/admin/announcement');
+      setAnnouncementForm({
+        ...defaultAnnouncement,
+        ...(data.announcement || {}),
+      });
+    } catch (err) {
+      setAnnouncementError(err.message);
+    } finally {
+      setAnnouncementFetching(false);
+    }
+  };
+  
   useEffect(() => {
     if (initialSettings) return;
     load();
+  }, []);
+
+  useEffect(() => {
+    if (initialAnnouncement) return;
+    loadAnnouncement();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -154,10 +191,39 @@ export default function SettingsClient({ initialSettings }) {
     }
   };
 
+  const handleAnnouncementSubmit = async (e) => {
+    e.preventDefault();
+    setAnnouncementLoading(true);
+    setAnnouncementError(null);
+    setAnnouncementMessage(null);
+    try {
+      const data = await apiRequest('/api/admin/announcement', {
+        method: 'PUT',
+        body: JSON.stringify({
+          message: announcementForm.message,
+          isActive: announcementForm.isActive,
+        }),
+      });
+      setAnnouncementForm({
+        ...defaultAnnouncement,
+        ...(data.announcement || {}),
+      });
+      setAnnouncementMessage('Announcement updated successfully');
+    } catch (err) {
+      setAnnouncementError(err.message);
+    } finally {
+      setAnnouncementLoading(false);
+    }
+  };
+  
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleAnnouncementChange = (key, value) => {
+    setAnnouncementForm((prev) => ({ ...prev, [key]: value }));
+  };
+  
   const handleDisplayHoursChange = (key, value) => {
     setForm((prev) => ({
       ...prev,
@@ -351,6 +417,61 @@ export default function SettingsClient({ initialSettings }) {
               />
             </div>
           </div>
+        </AdminForm>
+      </AdminCard>
+    
+    <AdminCard
+        title="Announcement banner"
+        description="Display a short notice at the top of public pages."
+        actions={announcementFetching && <span className="text-xs text-neutral-500">Refreshing…</span>}
+      >
+        {announcementError && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {announcementError}
+          </div>
+        )}
+        {announcementMessage && (
+          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {announcementMessage}
+          </div>
+        )}
+
+        <AdminForm
+          onSubmit={handleAnnouncementSubmit}
+          submitLabel="Save announcement"
+          submitting={announcementLoading}
+          secondaryAction={
+            <button
+              type="button"
+              className="text-sm font-semibold text-neutral-700 underline"
+              onClick={loadAnnouncement}
+              disabled={announcementFetching}
+            >
+              Reload
+            </button>
+          }
+        >
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-neutral-800">Announcement message</label>
+            <textarea
+              className="min-h-[96px] w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={announcementForm.message || ''}
+              onChange={(e) => handleAnnouncementChange('message', e.target.value)}
+              placeholder="Share a short update with guests"
+              maxLength={280}
+            />
+            <p className="text-xs text-neutral-500">
+              Keep it short and clear. Changes appear instantly on public pages.
+            </p>
+          </div>
+          <label className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm font-semibold text-neutral-800">
+            <input
+              type="checkbox"
+              checked={!!announcementForm.isActive}
+              onChange={(e) => handleAnnouncementChange('isActive', e.target.checked)}
+            />
+            Show announcement on the website
+          </label>
         </AdminForm>
       </AdminCard>
     </div>

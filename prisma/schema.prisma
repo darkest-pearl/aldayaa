@@ -111,3 +111,11 @@ model RestaurantSettings {
   workingHoursByDay     String?
   displayHours          String?
 }
+
+model Announcement {
+  id        String   @id @default(cuid())
+  message   String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

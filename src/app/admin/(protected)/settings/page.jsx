@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import SettingsClient from './SettingsClient';
 import { getAdminFromRequest } from '../../../../lib/auth';
 import { getRestaurantSettings } from '../../../../lib/restaurant-settings';
+import { getLatestAnnouncement } from '../../../../lib/announcement';
 
 export const metadata = { title: 'Restaurant Settings' };
 
@@ -13,6 +14,15 @@ export default async function AdminSettingsPage() {
   }
 
   const settings = await getRestaurantSettings();
+  const announcement = await getLatestAnnouncement();
+  const announcementData = announcement
+    ? {
+        id: announcement.id,
+        message: announcement.message,
+        isActive: announcement.isActive,
+        updatedAt: announcement.updatedAt.toISOString(),
+      }
+    : null;
 
-  return <SettingsClient initialSettings={settings} />;
+  return <SettingsClient initialSettings={settings} initialAnnouncement={announcementData} />;
 }
