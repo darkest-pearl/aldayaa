@@ -3,9 +3,9 @@ export const dynamic = "force-dynamic";
 import HomeClient from './HomeClient';
 import { prisma } from '../../lib/prisma';
 
-async function getSignatureDishes() {
+async function getRecommendedDishes() {
   const dishes = await prisma.menuItem.findMany({
-    where: { isSignature: true },
+    where: { recommended: true },
     select: {
       id: true,
       name: true,
@@ -15,12 +15,11 @@ async function getSignatureDishes() {
     },
   });
 
-  const shuffled = [...dishes].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 4);
+  return dishes.sort(() => Math.random() - 0.5).slice(0, 6);
 }
 
 export default async function HomePage() {
-  const signatureDishes = await getSignatureDishes();
+  const recommendedDishes = await getRecommendedDishes();
 
-      return <HomeClient signatureDishes={signatureDishes} />;
+      return <HomeClient recommendedDishes={recommendedDishes} />;
 }

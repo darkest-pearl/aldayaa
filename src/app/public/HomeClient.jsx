@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -40,7 +41,16 @@ const pillars = [
   },
 ];
 
-const signatureFallbackImage = '/images/food-mezze.jpg';
+const recommendedFallbackImage = '/images/food-mezze.jpg';
+const slideIntervalMs = 4500;
+const swipeConfidenceThreshold = 60;
+
+const getItemsPerView = (width) => {
+  if (width >= 1280) return 4;
+  if (width >= 1024) return 3;
+  if (width >= 768) return 2;
+  return 1;
+};
 
 const formatPrice = (price) => {
   if (typeof price === 'number' && !Number.isNaN(price)) {
@@ -49,8 +59,74 @@ const formatPrice = (price) => {
   return 'AED —';
 };
 
-export default function HomeClient({ signatureDishes = [] }) {
-  const hasSignatureDishes = signatureDishes.length > 0;
+export default function HomeClient({ recommendedDishes = [] }) {
+  const hasRecommendedDishes = recommendedDishes.length > 0;
+  const [itemsPerView, setItemsPerView] = useState(1);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    const updateItemsPerView = () => {
+      setItemsPerView(getItemsPerView(window.innerWidth));
+    };
+
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
+
+  const effectiveItemsPerView = Math.max(
+    1,
+    Math.min(itemsPerView, recommendedDishes.length || 1)
+  );
+
+  const slideGroups = useMemo(() => {
+    const groups = [];
+    for (let i = 0; i < recommendedDishes.length; i += effectiveItemsPerView) {
+      groups.push(recommendedDishes.slice(i, i + effectiveItemsPerView));
+    }
+    return groups;
+  }, [recommendedDishes, effectiveItemsPerView]);
+
+  useEffect(() => {
+    if (currentIndex > slideGroups.length - 1) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, slideGroups.length]);
+
+  const shouldAutoPlay = recommendedDishes.length >= 3 && slideGroups.length > 1;
+  const shouldCenterItems =
+    recommendedDishes.length > 0 && recommendedDishes.length < 3;
+
+  useEffect(() => {
+    if (!shouldAutoPlay || isPaused) return undefined;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slideGroups.length);
+    }, slideIntervalMs);
+
+    return () => clearInterval(timer);
+  }, [isPaused, shouldAutoPlay, slideGroups.length]);
+
+  const handleNext = () => {
+    if (slideGroups.length < 2) return;
+    setCurrentIndex((prev) => (prev + 1) % slideGroups.length);
+  };
+
+  const handlePrev = () => {
+    if (slideGroups.length < 2) return;
+    setCurrentIndex((prev) =>
+      prev === 0 ? slideGroups.length - 1 : prev - 1
+    );
+  };
+
+  const gridColsClass = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+  }[effectiveItemsPerView];
 
   return (
     <div className="bg-[#f6f0e7] text-textdark">
@@ -184,13 +260,13 @@ export default function HomeClient({ signatureDishes = [] }) {
       </Section>
 
       {/* SIGNATURE DISHES (DARK SECTION) */}
-      {hasSignatureDishes && (
+      {hasRecommendedDishes && (
         <section className="bg-neutral-950 text-white">
           <Section className="py-10 md:py-16">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
               <div>
                 <p className="uppercase tracking-[0.2em] text-amber-400 text-xs mb-2">
-                  Signature Dishes
+                  Recommended Dishes
                 </p>
                 <h3 className="text-xl md:text-3xl font-semibold tracking-tight font-serif">
                   A taste of the menu
@@ -206,37 +282,126 @@ export default function HomeClient({ signatureDishes = [] }) {
               </Link>
             </div>
 
-            <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {signatureDishes.map((dish) => (
-                <motion.div
-                  key={dish.id}
-                  whileHover={{ translateY: -4 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 shadow-sm"
-                >
-                  <div className="relative mb-3 h-28 rounded-xl overflow-hidden border border-white/10">
-                    <Image
-                      src={dish.imageUrl || signatureFallbackImage}
-                      alt={dish.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 320px"
-                      className="object-cover"
+            <div
+              className="relative"
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
+            >
+              <motion.div
+                drag={slideGroups.length > 1 ? 'x' : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.15}
+                onDragEnd={(_event, info) => {
+                  if (info.offset.x < -swipeConfidenceThreshold) {
+                    handleNext();
+                  }
+                  if (info.offset.x > swipeConfidenceThreshold) {
+                    handlePrev();
+                  }
+                }}
+                animate={{ x: `-${currentIndex * 100}%` }}
+                transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+                className="flex"
+              >
+                {slideGroups.map((group, groupIndex) => (
+                  <div key={`slide-${groupIndex}`} className="min-w-full">
+                    <div
+                      className={[
+                        shouldCenterItems ? 'mx-auto max-w-4xl' : '',
+                        shouldCenterItems ? 'justify-items-center' : '',
+                        shouldCenterItems
+                          ? `grid gap-4 md:gap-6 ${gridColsClass}`
+                          : `grid gap-4 md:gap-6 ${gridColsClass}`,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
+                      {group.map((dish) => (
+                        <motion.div
+                          key={dish.id}
+                          whileHover={{ translateY: -4 }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 shadow-sm"
+                        >
+                          <div className="relative mb-3 h-28 rounded-xl overflow-hidden border border-white/10">
+                            <Image
+                              src={dish.imageUrl || recommendedFallbackImage}
+                              alt={dish.name}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 320px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-base md:text-lg font-semibold tracking-tight font-serif">
+                              {dish.name}
+                            </h4>
+                            <span className="text-amber-300 text-xs md:text-sm font-semibold">
+                              {formatPrice(dish.price)}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed text-white/70">
+                            {dish.description ||
+                              'Guest-favorite selection from our recommended list.'}
+                          </p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                  ))}
+              </motion.div>
+
+              {slideGroups.length > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6">
+                  {slideGroups.map((_group, index) => (
+                    <button
+                      key={`dot-${index}`}
+                      type="button"
+                      aria-label={`Go to slide ${index + 1}`}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentIndex
+                          ? 'w-6 bg-amber-400'
+                          : 'w-2 bg-white/30 hover:bg-white/60'
+                      }`}
+                      onClick={() => setCurrentIndex(index)}
                     />
-                  </div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-base md:text-lg font-semibold tracking-tight font-serif">
-                      {dish.name}
-                    </h4>
-                    <span className="text-amber-300 text-xs md:text-sm font-semibold">
-                      {formatPrice(dish.price)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-white/70">
-                    {dish.description || 'Guest-favorite selection from our signature list.'}
-                  </p>
-                </motion.div>
-              ))}
+                  ))}
+                </div>
+              )}
             </div>
+
+            <noscript>
+              <div className="grid gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4 mt-6">
+                {recommendedDishes.map((dish) => (
+                  <div
+                    key={dish.id}
+                    className="bg-white/5 border border-white/10 rounded-2xl p-4 md:p-5 shadow-sm"
+                  >
+                    <div className="relative mb-3 h-28 rounded-xl overflow-hidden border border-white/10">
+                      <Image
+                        src={dish.imageUrl || recommendedFallbackImage}
+                        alt={dish.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 320px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-base md:text-lg font-semibold tracking-tight font-serif">
+                        {dish.name}
+                      </h4>
+                      <span className="text-amber-300 text-xs md:text-sm font-semibold">
+                        {formatPrice(dish.price)}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-white/70">
+                      {dish.description ||
+                        'Guest-favorite selection from our recommended list.'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </noscript>
           </Section>
         </section>
       )}

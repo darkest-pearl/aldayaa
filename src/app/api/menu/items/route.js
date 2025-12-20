@@ -12,7 +12,6 @@ const itemSchema = z.object({
   isAvailable: z.boolean().optional(),
   imageUrl: z.string().url().optional().nullable(),
   recommended: z.boolean().optional(),
-  isSignature: z.boolean().optional(),
 });
 
 export async function GET(request) {
@@ -41,7 +40,6 @@ export async function POST(request) {
         isAvailable: parsed.data.isAvailable !== false,
         imageUrl: parsed.data.imageUrl || null,
         recommended: Boolean(parsed.data.recommended),
-        isSignature: Boolean(parsed.data.isSignature),
       },
     });
     return success({ item });

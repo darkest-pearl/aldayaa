@@ -12,7 +12,6 @@ const updateSchema = z.object({
   isAvailable: z.boolean().optional(),
   imageUrl: z.string().url().optional().nullable(),
   recommended: z.boolean().optional(),
-  isSignature: z.boolean().optional(),
 });
 
 export async function PUT(request, { params }) {
