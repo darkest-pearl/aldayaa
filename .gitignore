@@ -1,6 +1,7 @@
 node_modules/
-.env 
+.env
+.env.*
+!.env.example
 .next/
 prisma/dev.db
 node_modules/.package-lock.json
-node_modules
