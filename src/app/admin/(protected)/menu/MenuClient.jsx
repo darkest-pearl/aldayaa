@@ -53,7 +53,6 @@ export default function MenuClient() {
     categoryId: '',
     imageUrl: '',
     recommended: false,
-    isSignature: false,
   });
 
   const load = async () => {
@@ -130,7 +129,6 @@ export default function MenuClient() {
           ...itemForm,
           price: Number(itemForm.price) || 0,
           recommended: Boolean(itemForm.recommended),
-          isSignature: Boolean(itemForm.isSignature),
         }),
       });
       setItemForm({
@@ -140,7 +138,6 @@ export default function MenuClient() {
         categoryId: '',
         imageUrl: '',
         recommended: false,
-        isSignature: false,
       });
       await load();
     } catch (err) {
@@ -409,19 +406,6 @@ export default function MenuClient() {
               />
               Mark as recommended
             </label>
-            <label className="flex items-center gap-2 text-xs font-semibold text-neutral-800">
-              <input
-                type="checkbox"
-                checked={itemForm.isSignature}
-                onChange={(e) =>
-                  setItemForm((f) => ({
-                    ...f,
-                    isSignature: e.target.checked,
-                  }))
-                }
-              />
-              Signature dish
-            </label>
           </AdminForm>
         </AdminCard>
 
@@ -483,28 +467,6 @@ export default function MenuClient() {
                       type="button"
                       className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600"
                       onClick={() => toggleItemField(row.id, 'recommended')}
-                    >
-                      No
-                    </button>
-                  ),
-              },
-              {
-                key: 'isSignature',
-                header: 'Signature',
-                render: (val, row) =>
-                  val ? (
-                    <button
-                      type="button"
-                      className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700"
-                      onClick={() => toggleItemField(row.id, 'isSignature')}
-                    >
-                      Yes
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600"
-                      onClick={() => toggleItemField(row.id, 'isSignature')}
                     >
                       No
                     </button>

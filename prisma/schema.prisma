@@ -56,21 +56,20 @@ model Photo {
 
 model Reservation {
   id              String   @id @default(cuid())
-  reference       String   @unique
   name            String
   phone           String
   email           String?
-  date            String
+  date            DateTime
   time            String
   guests          Int      @default(1)
   specialRequests String?
   status          String   @default("PENDING")
+  reference       String   @unique
   createdAt       DateTime @default(now())
 }
 
 model Order {
   id              String      @id @default(cuid())
-  reference       String      @unique
   name            String
   phone           String
   deliveryType    String
@@ -78,22 +77,23 @@ model Order {
   notes           String?
   totalPrice      Float
   status          String      @default("NEW")
-  paidOnline      Boolean     @default(false)
-  notifyWhenReady Boolean     @default(false)
   createdAt       DateTime    @default(now())
+  notifyWhenReady Boolean     @default(false)
+  paidOnline      Boolean     @default(false)
+  reference       String      @unique
   items           OrderItem[]
 }
 
 model OrderItem {
   id         String    @id @default(cuid())
   orderId    String
-  order      Order     @relation(fields: [orderId], references: [id])
   itemId     String?
   name       String
   price      Float
   quantity   Int
-  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
   menuItemId String?
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  order      Order     @relation(fields: [orderId], references: [id])
 }
 
 model AdminUser {
@@ -113,4 +113,12 @@ model RestaurantSettings {
   cancellationFee       Float   @default(0)
   workingHoursByDay     String?
   displayHours          String?
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  message   String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

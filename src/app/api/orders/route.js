@@ -36,6 +36,7 @@ export async function GET(request) {
     });
     return success({ orders });
   } catch (error) {
+    console.error('Orders GET error:', error);
     return handleApiError(error);
   }
 }

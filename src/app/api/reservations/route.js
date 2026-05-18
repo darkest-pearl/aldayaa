@@ -2,9 +2,9 @@ export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
+import { generateReservationReference } from "../../../lib/reference";
 import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
-import { generateReference } from '../../../lib/reference';
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -36,12 +36,31 @@ function getDayKey(dateString) {
   return DAY_KEYS_BY_INDEX[dayIndex] || null;
 }
 
+function formatDateOnly(dateValue) {
+  if (!dateValue) return null;
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function serializeReservation(reservation) {
+  return {
+    ...reservation,
+    date: formatDateOnly(reservation.date),
+    createdAt: reservation.createdAt?.toISOString?.(),
+  };
+}
+
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
-    return success({ reservations });
+    return success({ reservations: reservations.map(serializeReservation) });
   } catch (error) {
+    console.error('Reservations GET error:', error);
     return handleApiError(error);
   }
 }
@@ -49,7 +68,12 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const parsed = createSchema.safeParse({ ...body, guests: Number(body.guests) });
+    const parsed = createSchema.safeParse({
+      ...body,
+      guests: Number(body.guests),
+      email: body.email?.trim() || null,
+    });
+
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
 
     const settings = await getRestaurantSettings();
@@ -72,6 +96,7 @@ export async function POST(request) {
     if (daySettings.closed) {
       return failure('Restaurant is closed on the selected day', 400);
     }
+
     const reservationMinutes = timeToMinutes(parsed.data.time);
     const openingMinutes = timeToMinutes(daySettings.openingTime ?? settings.openingTime);
     const closingMinutes = timeToMinutes(daySettings.closingTime ?? settings.closingTime);
@@ -86,12 +111,32 @@ export async function POST(request) {
       return failure('Restaurant is closed at this time', 400);
     }
 
-    const reference = generateReference();
+    const reservationDate = new Date(`${parsed.data.date}T${parsed.data.time}:00+04:00`);
+
+    if (Number.isNaN(reservationDate.getTime())) {
+      return failure('Invalid reservation date or time', 400);
+    }
+
+    const reference = generateReservationReference();
+
     const reservation = await prisma.reservation.create({
-      data: { ...parsed.data, reference },
+      data: {
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        email: parsed.data.email,
+        date: reservationDate,
+        time: parsed.data.time,
+        guests: parsed.data.guests,
+        specialRequests: parsed.data.specialRequests,
+        reference,
+      },
     });
-    return success({ reservation, reference });
+
+    const serializedReservation = serializeReservation(reservation);
+
+    return success({ reservation: serializedReservation, reference });
   } catch (error) {
+    console.error('Reservations POST error:', error);
     return failure('Unable to create reservation', 500);
   }
 }
@@ -103,8 +148,11 @@ export async function PUT(request) {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return failure('Invalid reservation update', 400, { details: parsed.error.flatten() });
 
-    const reservation = await prisma.reservation.update({ where: { id: parsed.data.id }, data: { status: parsed.data.status } });
-    return success({ reservation });
+    const reservation = await prisma.reservation.update({
+      where: { id: parsed.data.id },
+      data: { status: parsed.data.status },
+    });
+    return success({ reservation: serializeReservation(reservation) });
   } catch (error) {
     return handleApiError(error);
   }

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import MenuItemImage from './MenuItemImage';
 
 export default function MenuClient({ categories }) {
   const [active, setActive] = useState('all');
@@ -43,7 +44,12 @@ export default function MenuClient({ categories }) {
             key={item.id}
             className="section-bg flex h-full flex-col justify-between rounded-2xl p-3 sm:p-4 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lifted"
           >
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <MenuItemImage
+                src={item.imageUrl}
+                alt={item.name}
+                className="w-full"
+              />
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
                   <h3 className="font-semibold text-base md:text-lg text-secondary">{item.name}</h3>

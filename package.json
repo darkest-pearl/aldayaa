@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "node": ">=18 <=22"
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "prisma": "prisma",
@@ -17,11 +17,8 @@
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed"
   },
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
   "dependencies": {
-    "@prisma/client": "5.17.0",
+    "@prisma/client": "^6.19.1",
     "autoprefixer": "10.4.20",
     "bcryptjs": "2.4.3",
     "clsx": "^2.1.1",
@@ -29,12 +26,18 @@
     "framer-motion": "11.3.24",
     "jsonwebtoken": "9.0.2",
     "next": "14.2.5",
+    "pg": "^8.16.3",
     "postcss": "8.4.41",
-    "prisma": "5.17.0",
+    "prisma": "^6.19.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tailwindcss": "3.4.9",
     "uuid": "9.0.1",
+    "ws": "^8.18.3",
     "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "cross-env": "^10.1.0"
   }
 }

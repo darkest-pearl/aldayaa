@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { prisma } from "./prisma";
 
 /** Ordered list of valid week days for working hours. */

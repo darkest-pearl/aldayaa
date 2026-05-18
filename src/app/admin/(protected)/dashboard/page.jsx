@@ -1,26 +1,59 @@
+export const dynamic = "force-dynamic";
+
 // src/app/admin/(protected)/dashboard/page.jsx
 import { prisma } from '../../../../lib/prisma';
 import DashboardClient from './DashboardClient.jsx';
-
-export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Admin Dashboard',
 };
 
+function getDubaiDayRange() {
+  const now = new Date();
+
+  // Dubai is UTC+4
+  const dubaiOffsetMs = 4 * 60 * 60 * 1000;
+
+  // Convert "now" to Dubai time
+  const dubaiNow = new Date(now.getTime() + dubaiOffsetMs);
+
+  // Start of Dubai day
+  const dubaiStart = new Date(dubaiNow);
+  dubaiStart.setHours(0, 0, 0, 0);
+
+  // End of Dubai day
+  const dubaiEnd = new Date(dubaiNow);
+  dubaiEnd.setHours(23, 59, 59, 999);
+
+  // Convert back to UTC for database comparison
+  const startUtc = new Date(dubaiStart.getTime() - dubaiOffsetMs);
+  const endUtc = new Date(dubaiEnd.getTime() - dubaiOffsetMs);
+
+  return { startUtc, endUtc };
+}
+
+
 async function getStats() {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const { startUtc, endUtc } = getDubaiDayRange();
 
   const [reservationsToday, ordersToday, menuCount, photoCount] = await Promise.all([
     prisma.reservation.count({
-      where: { date: new Date().toISOString().slice(0, 10) },
+      where: {
+        date: {
+          gte: startUtc,
+          lte: endUtc,
+        },
+      },
     }),
     prisma.order.count({
       where: {
-        createdAt: { gte: startOfToday },
+        createdAt: {
+          gte: startUtc,
+          lte: endUtc,
+        },
       },
     }),
+
     prisma.menuItem.count(),
     prisma.photo.count(),
   ]);
@@ -47,7 +80,7 @@ async function getStats() {
       id: r.id,
       name: r.name,
       phone: r.phone,
-      date: r.date,
+      date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
       time: r.time,
       status: r.status,
     })),
