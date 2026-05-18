@@ -4,6 +4,7 @@ import { prisma } from '../../../lib/prisma';
 import { requireAdmin } from '../../../lib/auth';
 import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
+import { generateReference } from '../../../lib/reference';
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -15,7 +16,8 @@ const createSchema = z.object({
   specialRequests: z.string().optional().nullable(),
 });
 
-const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
+const RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
+const updateSchema = z.object({ id: z.string().min(3), status: z.enum(RESERVATION_STATUSES) });
 const deleteSchema = z.object({ id: z.string().min(3) });
 
 function timeToMinutes(time) {
@@ -84,8 +86,11 @@ export async function POST(request) {
       return failure('Restaurant is closed at this time', 400);
     }
 
-    const reservation = await prisma.reservation.create({ data: parsed.data });
-    return success({ reservation });
+    const reference = generateReference();
+    const reservation = await prisma.reservation.create({
+      data: { ...parsed.data, reference },
+    });
+    return success({ reservation, reference });
   } catch (error) {
     return failure('Unable to create reservation', 500);
   }

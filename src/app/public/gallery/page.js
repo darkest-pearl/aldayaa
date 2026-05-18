@@ -2,6 +2,8 @@ import Section from '../../../components/Section';
 import GalleryClient from '../../../components/GalleryClient';
 import { prisma } from '../../../lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = { title: 'Gallery | Al Dayaa Al Shamiah' };
 
 async function getGallery() {

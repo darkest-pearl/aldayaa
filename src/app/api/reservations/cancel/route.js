@@ -4,8 +4,8 @@ import { prisma } from '../../../../lib/prisma';
 import { success, failure } from '../../../../lib/api-response';
 
 const cancelSchema = z.object({
-  reference: z.string().min(3),
-  phone: z.string().optional(),
+  reference: z.string().trim().min(3),
+  phone: z.string().trim().min(4),
 });
 
 function parseReservationDateTime(date, time) {
@@ -20,16 +20,16 @@ export async function POST(request) {
     const parsed = cancelSchema.safeParse(body);
 
     if (!parsed.success) {
-      return failure('Invalid reservation reference', 400);
+      return failure('Reservation reference and phone number are required', 400);
     }
 
     const { reference, phone } = parsed.data;
 
-    const reservation = await prisma.reservation.findUnique({ where: { id: reference } });
+    const reservation = await prisma.reservation.findUnique({ where: { reference } });
 
     if (!reservation) return failure('Reservation not found', 404);
 
-    if (phone && reservation.phone !== phone) {
+    if (reservation.phone !== phone) {
       return failure('Phone number does not match reservation', 400);
     }
 

@@ -94,7 +94,7 @@ export default function ReservationsClient() {
     return (reservations || []).filter((r) => {
       const q = search.toLowerCase().trim();
       if (q) {
-        const haystack = [r.name, r.phone, r.email, r.specialRequests]
+        const haystack = [r.reference, r.name, r.phone, r.email, r.specialRequests]
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
@@ -231,6 +231,7 @@ export default function ReservationsClient() {
           columns={[
             { key: 'date', header: 'Date' },
             { key: 'time', header: 'Time' },
+            { key: 'reference', header: 'Reference' },
             { key: 'name', header: 'Guest' },
             { key: 'phone', header: 'Phone' },
             { key: 'guests', header: 'Guests' },

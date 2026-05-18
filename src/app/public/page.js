@@ -1,6 +1,8 @@
 import HomeClient from './HomeClient';
 import { prisma } from '../../lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 async function getSignatureDishes() {
   const dishes = await prisma.menuItem.findMany({
     where: { isSignature: true },

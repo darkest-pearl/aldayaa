@@ -56,6 +56,7 @@ model Photo {
 
 model Reservation {
   id              String   @id @default(cuid())
+  reference       String   @unique
   name            String
   phone           String
   email           String?
@@ -68,19 +69,19 @@ model Reservation {
 }
 
 model Order {
-  id           String      @id @default(cuid())
-  reference    String      @unique
-  name         String
-  phone        String
-  deliveryType String
-  address      String?
-  notes        String?
-  totalPrice   Float
-  status       String      @default("NEW")
-  paidOnline   Boolean     @default(false)
-  notifyWhenReady Boolean  @default(false)
-  createdAt    DateTime    @default(now())
-  items        OrderItem[]
+  id              String      @id @default(cuid())
+  reference       String      @unique
+  name            String
+  phone           String
+  deliveryType    String
+  address         String?
+  notes           String?
+  totalPrice      Float
+  status          String      @default("NEW")
+  paidOnline      Boolean     @default(false)
+  notifyWhenReady Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
 }
 
 model OrderItem {

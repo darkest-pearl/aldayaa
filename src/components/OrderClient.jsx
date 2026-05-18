@@ -88,7 +88,7 @@ export default function OrderClient({ categories }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          items: cart,
+          items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
           paidOnline: false,
         }),
       });

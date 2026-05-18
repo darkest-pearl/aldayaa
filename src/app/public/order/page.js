@@ -2,6 +2,8 @@ import Section from '../../../components/Section';
 import OrderClient from '../../../components/OrderClient';
 import { prisma } from '../../../lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Order Online | Al Dayaa Al Shamiah'
 };

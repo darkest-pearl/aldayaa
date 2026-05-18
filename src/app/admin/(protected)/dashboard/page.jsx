@@ -2,6 +2,8 @@
 import { prisma } from '../../../../lib/prisma';
 import DashboardClient from './DashboardClient.jsx';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Admin Dashboard',
 };

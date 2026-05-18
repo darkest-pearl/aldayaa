@@ -97,10 +97,7 @@ export default function MenuClient() {
 
   const deleteCategory = async (id) => {
     try {
-      await apiRequest('/api/menu/categories', {
-        method: 'DELETE',
-        body: JSON.stringify({ id }),
-      });
+      await apiRequest(`/api/menu/categories/${id}`, { method: 'DELETE' });
       await load();
     } catch (err) {
       setError(err.message);
