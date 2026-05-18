@@ -5,11 +5,40 @@ import { prisma } from "./prisma";
 /** @typedef {import("@prisma/client").AdminUser} AdminUser */
 
 /** Cookie name for admin sessions. */
-const COOKIE_NAME = "aldayaa_admin";
-/** Secret used for signing JWTs. */
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "aldayaa-secret";
+export const COOKIE_NAME = "aldayaa_admin";
 /** Token expiry duration. */
 const TOKEN_EXPIRY = "7d";
+const DEVELOPMENT_JWT_SECRET = "development-only-aldayaa-secret";
+
+/**
+ * Resolve the JWT signing secret safely.
+ * Production must provide ADMIN_JWT_SECRET; development gets an explicit non-production fallback.
+ * @returns {string}
+ */
+function getJwtSecret() {
+  const secret = process.env.ADMIN_JWT_SECRET;
+  if (secret && secret.length >= 32) return secret;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new AuthError(
+      "ADMIN_JWT_SECRET must be configured in production and should be at least 32 characters long",
+      500,
+      "MISSING_JWT_SECRET",
+    );
+  }
+
+  if (secret && secret.length < 32) {
+    console.warn("ADMIN_JWT_SECRET is shorter than recommended; using development fallback outside production.");
+  }
+
+  return DEVELOPMENT_JWT_SECRET;
+}
+
+function getCookieDomain() {
+  return process.env.NODE_ENV === "production" && process.env.COOKIE_DOMAIN
+    ? process.env.COOKIE_DOMAIN
+    : undefined;
+}
 
 /**
  * Role constants available to admin users.
@@ -47,7 +76,7 @@ export function createToken(admin) {
     throw new AuthError("Invalid admin payload", 400, "INVALID_PAYLOAD");
   }
 
-  return jwt.sign({ id: admin.id, email: admin.email, role: admin.role }, JWT_SECRET, {
+  return jwt.sign({ id: admin.id, email: admin.email, role: admin.role }, getJwtSecret(), {
     expiresIn: TOKEN_EXPIRY,
   });
 }
@@ -66,12 +95,27 @@ export function setSessionCookie(response, admin) {
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
-      domain: process.env.NODE_ENV === "production" ? process.env.COOKIE_DOMAIN : undefined,
+      domain: getCookieDomain(),
     });
   } catch (error) {
     console.error("Failed to set session cookie", error);
     throw error;
   }
+}
+
+/**
+ * Clear the admin session cookie.
+ * @param {import("next/server").NextResponse} response - Response to mutate.
+ */
+export function clearSessionCookie(response) {
+  response.cookies.set(COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+    domain: getCookieDomain(),
+  });
 }
 
 /**
@@ -90,7 +134,9 @@ export async function getAdminFromRequest(request) {
   if (!token) return null;
 
   try {
-    return jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, getJwtSecret());
+    if (!payload?.id || !payload?.email || !payload?.role) return null;
+    return payload;
   } catch (error) {
     console.warn("Invalid admin token", error);
     return null;
