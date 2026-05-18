@@ -4,13 +4,20 @@ import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
 
+const imagePathSchema = z
+  .string()
+  .trim()
+  .refine((value) => value.startsWith('/') || value.startsWith('https://') || value.startsWith('http://'), {
+    message: 'Image must be a local path or a full URL',
+  });
+
 const itemSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional().nullable(),
   price: z.number().min(0),
   categoryId: z.string().min(3),
   isAvailable: z.boolean().optional(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageUrl: imagePathSchema.optional().nullable().or(z.literal('')),
   recommended: z.boolean().optional(),
   isSignature: z.boolean().optional(),
 });
