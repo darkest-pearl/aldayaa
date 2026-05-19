@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import Section from '../../components/Section';
 import Button from '../../components/Button';
+import { FEATURE_KEYS, isFeatureEnabled } from '../../lib/features';
 import { strings } from '../../lib/strings';
 
 const highlights = [
@@ -66,6 +67,9 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
   const [isPaused, setIsPaused] = useState(false);
   const whatsappLink = profile.whatsappLink || strings.whatsappLink;
   const whatsappNumber = profile.whatsappNumber || strings.whatsapp;
+  const contactWhatsappEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.CONTACT_WHATSAPP);
+  const onlineOrderingEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.ONLINE_ORDERING);
+  const reservationsEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.RESERVATIONS);
 
   useEffect(() => {
     const updateItemsPerView = () => {
@@ -161,18 +165,24 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
               Experience Al Dayaa Al Shamiah—where fire-grilled favorites, mezze, and biryani come together in a refined, warm atmosphere.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
-              <Link href="/public/order">
-                <Button className="bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all">
-                  Order Online
-                </Button>
-              </Link>
-              <Link href="/public/reservations">
-                <Button className="border border-white/30 bg-white/10 hover:bg-white/20 text-white rounded-full px-6 py-3 backdrop-blur-sm transition-all">
-                  Reserve a Table
-                </Button>
-              </Link>
-            </div>
+            {(onlineOrderingEnabled || reservationsEnabled) && (
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center md:justify-start">
+                {onlineOrderingEnabled && (
+                  <Link href="/public/order">
+                    <Button className="bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all">
+                      Order Online
+                    </Button>
+                  </Link>
+                )}
+                {reservationsEnabled && (
+                  <Link href="/public/reservations">
+                    <Button className="border border-white/30 bg-white/10 hover:bg-white/20 text-white rounded-full px-6 py-3 backdrop-blur-sm transition-all">
+                      Reserve a Table
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex-1 w-full">
@@ -462,18 +472,24 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
               Order for delivery or book your table in a few taps.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-            <Link href="/public/order" className="w-full sm:w-auto">
-              <Button className="bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded-full w-full px-5 py-3 shadow-md hover:shadow-lg transition-all">
-                Order for Delivery or Pickup
-              </Button>
-            </Link>
-            <Link href="/public/reservations" className="w-full sm:w-auto">
-              <Button className="border border-amber-300 bg-white text-neutral-900 hover:bg-amber-100 rounded-full w-full px-5 py-3 transition-all">
-                Reserve a Table
-              </Button>
-            </Link>
-          </div>
+          {(onlineOrderingEnabled || reservationsEnabled) && (
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              {onlineOrderingEnabled && (
+                <Link href="/public/order" className="w-full sm:w-auto">
+                  <Button className="bg-amber-500 hover:bg-amber-400 text-neutral-950 rounded-full w-full px-5 py-3 shadow-md hover:shadow-lg transition-all">
+                    Order for Delivery or Pickup
+                  </Button>
+                </Link>
+              )}
+              {reservationsEnabled && (
+                <Link href="/public/reservations" className="w-full sm:w-auto">
+                  <Button className="border border-amber-300 bg-white text-neutral-900 hover:bg-amber-100 rounded-full w-full px-5 py-3 transition-all">
+                    Reserve a Table
+                  </Button>
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </Section>
 
@@ -487,13 +503,15 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
                 {strings.hours.weekday} | {strings.hours.friday}
               </p>
             </div>
-            <Link
-              href={whatsappLink}
-              target="_blank"
-              className="bg-amber-500 text-neutral-900 px-4 py-2 rounded-full shadow hover:-translate-y-0.5 transition-transform text-sm md:text-base"
-            >
-              WhatsApp {whatsappNumber}
-            </Link>
+            {contactWhatsappEnabled && (
+              <Link
+                href={whatsappLink}
+                target="_blank"
+                className="bg-amber-500 text-neutral-900 px-4 py-2 rounded-full shadow hover:-translate-y-0.5 transition-transform text-sm md:text-base"
+              >
+                WhatsApp {whatsappNumber}
+              </Link>
+            )}
           </div>
         </Section>
       </div>

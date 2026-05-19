@@ -40,6 +40,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Non-interactive Next.js linting and a focused production-hardening smoke check.
 - Restaurant profile/config foundation for one restaurant profile, with admin API support.
 
+## Feature Modules Foundation
+
+- `src/lib/features.js` defines stable module keys, labels, categories, and helper functions for future package logic.
+- `RestaurantProfile.enabledFeatures` stores enabled module keys as JSON text for the single restaurant profile.
+- This is a foundation for future subscription packages and module gating. It does not add billing, SaaS gateway, inventory, payroll, AI ordering, or tenant logic yet.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
