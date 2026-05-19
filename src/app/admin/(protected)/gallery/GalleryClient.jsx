@@ -85,10 +85,7 @@ export default function GalleryClient() {
 
   const deleteCategory = async (id) => {
     try {
-      await apiRequest('/api/gallery/categories', {
-        method: 'DELETE',
-        body: JSON.stringify({ id }),
-      });
+      await apiRequest(`/api/gallery/categories/${id}`, { method: 'DELETE' });
       await load();
     } catch (err) {
       setError(err.message);
@@ -116,10 +113,7 @@ export default function GalleryClient() {
 
   const deletePhoto = async (id) => {
     try {
-      await apiRequest('/api/gallery/photos', {
-        method: 'DELETE',
-        body: JSON.stringify({ id }),
-      });
+      await apiRequest(`/api/gallery/photos/${id}`, { method: 'DELETE' });
       await load();
     } catch (err) {
       setError(err.message);

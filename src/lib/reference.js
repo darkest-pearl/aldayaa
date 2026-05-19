@@ -57,4 +57,3 @@ export function generateReservationReference() {
 
   return `AD-R-${YY}${MM}${DD}${HH}${mm}${ss}-${ms}${rand}`;
 }
-

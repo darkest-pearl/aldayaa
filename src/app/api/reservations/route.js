@@ -16,8 +16,10 @@ const createSchema = z.object({
   specialRequests: z.string().optional().nullable(),
 });
 
-const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
+const RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
+const updateSchema = z.object({ id: z.string().min(3), status: z.enum(RESERVATION_STATUSES) });
 const deleteSchema = z.object({ id: z.string().min(3) });
+const RESTAURANT_TIME_ZONE = 'Asia/Dubai';
 
 function timeToMinutes(time) {
   const [hours, minutes] = (time || '').split(':').map((v) => Number(v));
@@ -29,32 +31,49 @@ const DAY_KEYS_BY_INDEX = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday
 
 function getDayKey(dateString) {
   if (!dateString) return null;
-  const date = new Date(`${dateString}T00:00:00`);
+  const date = new Date(`${dateString}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return null;
-  const dayIndex = typeof date.getUTCDay === 'function' ? date.getUTCDay() : date.getDay();
+  const dayIndex = date.getUTCDay();
   return DAY_KEYS_BY_INDEX[dayIndex] || null;
 }
 
 function formatDateOnly(dateValue) {
   if (!dateValue) return null;
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
   const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
   if (Number.isNaN(date.getTime())) return null;
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: RESTAURANT_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value;
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
+function serializeReservation(reservation) {
+  return {
+    ...reservation,
+    date: formatDateOnly(reservation.date),
+    createdAt: reservation.createdAt?.toISOString?.(),
+  };
 }
 
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
-    const serializedReservations = reservations.map((reservation) => ({
-      ...reservation,
-      date: formatDateOnly(reservation.date),
-      createdAt: reservation.createdAt?.toISOString?.(),
-    }));
-    return success({ reservations: serializedReservations });
+    return success({ reservations: reservations.map(serializeReservation) });
   } catch (error) {
     console.error('Reservations GET error:', error);
     return handleApiError(error);
@@ -67,7 +86,7 @@ export async function POST(request) {
     const parsed = createSchema.safeParse({
       ...body,
       guests: Number(body.guests),
-      email: body.email?.trim() || null, // ✅ FIX
+      email: body.email?.trim() || null,
     });
 
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
@@ -92,6 +111,7 @@ export async function POST(request) {
     if (daySettings.closed) {
       return failure('Restaurant is closed on the selected day', 400);
     }
+
     const reservationMinutes = timeToMinutes(parsed.data.time);
     const openingMinutes = timeToMinutes(daySettings.openingTime ?? settings.openingTime);
     const closingMinutes = timeToMinutes(daySettings.closingTime ?? settings.closingTime);
@@ -112,30 +132,24 @@ export async function POST(request) {
       return failure('Invalid reservation date or time', 400);
     }
 
-    const { date, ...reservationPayload } = parsed.data;
-
     const reference = generateReservationReference();
 
     const reservation = await prisma.reservation.create({
       data: {
-        ...reservationPayload,
+        name: parsed.data.name,
+        phone: parsed.data.phone,
+        email: parsed.data.email,
         date: reservationDate,
-        reference, // ✅ WRITE IT EXPLICITLY
+        time: parsed.data.time,
+        guests: parsed.data.guests,
+        specialRequests: parsed.data.specialRequests,
+        reference,
       },
     });
 
-    const serializedReservation = {
-      id: reservation.id,
-      name: reservation.name,
-      phone: reservation.phone,
-      date: formatDateOnly(reservation.date),
-      time: reservation.time,
-      status: reservation.status,
-      reference: reservation.reference, // ✅ ADD THIS
-      createdAt: reservation.createdAt?.toISOString(),
-    };
+    const serializedReservation = serializeReservation(reservation);
 
-    return success({ reservation: serializedReservation });
+    return success({ reservation: serializedReservation, reference });
   } catch (error) {
     console.error('Reservations POST error:', error);
     return failure('Unable to create reservation', 500);
@@ -149,8 +163,11 @@ export async function PUT(request) {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return failure('Invalid reservation update', 400, { details: parsed.error.flatten() });
 
-    const reservation = await prisma.reservation.update({ where: { id: parsed.data.id }, data: { status: parsed.data.status } });
-    return success({ reservation });
+    const reservation = await prisma.reservation.update({
+      where: { id: parsed.data.id },
+      data: { status: parsed.data.status },
+    });
+    return success({ reservation: serializeReservation(reservation) });
   } catch (error) {
     return handleApiError(error);
   }

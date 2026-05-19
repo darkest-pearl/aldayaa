@@ -35,7 +35,7 @@ function getDubaiDayRange() {
 
 async function getStats() {
   const { startUtc, endUtc } = getDubaiDayRange();
-  
+
   const [reservationsToday, ordersToday, menuCount, photoCount] = await Promise.all([
     prisma.reservation.count({
       where: {

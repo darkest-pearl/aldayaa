@@ -150,7 +150,7 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
       setAnnouncementFetching(false);
     }
   };
-  
+
   useEffect(() => {
     if (initialSettings) return;
     load();
@@ -215,7 +215,7 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
       setAnnouncementLoading(false);
     }
   };
-  
+
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
@@ -223,7 +223,7 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
   const handleAnnouncementChange = (key, value) => {
     setAnnouncementForm((prev) => ({ ...prev, [key]: value }));
   };
-  
+
   const handleDisplayHoursChange = (key, value) => {
     setForm((prev) => ({
       ...prev,
@@ -419,7 +419,7 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
           </div>
         </AdminForm>
       </AdminCard>
-    
+
     <AdminCard
         title="Announcement banner"
         description="Display a short notice at the top of public pages."

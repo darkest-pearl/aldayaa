@@ -25,11 +25,14 @@ model MenuItem {
   isAvailable Boolean      @default(true)
   imageUrl    String?
   recommended Boolean      @default(false)
+  isSignature Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   categoryId  String
   category    MenuCategory @relation(fields: [categoryId], references: [id])
   orders      OrderItem[]
+
+  @@index([isSignature])
 }
 
 model GalleryCategory {
@@ -77,7 +80,7 @@ model Order {
   createdAt       DateTime    @default(now())
   notifyWhenReady Boolean     @default(false)
   paidOnline      Boolean     @default(false)
-  reference       String      @unique @default("")
+  reference       String      @unique
   items           OrderItem[]
 }
 

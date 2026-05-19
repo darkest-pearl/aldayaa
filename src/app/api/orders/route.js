@@ -7,10 +7,8 @@ import { generateReference } from "../../../lib/reference";
 import { sendWhatsAppMessage } from "../../../lib/whatsapp";
 
 const itemSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
-  quantity: z.number().int().min(1),
+  id: z.string().min(1),
+  quantity: z.coerce.number().int().min(1).max(99),
 });
 
 const orderSchema = z.object({
@@ -24,7 +22,8 @@ const orderSchema = z.object({
   notifyWhenReady: z.boolean().optional(),
 });
 
-const updateSchema = z.object({ id: z.string().min(3), status: z.string() });
+const ORDER_STATUSES = ['NEW', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+const updateSchema = z.object({ id: z.string().min(3), status: z.enum(ORDER_STATUSES) });
 const deleteSchema = z.object({ id: z.string().min(3) });
 
 /* ----------------------------- GET (Admin Only) ----------------------------- */
@@ -67,15 +66,40 @@ export async function POST(request) {
     // validate incoming data
     const parsed = orderSchema.safeParse({
       ...body,
-      items: (body.items || []).map((i) => ({ ...i, price: Number(i.price) })),
       notifyWhenReady,
     });
     if (!parsed.success) {
       return failure("Invalid order data", 400, { details: parsed.error.flatten() });
     }
 
-    // compute total
-    const totalPrice = parsed.data.items.reduce(
+    const itemIds = [...new Set(parsed.data.items.map((item) => item.id))];
+    const menuItems = await prisma.menuItem.findMany({
+      where: { id: { in: itemIds } },
+      select: { id: true, name: true, price: true, isAvailable: true },
+    });
+    const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
+    const missingItem = parsed.data.items.find((item) => !menuItemsById.has(item.id));
+    if (missingItem) {
+      return failure("One or more menu items are no longer available", 400);
+    }
+
+    const unavailableItem = parsed.data.items.find((item) => !menuItemsById.get(item.id)?.isAvailable);
+    if (unavailableItem) {
+      return failure("One or more menu items are no longer available", 400);
+    }
+
+    const orderItems = parsed.data.items.map((item) => {
+      const menuItem = menuItemsById.get(item.id);
+      return {
+        itemId: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        quantity: item.quantity,
+        menuItemId: menuItem.id,
+      };
+    });
+
+    const totalPrice = orderItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
@@ -99,12 +123,7 @@ export async function POST(request) {
         notifyWhenReady,
         totalPrice,
         items: {
-          create: parsed.data.items.map((item) => ({
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            menuItemId: item.id,
-          })),
+          create: orderItems,
         },
       },
       include: { items: true },

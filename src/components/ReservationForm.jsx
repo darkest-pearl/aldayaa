@@ -17,7 +17,7 @@ export default function ReservationForm() {
 
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [reservationReference, setReservationReference] = useState(null)
+  const [reservationReference, setReservationReference] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelForm, setCancelForm] = useState({ reference: "", phone: "" });
   const [cancelStatus, setCancelStatus] = useState(null);
@@ -43,17 +43,18 @@ export default function ReservationForm() {
     });
 
     const data = await res.json();
-    console.log("API response:", data);
-
     setLoading(false);
 
     if (data.success) {
-      setReservationReference(data.data.reservation.reference);
+      const reference = data.data?.reference || data.data?.reservation?.reference;
+      setReservationReference(reference || null);
 
       setStatus({
         type: "success",
         message:
-          "Reservation received! Please save your reference number in case you need to cancel.",
+          reference
+            ? `Reservation received! Your reference is ${reference}. We will confirm shortly.`
+            : "Reservation received! We will confirm shortly.",
       });
 
       setForm({
@@ -76,10 +77,10 @@ export default function ReservationForm() {
   const submitCancellation = async (e) => {
     e.preventDefault();
     setCancelStatus(null);
-    if (!cancelForm.reference.trim()) {
+    if (!cancelForm.reference.trim() || !cancelForm.phone.trim()) {
       setCancelStatus({
         type: "error",
-        message: "Please enter your reservation reference.",
+        message: "Please enter your reservation reference and phone number.",
       });
       return;
     }
@@ -91,7 +92,7 @@ export default function ReservationForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           reference: cancelForm.reference.trim(),
-          phone: cancelForm.phone.trim() || undefined,
+          phone: cancelForm.phone.trim(),
         }),
       });
       const data = await res.json();
@@ -314,7 +315,7 @@ export default function ReservationForm() {
             <div className="space-y-1 mb-4">
               <h2 className="text-lg md:text-xl font-semibold text-secondary">Cancel your reservation</h2>
               <p className="text-sm text-neutral-600">
-                Enter your reservation reference below to request a cancellation.
+                Enter your reservation reference and phone number below to request a cancellation.
               </p>
             </div>
             <form className="space-y-4" onSubmit={submitCancellation}>
@@ -331,7 +332,7 @@ export default function ReservationForm() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-secondary">Phone number (optional)</label>
+                <label className="text-sm font-semibold text-secondary">Phone number</label>
                 <input
                   className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
                   placeholder="Used for verification"
@@ -339,6 +340,7 @@ export default function ReservationForm() {
                   onChange={(e) =>
                     setCancelForm({ ...cancelForm, phone: e.target.value })
                   }
+                  required
                 />
               </div>
               <div className="flex gap-3">
