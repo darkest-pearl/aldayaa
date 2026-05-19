@@ -138,6 +138,22 @@ model RestaurantProfile {
   updatedAt          DateTime @updatedAt
 }
 
+model RestaurantTable {
+  id        String   @id @default(cuid())
+  label     String
+  slug      String   @unique
+  qrToken   String   @unique
+  seats     Int?
+  zone      String?
+  isActive  Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([zone])
+}
+
 model Announcement {
   id        String   @id @default(cuid())
   message   String

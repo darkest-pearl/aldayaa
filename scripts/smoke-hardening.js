@@ -155,6 +155,34 @@ function checkFeatureModulesFoundation() {
   assertIncludes(header, 'visibleNavLinks', 'Header feature-filtered nav links');
 }
 
+function checkQrTableOrderingFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const features = read('src/lib/features.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const adminTablesClient = read('src/app/admin/(protected)/tables/TablesClient.jsx');
+  const publicTablePage = read('src/app/public/table/[slug]/page.js');
+  const orderPage = read('src/app/public/order/page.js');
+
+  assertIncludes(schema, 'model RestaurantTable', 'RestaurantTable Prisma model');
+  assertIncludes(schema, 'slug      String   @unique', 'RestaurantTable unique slug');
+  assertIncludes(schema, 'qrToken   String   @unique', 'RestaurantTable unique QR token');
+  assertIncludes(features, 'TABLE_QR_ORDERING', 'TABLE_QR_ORDERING feature key');
+  assert(fs.existsSync(path.join(root, 'src/app/api/admin/tables/route.js')), 'Admin table collection API route is missing');
+  assert(fs.existsSync(path.join(root, 'src/app/api/admin/tables/[id]/route.js')), 'Admin table item API route is missing');
+  assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/tables/page.jsx')), 'Admin tables page is missing');
+  assert(fs.existsSync(path.join(root, 'src/app/public/table/[slug]/page.js')), 'Public table landing route is missing');
+  assertIncludes(adminTablesClient, '/api/admin/tables', 'Admin tables UI API usage');
+  assertIncludes(adminTablesClient, "['ADMIN', 'MANAGER']", 'Admin tables manage role guard');
+  assertIncludes(adminShell, "'/admin/tables'", 'Admin tables navigation');
+  assertIncludes(publicTablePage, 'FEATURE_KEYS.TABLE_QR_ORDERING', 'Public table feature flag check');
+  assertIncludes(publicTablePage, 'searchParams = {}', 'Public table token query awareness');
+  assertIncludes(publicTablePage, 'searchParams.token', 'Public table token read');
+  assertIncludes(publicTablePage, 'tableRecord.qrToken !== token', 'Public table token validation');
+  assertIncludes(publicTablePage, '/public/order?table=', 'Public table handoff URL');
+  assertIncludes(orderPage, 'searchParams = {}', 'Order page table query awareness');
+  assertIncludes(orderPage, 'Ordering for', 'Order page table notice');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -163,6 +191,7 @@ const checks = [
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,
+  checkQrTableOrderingFoundation,
 ];
 
 for (const check of checks) {
