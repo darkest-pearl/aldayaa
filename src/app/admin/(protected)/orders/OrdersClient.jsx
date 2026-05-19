@@ -36,6 +36,7 @@ export default function OrdersClient() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [contextFilter, setContextFilter] = useState('ALL');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -97,6 +98,9 @@ export default function OrdersClient() {
           o.name,
           o.phone,
           o.deliveryType,
+          o.orderContext,
+          o.tableLabel,
+          o.tableSlug,
           o.address,
           o.notes,
           o.id,
@@ -109,6 +113,7 @@ export default function OrdersClient() {
 
       if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
       if (typeFilter !== 'ALL' && o.deliveryType !== typeFilter) return false;
+      if (contextFilter !== 'ALL' && (o.orderContext || 'STANDARD') !== contextFilter) return false;
 
       if (fromDate || toDate) {
         const createdAtTime = o.createdAt ? new Date(o.createdAt).getTime() : null;
@@ -129,7 +134,7 @@ export default function OrdersClient() {
       
       return true;
     });
-  }, [orders, search, statusFilter, typeFilter, fromDate, toDate]);
+  }, [orders, search, statusFilter, typeFilter, contextFilter, fromDate, toDate]);
 
   return (
     <div className="space-y-6">
@@ -145,7 +150,7 @@ export default function OrdersClient() {
       )}
 
       <AdminCard title="Filters">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <div className="space-y-1">
             <label className="text-xs font-semibold text-neutral-700">
               Search
@@ -187,6 +192,21 @@ export default function OrdersClient() {
               <option value="ALL">All</option>
               <option value="DELIVERY">Delivery</option>
               <option value="PICKUP">Pickup</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-neutral-700">
+              Context
+            </label>
+            <select
+              className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+              value={contextFilter}
+              onChange={(e) => setContextFilter(e.target.value)}
+            >
+              <option value="ALL">All</option>
+              <option value="STANDARD">Standard</option>
+              <option value="TABLE">Table</option>
             </select>
           </div>
 
@@ -244,6 +264,27 @@ export default function OrdersClient() {
               },
               { key: 'phone', header: 'Phone' },
               { key: 'deliveryType', header: 'Type' },
+              {
+                key: 'orderContext',
+                header: 'Context',
+                render: (_val, order) => {
+                  const context = order.orderContext || 'STANDARD';
+                  const tableLabel = order.tableLabel || order.table?.label || order.tableSlug;
+
+                  return (
+                    <div>
+                      <span className="font-semibold text-neutral-800">
+                        {context === 'TABLE' ? 'Table' : 'Standard'}
+                      </span>
+                      {context === 'TABLE' && tableLabel && (
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {tableLabel}
+                        </p>
+                      )}
+                    </div>
+                  );
+                },
+              },
               { key: 'totalPrice', header: 'Total (AED)' },
               {
                 key: 'status',

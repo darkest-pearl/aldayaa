@@ -17,12 +17,12 @@ async function getMenu() {
   });
 }
 
-async function getActiveTable(slug) {
-  if (!process.env.DATABASE_URL || !slug) return null;
+async function getActiveTable(slug, tableToken) {
+  if (!process.env.DATABASE_URL || !slug || !tableToken) return null;
 
   try {
     return prisma.restaurantTable.findFirst({
-      where: { slug, isActive: true },
+      where: { slug, qrToken: tableToken, isActive: true },
     });
   } catch (error) {
     console.error('Failed to load restaurant table for order page', error);
@@ -32,14 +32,25 @@ async function getActiveTable(slug) {
 
 export default async function OrderPage({ searchParams = {} }) {
   const tableSlug = typeof searchParams.table === 'string' ? searchParams.table : '';
+  const tableToken = typeof searchParams.tableToken === 'string' ? searchParams.tableToken : '';
   const [menu, profileRecord] = await Promise.all([
     getMenu(),
     getRestaurantProfile(),
   ]);
   const profile = toPublicRestaurantProfile(profileRecord);
   const tableOrderingEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.TABLE_QR_ORDERING);
-  const tableRecord = tableOrderingEnabled && tableSlug ? await getActiveTable(tableSlug) : null;
-  const table = tableRecord ? normalizeTable(tableRecord) : null;
+  const tableRecord = tableOrderingEnabled && tableSlug && tableToken
+    ? await getActiveTable(tableSlug, tableToken)
+    : null;
+  const normalizedTable = tableRecord ? normalizeTable(tableRecord) : null;
+  const table = normalizedTable
+    ? {
+        label: normalizedTable.label,
+        slug: normalizedTable.slug,
+        zone: normalizedTable.zone,
+        tableToken,
+      }
+    : null;
   const categories = JSON.parse(JSON.stringify(menu));
 
   return (
@@ -59,7 +70,7 @@ export default async function OrderPage({ searchParams = {} }) {
         </div>
       )}
 
-      <OrderClient categories={categories} />
+      <OrderClient categories={categories} table={table} />
     </Section>
   );
 }

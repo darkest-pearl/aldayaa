@@ -179,8 +179,43 @@ function checkQrTableOrderingFoundation() {
   assertIncludes(publicTablePage, 'searchParams.token', 'Public table token read');
   assertIncludes(publicTablePage, 'tableRecord.qrToken !== token', 'Public table token validation');
   assertIncludes(publicTablePage, '/public/order?table=', 'Public table handoff URL');
+  assertIncludes(publicTablePage, 'tableToken=', 'Public table token handoff URL');
   assertIncludes(orderPage, 'searchParams = {}', 'Order page table query awareness');
   assertIncludes(orderPage, 'Ordering for', 'Order page table notice');
+}
+
+function checkTableOrderContextFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const orderPage = read('src/app/public/order/page.js');
+  const orderClient = read('src/components/OrderClient.jsx');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+
+  assertIncludes(schema, 'tableId', 'Order tableId field');
+  assertIncludes(schema, 'tableLabel', 'Order tableLabel field');
+  assertIncludes(schema, 'tableSlug', 'Order tableSlug field');
+  assertIncludes(schema, 'orderContext', 'Order orderContext field');
+  assert(/table\s+RestaurantTable\?/.test(schema), 'Order RestaurantTable relation missing');
+  assert(/orders\s+Order\[\]/.test(schema), 'RestaurantTable orders relation missing');
+  assertIncludes(orderRoute, 'tableSlug: z.string().trim()', 'Order POST tableSlug validation');
+  assertIncludes(orderRoute, 'table: z.string().trim()', 'Order POST table alias validation');
+  assertIncludes(orderRoute, 'tableToken: z.string().trim()', 'Order POST tableToken validation');
+  assertIncludes(orderRoute, 'FEATURE_KEYS.TABLE_QR_ORDERING', 'Order POST table feature flag check');
+  assertIncludes(orderRoute, 'prisma.restaurantTable.findFirst', 'Order POST RestaurantTable lookup');
+  assertIncludes(orderRoute, 'qrToken: requestedTableToken', 'Order POST RestaurantTable token lookup');
+  assertIncludes(orderRoute, 'if (!requestedTableToken)', 'Order POST table token required');
+  assertIncludes(orderRoute, "orderContext: tableContext ? 'TABLE' : 'STANDARD'", 'Order context persistence');
+  assertIncludes(orderRoute, 'tableLabel: tableContext?.label', 'Order table label snapshot');
+  assertIncludes(orderRoute, 'include: { items: true, table: true }', 'Orders API table relation output');
+  assertIncludes(orderPage, 'searchParams.tableToken', 'Public order page reads tableToken');
+  assertIncludes(orderPage, 'qrToken: tableToken', 'Public order page validates table token');
+  assertIncludes(orderPage, 'table={table}', 'Public order page passes table context');
+  assertIncludes(orderClient, 'table = null', 'OrderClient table prop fallback');
+  assertIncludes(orderClient, 'tableSlug: table?.slug', 'OrderClient submits table slug');
+  assertIncludes(orderClient, 'tableToken: table?.tableToken', 'OrderClient submits table token');
+  assertIncludes(ordersClient, 'contextFilter', 'Admin orders context filter');
+  assertIncludes(ordersClient, 'order.orderContext', 'Admin orders context display');
+  assertIncludes(ordersClient, 'order.tableLabel', 'Admin orders table label display');
 }
 
 const checks = [
@@ -192,6 +227,7 @@ const checks = [
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,
   checkQrTableOrderingFoundation,
+  checkTableOrderContextFoundation,
 ];
 
 for (const check of checks) {
