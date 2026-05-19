@@ -72,7 +72,7 @@ export default async function PublicTablePage({ params, searchParams = {} }) {
   }
 
   const table = normalizeTable(tableRecord);
-  const orderHref = `/public/order?table=${encodeURIComponent(table.slug)}`;
+  const orderHref = `/public/order?table=${encodeURIComponent(table.slug)}&tableToken=${encodeURIComponent(token)}`;
 
   return (
     <Section className="max-w-2xl space-y-6 text-center">

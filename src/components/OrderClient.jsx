@@ -90,6 +90,7 @@ export default function OrderClient({ categories, table = null }) {
         body: JSON.stringify({
           ...form,
           tableSlug: table?.slug,
+          tableToken: table?.tableToken,
           items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
           paidOnline: false,
         }),

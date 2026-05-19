@@ -24,6 +24,7 @@ const orderSchema = z.object({
   notifyWhenReady: z.boolean().optional(),
   tableSlug: z.string().trim().min(1).max(80).optional().nullable(),
   table: z.string().trim().min(1).max(80).optional().nullable(),
+  tableToken: z.string().trim().min(8).max(200).optional().nullable(),
 });
 
 const ORDER_STATUSES = ['NEW', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
@@ -33,6 +34,10 @@ const deleteSchema = z.object({ id: z.string().min(3) });
 function getRequestedTableSlug(orderData) {
   const rawSlug = orderData.tableSlug || orderData.table || '';
   return typeof rawSlug === 'string' ? rawSlug.trim() : '';
+}
+
+function getRequestedTableToken(orderData) {
+  return typeof orderData.tableToken === 'string' ? orderData.tableToken.trim() : '';
 }
 
 /* ----------------------------- GET (Admin Only) ----------------------------- */
@@ -82,16 +87,21 @@ export async function POST(request) {
     }
 
     const requestedTableSlug = getRequestedTableSlug(parsed.data);
+    const requestedTableToken = getRequestedTableToken(parsed.data);
     let tableContext = null;
 
     if (requestedTableSlug) {
+      if (!requestedTableToken) {
+        return failure('Table ordering is not available for this table', 400);
+      }
+
       const profile = await getRestaurantProfile();
       if (!isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.TABLE_QR_ORDERING)) {
         return failure('Table ordering is not available', 400);
       }
 
       tableContext = await prisma.restaurantTable.findFirst({
-        where: { slug: requestedTableSlug, isActive: true },
+        where: { slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true },
         select: { id: true, label: true, slug: true },
       });
 
