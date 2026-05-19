@@ -46,6 +46,13 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - `RestaurantProfile.enabledFeatures` stores enabled module keys as JSON text for the single restaurant profile.
 - This is a foundation for future subscription packages and module gating. It does not add billing, SaaS gateway, inventory, payroll, AI ordering, or tenant logic yet.
 
+## QR/Table Ordering Foundation
+
+- `RestaurantTable` supports QR-ready table labels, slugs, tokens, zones, seats, active status, and notes.
+- Admin users can manage tables under `/admin/tables`; SUPPORT users can view links in read-only mode.
+- Public QR links use `/public/table/[slug]` and hand off to `/public/order?table=...`.
+- This is a foundation only. It does not add full waiter-assisted ordering, POS behavior, payments, inventory, or dine-in order records yet.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
