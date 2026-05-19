@@ -8,17 +8,42 @@ const cancelSchema = z.object({
   phone: z.string().trim().min(4),
 });
 
+const RESTAURANT_TIME_ZONE = 'Asia/Dubai';
+
+function formatDubaiDateOnly(dateValue) {
+  if (!dateValue) return null;
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: RESTAURANT_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value;
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
 function parseReservationDateTime(date, time) {
   if (!date || !time) return null;
-  const baseDate = date instanceof Date ? new Date(date) : new Date(`${date}T00:00:00`);
-  if (Number.isNaN(baseDate.getTime())) return null;
+  const dateOnly = formatDubaiDateOnly(date);
+  if (!dateOnly) return null;
 
   const [hours, minutes] = `${time}`.split(':').map((value) => Number(value));
   if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
 
-  baseDate.setHours(hours, minutes, 0, 0);
-
-  return Number.isNaN(baseDate.getTime()) ? null : baseDate;
+  const reservationDateTime = new Date(`${dateOnly}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00+04:00`);
+  return Number.isNaN(reservationDateTime.getTime()) ? null : reservationDateTime;
 }
 
 export async function POST(request) {

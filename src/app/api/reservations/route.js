@@ -19,6 +19,7 @@ const createSchema = z.object({
 const RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
 const updateSchema = z.object({ id: z.string().min(3), status: z.enum(RESERVATION_STATUSES) });
 const deleteSchema = z.object({ id: z.string().min(3) });
+const RESTAURANT_TIME_ZONE = 'Asia/Dubai';
 
 function timeToMinutes(time) {
   const [hours, minutes] = (time || '').split(':').map((v) => Number(v));
@@ -30,20 +31,34 @@ const DAY_KEYS_BY_INDEX = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday
 
 function getDayKey(dateString) {
   if (!dateString) return null;
-  const date = new Date(`${dateString}T00:00:00`);
+  const date = new Date(`${dateString}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return null;
-  const dayIndex = typeof date.getUTCDay === 'function' ? date.getUTCDay() : date.getDay();
+  const dayIndex = date.getUTCDay();
   return DAY_KEYS_BY_INDEX[dayIndex] || null;
 }
 
 function formatDateOnly(dateValue) {
   if (!dateValue) return null;
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    return dateValue;
+  }
+
   const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
   if (Number.isNaN(date.getTime())) return null;
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: RESTAURANT_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const getPart = (type) => parts.find((part) => part.type === type)?.value;
+  const year = getPart('year');
+  const month = getPart('month');
+  const day = getPart('day');
+
+  return year && month && day ? `${year}-${month}-${day}` : null;
 }
 
 function serializeReservation(reservation) {

@@ -8,7 +8,7 @@ import { sendWhatsAppMessage } from "../../../lib/whatsapp";
 
 const itemSchema = z.object({
   id: z.string().min(1),
-  quantity: z.coerce.number().int().min(1),
+  quantity: z.coerce.number().int().min(1).max(99),
 });
 
 const orderSchema = z.object({
