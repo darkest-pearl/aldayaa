@@ -5,15 +5,18 @@ import Button from "./Button";
 import MenuItemImage from "./MenuItemImage";
 
 export default function OrderClient({ categories, table = null }) {
-  const [cart, setCart] = useState([]);
-  const [form, setForm] = useState({
+  const isTableOrder = Boolean(table?.slug && table?.tableToken);
+  const defaultDeliveryType = isTableOrder ? "PICKUP" : "DELIVERY";
+  const createEmptyForm = () => ({
     name: "",
     phone: "",
-    deliveryType: "DELIVERY", // default
+    deliveryType: defaultDeliveryType,
     address: "",
     notes: "",
-    notifyWhenReady: false, // <-- added
+    notifyWhenReady: false,
   });
+  const [cart, setCart] = useState([]);
+  const [form, setForm] = useState(createEmptyForm);
 
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
@@ -89,8 +92,7 @@ export default function OrderClient({ categories, table = null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          tableSlug: table?.slug,
-          tableToken: table?.tableToken,
+          ...(isTableOrder ? { tableSlug: table.slug, tableToken: table.tableToken } : {}),
           items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
           paidOnline: false,
         }),
@@ -111,14 +113,7 @@ export default function OrderClient({ categories, table = null }) {
 
       // Reset cart + form
       setCart([]);
-      setForm({
-        name: "",
-        phone: "",
-        deliveryType: "DELIVERY",
-        address: "",
-        notes: "",
-        notifyWhenReady: false,
-      });
+      setForm(createEmptyForm());
     } catch (err) {
       setLoading(false);
       alert("Order failed. Check your connection.");
@@ -295,6 +290,14 @@ export default function OrderClient({ categories, table = null }) {
                 {cart.length} item{cart.length !== 1 ? "s" : ""}
               </span>
             </div>
+            {isTableOrder && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-secondary shadow-soft">
+                <p className="font-semibold">Ordering for {table.label}</p>
+                <p className="mt-1 text-xs leading-relaxed text-neutral-700">
+                  Staff will receive this table order with your table number. No delivery address is needed.
+                </p>
+              </div>
+            )}
 
             {cart.length === 0 ? (
               <p className="text-sm text-neutral-600">No items yet.</p>
@@ -364,6 +367,7 @@ export default function OrderClient({ categories, table = null }) {
               />
 
               {/* delivery / pickup */}
+              {!isTableOrder && (
               <div className="flex gap-3 text-sm font-semibold">
                 <label
                   className={`flex-1 text-center border rounded-full py-3 cursor-pointer transition shadow-soft ${
@@ -410,9 +414,19 @@ export default function OrderClient({ categories, table = null }) {
                   Pickup
                 </label>
               </div>
+              )}
+
+              {isTableOrder && (
+                <div className="rounded-xl border border-primary/30 bg-white/95 p-3 text-sm text-neutral-700 shadow-sm">
+                  <p className="font-semibold text-secondary">Table order checkout</p>
+                  <p className="mt-1 text-xs leading-relaxed">
+                    Staff will receive this table order from {table.label}. No delivery address is needed.
+                  </p>
+                </div>
+              )}
 
             {/* DELIVERY address */}
-              {form.deliveryType === "DELIVERY" && (
+              {!isTableOrder && form.deliveryType === "DELIVERY" && (
                 <input
                   className="rounded-xl border border-neutral-200/80 px-3.5 py-3 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Delivery address"
@@ -423,7 +437,7 @@ export default function OrderClient({ categories, table = null }) {
               )}
 
               {/* PICKUP WhatsApp checkbox */}
-              {form.deliveryType === "PICKUP" && (
+              {!isTableOrder && form.deliveryType === "PICKUP" && (
                 <div className="rounded-xl border border-neutral-200/80 p-3 space-y-2 bg-white/90 shadow-sm">
                   <label className="flex items-center gap-2 text-sm font-semibold text-secondary">
                     <input
@@ -461,7 +475,7 @@ export default function OrderClient({ categories, table = null }) {
                 disabled={loading}
                 className="w-full justify-center min-h-[44px] text-base font-semibold focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/60"
               >
-                {loading ? "Placing order..." : "Checkout"}
+                {loading ? "Placing order..." : isTableOrder ? "Send table order" : "Checkout"}
               </Button>
             </form>
             <div className="space-y-1 text-xs text-neutral-600">

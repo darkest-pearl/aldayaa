@@ -101,6 +101,8 @@ export default function OrdersClient() {
           o.orderContext,
           o.tableLabel,
           o.tableSlug,
+          o.table?.label,
+          o.table?.zone,
           o.address,
           o.notes,
           o.id,
@@ -270,15 +272,27 @@ export default function OrdersClient() {
                 render: (_val, order) => {
                   const context = order.orderContext || 'STANDARD';
                   const tableLabel = order.tableLabel || order.table?.label || order.tableSlug;
+                  const tableZone = order.table?.zone;
 
                   return (
                     <div>
-                      <span className="font-semibold text-neutral-800">
-                        {context === 'TABLE' ? 'Table' : 'Standard'}
+                      <span
+                        className={
+                          context === 'TABLE'
+                            ? 'rounded-full bg-primary/15 px-2 py-1 text-xs font-semibold text-secondary'
+                            : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700'
+                        }
+                      >
+                        {context === 'TABLE' ? 'Table order' : 'Standard'}
                       </span>
                       {context === 'TABLE' && tableLabel && (
                         <p className="mt-1 text-xs text-neutral-500">
-                          {tableLabel}
+                          Table: {tableLabel}
+                        </p>
+                      )}
+                      {context === 'TABLE' && tableZone && (
+                        <p className="text-xs text-neutral-500">
+                          Zone: {tableZone}
                         </p>
                       )}
                     </div>

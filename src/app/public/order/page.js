@@ -64,9 +64,14 @@ export default async function OrderPage({ searchParams = {} }) {
       </div>
 
       {table && (
-        <div className="mx-auto max-w-2xl rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm font-semibold text-secondary shadow-soft">
-          Ordering for {table.label}
-          {table.zone ? <span className="font-medium text-neutral-700"> - {table.zone}</span> : null}
+        <div className="mx-auto max-w-2xl rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-center text-sm text-secondary shadow-soft">
+          <p className="font-semibold">
+            Ordering for {table.label}
+            {table.zone ? <span className="font-medium text-neutral-700"> - {table.zone}</span> : null}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-700">
+            Staff will receive your table order. No delivery address is needed.
+          </p>
         </div>
       )}
 

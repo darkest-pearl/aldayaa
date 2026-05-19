@@ -66,20 +66,16 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const orderType = body.deliveryType;
+    const requestedTableSlugFromBody = getRequestedTableSlug(body);
+    // Table-context orders reuse PICKUP until the schema supports a dedicated DINE_IN mode.
+    const orderType = requestedTableSlugFromBody ? 'PICKUP' : body.deliveryType;
     const notifyWhenReady =
       orderType === "DELIVERY" ? false : Boolean(body.notifyWhenReady);
-
-    if (
-      orderType === 'DELIVERY' &&
-      (!body.address || !body.address.trim())
-    ) {
-      return failure('Delivery address is required for delivery orders', 400);
-    }
 
     // validate incoming data
     const parsed = orderSchema.safeParse({
       ...body,
+      deliveryType: orderType,
       notifyWhenReady,
     });
     if (!parsed.success) {
@@ -108,6 +104,14 @@ export async function POST(request) {
       if (!tableContext) {
         return failure('Table ordering is not available for this table', 400);
       }
+    }
+    const hasTableContext = Boolean(tableContext);
+
+    if (
+      !hasTableContext && parsed.data.deliveryType === 'DELIVERY' &&
+      (!parsed.data.address || !parsed.data.address.trim())
+    ) {
+      return failure('Delivery address is required for delivery orders', 400);
     }
 
     const itemIds = [...new Set(parsed.data.items.map((item) => item.id))];
@@ -152,13 +156,14 @@ export async function POST(request) {
         name: parsed.data.name,
         phone: parsed.data.phone,
         deliveryType: parsed.data.deliveryType,
-        address:
-          orderType === "DELIVERY"
-            ? body.address.trim()
+        address: hasTableContext
+          ? null
+          : parsed.data.deliveryType === "DELIVERY"
+            ? parsed.data.address.trim()
             : null,
         notes: parsed.data.notes || null,
         paidOnline: Boolean(parsed.data.paidOnline),
-        notifyWhenReady,
+        notifyWhenReady: hasTableContext ? false : notifyWhenReady,
         totalPrice,
         tableId: tableContext?.id || null,
         tableLabel: tableContext?.label || null,

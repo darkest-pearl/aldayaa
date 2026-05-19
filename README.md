@@ -52,7 +52,8 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Admin users can manage tables under `/admin/tables`; SUPPORT users can view links in read-only mode.
 - Public QR links use `/public/table/[slug]` and hand off to `/public/order?table=...`.
 - Table order context can now be persisted on orders for admin visibility.
-- This is a foundation only. It does not add full waiter-assisted ordering, POS behavior, payments, inventory, or dine-in order records yet.
+- Table-order UX and admin visibility refined for clearer customer checkout and easier order scanning.
+- This is a foundation only. It does not add full waiter-assisted ordering, POS behavior, kitchen workflow, payments, inventory, or dine-in order records yet.
 
 ## Production Notes
 
