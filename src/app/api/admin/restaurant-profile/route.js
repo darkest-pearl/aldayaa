@@ -2,11 +2,13 @@ export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
+import { FEATURE_KEY_VALUES, normalizeEnabledFeatures } from '../../../../lib/features';
 import { prisma } from '../../../../lib/prisma';
 import {
   defaultRestaurantProfile,
   getRestaurantProfile,
   normalizeRestaurantProfile,
+  toPrismaRestaurantProfileData,
 } from '../../../../lib/restaurant-profile';
 
 const optionalUrlSchema = z
@@ -38,15 +40,22 @@ const profileSchema = z.object({
   primaryColor: colorSchema.optional(),
   secondaryColor: colorSchema.optional(),
   currency: z.string().trim().min(2).max(8).optional(),
+  enabledFeatures: z.array(z.enum(FEATURE_KEY_VALUES)).optional(),
 });
 
 function cleanProfilePayload(payload) {
-  return Object.fromEntries(
+  const cleaned = Object.fromEntries(
     Object.entries(payload).map(([key, value]) => [
       key,
       typeof value === 'string' ? value.trim() : value,
     ]),
   );
+
+  if (Object.prototype.hasOwnProperty.call(cleaned, 'enabledFeatures')) {
+    cleaned.enabledFeatures = JSON.stringify(normalizeEnabledFeatures(cleaned.enabledFeatures));
+  }
+
+  return cleaned;
 }
 
 export async function GET(request) {
@@ -75,7 +84,7 @@ export async function PUT(request) {
     const profile = await prisma.restaurantProfile.upsert({
       where: { id: 1 },
       create: {
-        ...defaultRestaurantProfile,
+        ...toPrismaRestaurantProfileData(defaultRestaurantProfile),
         ...updates,
       },
       update: updates,

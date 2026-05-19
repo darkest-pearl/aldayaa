@@ -2,15 +2,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
+import { FEATURE_KEYS, isFeatureEnabled } from '../lib/features';
 import { strings } from '../lib/strings';
 import { gentleEase } from '../lib/easings';
 
 const navLinks = [
   { href: '/public', label: 'Home' },
-  { href: '/public/menu', label: 'Menu' },
-  { href: '/public/reservations', label: 'Reservations' },
-  { href: '/public/order', label: 'Order Online' },
-  { href: '/public/gallery', label: 'Gallery' },
+  { href: '/public/menu', label: 'Menu', featureKey: FEATURE_KEYS.MENU },
+  { href: '/public/reservations', label: 'Reservations', featureKey: FEATURE_KEYS.RESERVATIONS },
+  { href: '/public/order', label: 'Order Online', featureKey: FEATURE_KEYS.ONLINE_ORDERING },
+  { href: '/public/gallery', label: 'Gallery', featureKey: FEATURE_KEYS.GALLERY },
   { href: '/public/about', label: 'About' },
   { href: '/public/contact', label: 'Contact' },
 ];
@@ -20,6 +21,10 @@ export default function Header({ profile = {} }) {
   const restaurantName = profile.restaurantName || strings.restaurantName;
   const tagline = profile.tagline || strings.tagline;
   const logoUrl = profile.logoUrl || '/images/logo-al-dayaa.png';
+  const visibleNavLinks = navLinks.filter(
+    (link) => !link.featureKey || isFeatureEnabled(profile.enabledFeatures, link.featureKey),
+  );
+  const reservationsEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.RESERVATIONS);
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
   const closeMenu = () => setIsMenuOpen(false);
@@ -41,7 +46,7 @@ export default function Header({ profile = {} }) {
           </Link>
           
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-neutral-700">
-            {navLinks.map((link) => (
+            {visibleNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -50,12 +55,14 @@ export default function Header({ profile = {} }) {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/public/reservations"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
-            >
-              Reserve
-            </Link>
+            {reservationsEnabled && (
+              <Link
+                href="/public/reservations"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
+              >
+                Reserve
+              </Link>
+            )}
           </nav>
 
           <button
@@ -124,7 +131,7 @@ export default function Header({ profile = {} }) {
                   </button>
                 </div>
                 <div className="flex flex-col divide-y divide-neutral-200/70 text-sm font-medium text-secondary/80">
-                  {navLinks.map((link) => (
+                  {visibleNavLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -136,6 +143,7 @@ export default function Header({ profile = {} }) {
                     </Link>
                   ))}
                 </div>
+                {reservationsEnabled && (
                 <div className="pt-4">
                   <Link
                     href="/public/reservations"
@@ -145,6 +153,7 @@ export default function Header({ profile = {} }) {
                     Reserve a table
                   </Link>
                 </div>
+                )}
               </div>
             </motion.nav>
           </>

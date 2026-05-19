@@ -1,4 +1,5 @@
 import { prisma } from './prisma';
+import { getDefaultEnabledFeatures, normalizeEnabledFeatures } from './features';
 import { strings } from './strings';
 
 export const defaultRestaurantProfile = {
@@ -19,6 +20,7 @@ export const defaultRestaurantProfile = {
   primaryColor: '#d6b15f',
   secondaryColor: '#183b32',
   currency: 'AED',
+  enabledFeatures: getDefaultEnabledFeatures(),
 };
 
 const profileStringFields = [
@@ -52,6 +54,7 @@ export function normalizeRestaurantProfile(profile = {}) {
   }
 
   normalized.id = profile.id || defaultRestaurantProfile.id;
+  normalized.enabledFeatures = normalizeEnabledFeatures(profile.enabledFeatures);
   normalized.createdAt = profile.createdAt;
   normalized.updatedAt = profile.updatedAt;
 
@@ -60,13 +63,32 @@ export function normalizeRestaurantProfile(profile = {}) {
 
 export function toPublicRestaurantProfile(profile = {}) {
   const normalized = normalizeRestaurantProfile(profile);
-  return profileStringFields.reduce(
+  const publicProfile = profileStringFields.reduce(
     (publicProfile, field) => ({
       ...publicProfile,
       [field]: normalized[field],
     }),
     { id: normalized.id },
   );
+
+  return {
+    ...publicProfile,
+    enabledFeatures: normalized.enabledFeatures,
+  };
+}
+
+export function toPrismaRestaurantProfileData(profile = {}) {
+  const normalized = normalizeRestaurantProfile(profile);
+  return {
+    ...profileStringFields.reduce(
+      (data, field) => ({
+        ...data,
+        [field]: normalized[field],
+      }),
+      {},
+    ),
+    enabledFeatures: JSON.stringify(normalized.enabledFeatures),
+  };
 }
 
 export async function getRestaurantProfile() {
@@ -78,7 +100,7 @@ export async function getRestaurantProfile() {
     const profile = await prisma.restaurantProfile.upsert({
       where: { id: 1 },
       update: {},
-      create: defaultRestaurantProfile,
+      create: toPrismaRestaurantProfileData(defaultRestaurantProfile),
     });
 
     return normalizeRestaurantProfile(profile);

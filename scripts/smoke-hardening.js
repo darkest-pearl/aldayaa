@@ -95,6 +95,7 @@ function checkRestaurantProfileFoundation() {
   const apiRoute = read('src/app/api/admin/restaurant-profile/route.js');
 
   assertIncludes(schema, 'model RestaurantProfile', 'RestaurantProfile Prisma model');
+  assertIncludes(schema, 'enabledFeatures', 'RestaurantProfile enabledFeatures field');
   assertIncludes(helper, 'getRestaurantProfile', 'Restaurant profile helper');
   assertIncludes(apiRoute, "await requireAdmin(request, ['ADMIN'", 'Restaurant profile admin API auth');
   assertIncludes(apiRoute, 'profileSchema.safeParse', 'Restaurant profile API validation');
@@ -117,6 +118,43 @@ function checkRestaurantProfileUiWiring() {
   assertIncludes(footer, 'profile: profileProp', 'Footer profile prop support');
 }
 
+function checkFeatureModulesFoundation() {
+  const featuresPath = path.join(root, 'src/lib/features.js');
+  assert(fs.existsSync(featuresPath), 'src/lib/features.js does not exist');
+
+  const features = read('src/lib/features.js');
+  const schema = read('prisma/schema.prisma');
+  const settingsClient = read('src/app/admin/(protected)/settings/SettingsClient.jsx');
+  const header = read('src/components/Header.jsx');
+
+  const defaultKeys = [
+    'WEBSITE',
+    'MENU',
+    'GALLERY',
+    'RESERVATIONS',
+    'ONLINE_ORDERING',
+    'ANNOUNCEMENTS',
+    'CONTACT_WHATSAPP',
+  ];
+  const defaultBlockMatch = features.match(/const DEFAULT_ENABLED_FEATURES = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert(defaultBlockMatch, 'Default enabled features block not found');
+  const defaultBlock = defaultBlockMatch[1];
+
+  for (const key of defaultKeys) {
+    assertIncludes(defaultBlock, `FEATURE_KEYS.${key}`, `Default enabled feature ${key}`);
+  }
+
+  assertIncludes(features, 'getFeatureDefinition', 'Feature definition helper');
+  assertIncludes(features, 'normalizeEnabledFeatures', 'Feature normalization helper');
+  assertIncludes(features, 'isFeatureEnabled', 'Feature enabled helper');
+  assertIncludes(features, 'getDefaultEnabledFeatures', 'Default enabled features helper');
+  assertIncludes(schema, 'enabledFeatures', 'RestaurantProfile enabledFeatures persistence');
+  assertIncludes(settingsClient, 'enabledFeatures', 'Admin profile enabledFeatures UI');
+  assertIncludes(settingsClient, 'featureGroups', 'Admin feature grouping UI');
+  assertIncludes(header, 'isFeatureEnabled', 'Header feature visibility helper');
+  assertIncludes(header, 'visibleNavLinks', 'Header feature-filtered nav links');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -124,6 +162,7 @@ const checks = [
   checkEnvExample,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
+  checkFeatureModulesFoundation,
 ];
 
 for (const check of checks) {

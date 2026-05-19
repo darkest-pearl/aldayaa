@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { FEATURE_KEYS, isFeatureEnabled } from '../lib/features';
 import { strings } from '../lib/strings';
 import { getRestaurantProfile, toPublicRestaurantProfile } from '../lib/restaurant-profile';
 
@@ -51,11 +52,12 @@ export default async function Footer({ profile: profileProp } = {}) {
     profileProp ? Promise.resolve(profileProp) : getRestaurantProfile(),
   ]);
   const profile = toPublicRestaurantProfile(loadedProfile);
+  const contactWhatsappEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.CONTACT_WHATSAPP);
 
   return (
     <footer className="mt-14 border-t border-neutral-200/70 bg-[#f3eadb] text-secondary">
       <div className="site-container py-10 space-y-8">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className={`grid gap-5 ${contactWhatsappEnabled ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
           <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-5 shadow-soft">
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Visit</p>
             <h3 className="mt-2 text-lg font-semibold">Find us</h3>
@@ -70,6 +72,7 @@ export default async function Footer({ profile: profileProp } = {}) {
             </Link>
           </div>
 
+          {contactWhatsappEnabled && (
           <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-5 shadow-soft">
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Connect</p>
             <h3 className="mt-2 text-lg font-semibold">Stay in touch</h3>
@@ -108,6 +111,7 @@ export default async function Footer({ profile: profileProp } = {}) {
               </Link>
             </div>
           </div>
+          )}
           <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-5 shadow-soft">
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Hours</p>
             <h3 className="mt-2 text-lg font-semibold">When we’re open</h3>

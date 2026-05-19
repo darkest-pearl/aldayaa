@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import AdminCard from '../../components/AdminCard.jsx';
 import AdminForm from '../../components/AdminForm.jsx';
 import AdminPageHeader from '../../components/AdminPageHeader.jsx';
+import {
+  FEATURE_DEFINITIONS,
+  getDefaultEnabledFeatures,
+  isFeatureEnabled,
+} from '../../../../lib/features';
 
 const DAY_ORDER = [
   { key: 'monday', label: 'Monday' },
@@ -122,11 +127,23 @@ const PROFILE_FIELDS = [
   { key: 'currency', label: 'Currency', type: 'text', required: true },
 ];
 
-const defaultProfile = PROFILE_FIELDS.reduce(
-  (profile, field) => ({ ...profile, [field.key]: field.type === 'color' ? '#d6b15f' : '' }),
-  {},
-);
-defaultProfile.secondaryColor = '#183b32';
+const defaultProfile = {
+  ...PROFILE_FIELDS.reduce(
+    (profile, field) => ({ ...profile, [field.key]: field.type === 'color' ? '#d6b15f' : '' }),
+    {},
+  ),
+  secondaryColor: '#183b32',
+  enabledFeatures: getDefaultEnabledFeatures(),
+};
+
+const featureGroups = FEATURE_DEFINITIONS.reduce((groups, feature) => {
+  const group = groups.find((item) => item.category === feature.category);
+  if (group) {
+    group.features.push(feature);
+    return groups;
+  }
+  return [...groups, { category: feature.category, features: [feature] }];
+}, []);
 
 export default function SettingsClient({ adminRole, initialSettings, initialAnnouncement, initialProfile }) {
   const [form, setForm] = useState(() => withWorkingHours(initialSettings || defaultState));
@@ -286,7 +303,7 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
     try {
       const payload = PROFILE_FIELDS.reduce(
         (values, field) => ({ ...values, [field.key]: profileForm[field.key] || '' }),
-        {},
+        { enabledFeatures: profileForm.enabledFeatures || [] },
       );
       const data = await apiRequest('/api/admin/restaurant-profile', {
         method: 'PUT',
@@ -314,6 +331,19 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
 
   const handleProfileChange = (key, value) => {
     setProfileForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleFeatureToggle = (key, checked) => {
+    setProfileForm((prev) => {
+      const current = Array.isArray(prev.enabledFeatures)
+        ? prev.enabledFeatures
+        : getDefaultEnabledFeatures();
+      const enabledFeatures = checked
+        ? [...new Set([...current, key])]
+        : current.filter((featureKey) => featureKey !== key);
+
+      return { ...prev, enabledFeatures };
+    });
   };
 
   const handleDisplayHoursChange = (key, value) => {
@@ -446,6 +476,41 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="space-y-4 border-t border-neutral-200 pt-4">
+            <div>
+              <p className="text-sm font-semibold text-neutral-800">Enabled modules</p>
+              <p className="text-sm text-neutral-600">
+                Save module toggles for future packages. This batch only wires low-risk public visibility.
+              </p>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {featureGroups.map((group) => (
+                <div key={group.category} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                    {group.category}
+                  </p>
+                  <div className="space-y-3">
+                    {group.features.map((feature) => (
+                      <label key={feature.key} className="flex items-start gap-3 rounded-lg bg-white p-3 text-sm shadow-sm">
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={isFeatureEnabled(profileForm.enabledFeatures, feature.key)}
+                          onChange={(e) => handleFeatureToggle(feature.key, e.target.checked)}
+                          disabled={!canUpdateProfile}
+                        />
+                        <span>
+                          <span className="block font-semibold text-neutral-800">{feature.label}</span>
+                          <span className="block text-xs leading-relaxed text-neutral-600">{feature.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </AdminForm>
       </AdminCard>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Button from "./Button";
+import { FEATURE_KEYS, isFeatureEnabled } from "../lib/features";
 import { strings } from "../lib/strings";
 
 export default function ContactForm({ profile = {} }) {
@@ -10,6 +11,7 @@ export default function ContactForm({ profile = {} }) {
   const googleMapsEmbedUrl = profile.googleMapsEmbedUrl || strings.googleMapsEmbed;
   const whatsappLink = profile.whatsappLink || strings.whatsappLink;
   const whatsappNumber = profile.whatsappNumber || strings.whatsapp;
+  const contactWhatsappEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.CONTACT_WHATSAPP);
 
   const [form, setForm] = useState({
     name: "",
@@ -95,7 +97,7 @@ export default function ContactForm({ profile = {} }) {
             </div>
           </div>
 
-          {/* WhatsApp */}
+          {contactWhatsappEnabled && (
           <div className="flex gap-3">
             <span className="h-10 w-10 rounded-full bg-primary/15 text-secondary flex items-center justify-center text-base md:text-lg">💬</span>
             <div>
@@ -110,6 +112,7 @@ export default function ContactForm({ profile = {} }) {
               </a>
             </div>
           </div>
+          )}
 
           {/* Hours */}
           <div className="flex gap-3">

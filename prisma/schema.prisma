@@ -133,6 +133,7 @@ model RestaurantProfile {
   primaryColor       String   @default("#d6b15f")
   secondaryColor     String   @default("#183b32")
   currency           String   @default("AED")
+  enabledFeatures    String   @default("[\"WEBSITE\",\"MENU\",\"GALLERY\",\"RESERVATIONS\",\"ONLINE_ORDERING\",\"ANNOUNCEMENTS\",\"CONTACT_WHATSAPP\"]")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
