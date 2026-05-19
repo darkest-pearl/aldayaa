@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "announcement:dismissed";
 
@@ -10,10 +10,7 @@ function getAnnouncementKey(announcement) {
 }
 
 export default function AnnouncementBanner({ announcement }) {
-  const announcementKey = useMemo(
-    () => getAnnouncementKey(announcement),
-    [announcement?.id, announcement?.updatedAt],
-  );
+  const announcementKey = getAnnouncementKey(announcement);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
