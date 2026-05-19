@@ -40,8 +40,9 @@ function UnavailableMessage({ title, message }) {
   );
 }
 
-export default async function PublicTablePage({ params }) {
+export default async function PublicTablePage({ params, searchParams = {} }) {
   const slug = typeof params?.slug === 'string' ? params.slug : '';
+  const token = typeof searchParams.token === 'string' ? searchParams.token : '';
   const [profileRecord, tableRecord] = await Promise.all([
     getRestaurantProfile(),
     findTable(slug),
@@ -61,11 +62,11 @@ export default async function PublicTablePage({ params }) {
     );
   }
 
-  if (!tableRecord || !tableRecord.isActive) {
+  if (!tableRecord || !tableRecord.isActive || (tableRecord.qrToken && tableRecord.qrToken !== token)) {
     return (
       <UnavailableMessage
-        title="This table is unavailable"
-        message="This QR link is not active right now. Please ask the team for a current table ordering link."
+        title="This table ordering link is unavailable"
+        message="Please ask the team for a current table ordering link."
       />
     );
   }

@@ -175,6 +175,9 @@ function checkQrTableOrderingFoundation() {
   assertIncludes(adminTablesClient, "['ADMIN', 'MANAGER']", 'Admin tables manage role guard');
   assertIncludes(adminShell, "'/admin/tables'", 'Admin tables navigation');
   assertIncludes(publicTablePage, 'FEATURE_KEYS.TABLE_QR_ORDERING', 'Public table feature flag check');
+  assertIncludes(publicTablePage, 'searchParams = {}', 'Public table token query awareness');
+  assertIncludes(publicTablePage, 'searchParams.token', 'Public table token read');
+  assertIncludes(publicTablePage, 'tableRecord.qrToken !== token', 'Public table token validation');
   assertIncludes(publicTablePage, '/public/order?table=', 'Public table handoff URL');
   assertIncludes(orderPage, 'searchParams = {}', 'Order page table query awareness');
   assertIncludes(orderPage, 'Ordering for', 'Order page table notice');
