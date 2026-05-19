@@ -24,6 +24,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
    npm run dev
    ```
 
+5. **Verify locally**
+   ```bash
+   npm run lint
+   npm run smoke:hardening
+   ```
+
 ## Features
 
 - Public website pages for home, menu, reservations, ordering, gallery, about, and contact.
@@ -31,6 +37,8 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Admin dashboard at `/admin/login` for operational management.
 - Role-based admin access with ADMIN, MANAGER, and SUPPORT roles.
 - Responsive Tailwind UI with Prisma-backed API routes.
+- Non-interactive Next.js linting and a focused production-hardening smoke check.
+- Restaurant profile/config foundation for one restaurant profile, with admin API support.
 
 ## Production Notes
 

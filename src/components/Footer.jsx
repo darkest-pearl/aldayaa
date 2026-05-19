@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { strings } from '../lib/strings';
+import { getRestaurantProfile } from '../lib/restaurant-profile';
 
 async function fetchSettingsHours() {
   const fallbackHours = {
@@ -45,7 +46,10 @@ async function fetchSettingsHours() {
 }
 
 export default async function Footer() {
-  const hours = await fetchSettingsHours();
+  const [hours, profile] = await Promise.all([
+    fetchSettingsHours(),
+    getRestaurantProfile(),
+  ]);
 
   return (
     <footer className="mt-14 border-t border-neutral-200/70 bg-[#f3eadb] text-secondary">
@@ -54,9 +58,9 @@ export default async function Footer() {
           <div className="rounded-2xl border border-neutral-200/70 bg-white/80 p-5 shadow-soft">
             <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Visit</p>
             <h3 className="mt-2 text-lg font-semibold">Find us</h3>
-            <p className="mt-2 text-sm text-neutral-700 leading-relaxed">{strings.address}</p>
+            <p className="mt-2 text-sm text-neutral-700 leading-relaxed">{profile.address}</p>
             <Link
-              href={strings.googleMaps}
+              href={profile.googleMapsUrl}
               className="mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary transition hover:text-secondary"
               target="_blank"
               rel="noopener noreferrer"
@@ -70,15 +74,15 @@ export default async function Footer() {
             <h3 className="mt-2 text-lg font-semibold">Stay in touch</h3>
             <a
               className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
-              href={strings.whatsappLink}
+              href={profile.whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
             >
-              WhatsApp {strings.whatsapp}
+              WhatsApp {profile.whatsappNumber}
             </a>
             <div className="mt-4 flex items-center gap-3 text-sm font-semibold text-neutral-800">
               <Link
-                href="https://www.instagram.com/aldayaa.rest/?hl=en"
+                href={profile.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-white/70 px-3 py-2 text-primary shadow-soft transition hover:text-secondary hover:shadow-lifted"
@@ -86,7 +90,7 @@ export default async function Footer() {
                 Instagram
               </Link>
               <Link
-                href="https://www.facebook.com/aldayaaalshamiah/"
+                href={profile.facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-white/70 px-3 py-2 text-primary shadow-soft transition hover:text-secondary hover:shadow-lifted"
@@ -94,7 +98,7 @@ export default async function Footer() {
                 Facebook
               </Link>
               <Link
-                href="https://www.tiktok.com/@aldayaa_alshamiah"
+                href={profile.tiktokUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-white/70 px-3 py-2 text-primary shadow-soft transition hover:text-secondary hover:shadow-lifted"
@@ -114,7 +118,7 @@ export default async function Footer() {
             <div className="mt-4 flex items-center gap-2 text-sm text-neutral-700">
               <span className="font-semibold text-secondary">Linktree:</span>
               <Link
-                href="https://linktr.ee/aldaya"
+                href={profile.linktreeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary transition hover:text-secondary"
@@ -126,8 +130,8 @@ export default async function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-3 border-t border-neutral-200/70 pt-4 text-xs text-neutral-600 md:flex-row">
-          <p>© {new Date().getFullYear()} {strings.restaurantName}</p>
-          <p className="text-neutral-500">Modern Levantine comfort in Sharjah</p>
+          <p>&copy; {new Date().getFullYear()} {profile.restaurantName}</p>
+          <p className="text-neutral-500">{profile.tagline}</p>
         </div>
       </div>
     </footer>

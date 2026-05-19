@@ -115,6 +115,28 @@ model RestaurantSettings {
   displayHours          String?
 }
 
+model RestaurantProfile {
+  id                 Int      @id @default(1)
+  restaurantName     String   @default("Al Dayaa Al Shamiah Restaurant")
+  tagline            String   @default("Authentic Arabic & Indian flavors in the heart of Sharjah.")
+  cuisineType        String   @default("Arabic & Indian")
+  whatsappNumber     String   @default("+971 55 417 3293")
+  whatsappLink       String   @default("https://wa.me/971554173293")
+  address            String   @default("Al Dayaa Al Shamiah Restaurant")
+  googleMapsUrl      String   @default("https://maps.app.goo.gl/n8Ced5MciXtpQCXCA")
+  googleMapsEmbedUrl String   @default("https://www.google.com/maps?output=embed&q=Al%20Dayaa%20Al%20Shamiah%20Restaurant%20Sharjah")
+  instagramUrl       String   @default("https://www.instagram.com/aldayaa.rest/?hl=en")
+  facebookUrl        String   @default("https://www.facebook.com/aldayaaalshamiah/")
+  tiktokUrl          String   @default("https://www.tiktok.com/@aldayaa_alshamiah")
+  linktreeUrl        String   @default("https://linktr.ee/aldaya")
+  logoUrl            String   @default("/images/logo-al-dayaa.png")
+  primaryColor       String   @default("#d6b15f")
+  secondaryColor     String   @default("#183b32")
+  currency           String   @default("AED")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model Announcement {
   id        String   @id @default(cuid())
   message   String
