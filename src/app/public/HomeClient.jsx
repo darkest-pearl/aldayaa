@@ -59,11 +59,13 @@ const formatPrice = (price) => {
   return 'AED —';
 };
 
-export default function HomeClient({ recommendedDishes = [] }) {
+export default function HomeClient({ recommendedDishes = [], profile = {} }) {
   const hasRecommendedDishes = recommendedDishes.length > 0;
   const [itemsPerView, setItemsPerView] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const whatsappLink = profile.whatsappLink || strings.whatsappLink;
+  const whatsappNumber = profile.whatsappNumber || strings.whatsapp;
 
   useEffect(() => {
     const updateItemsPerView = () => {
@@ -486,11 +488,11 @@ export default function HomeClient({ recommendedDishes = [] }) {
               </p>
             </div>
             <Link
-              href={strings.whatsappLink}
+              href={whatsappLink}
               target="_blank"
               className="bg-amber-500 text-neutral-900 px-4 py-2 rounded-full shadow hover:-translate-y-0.5 transition-transform text-sm md:text-base"
             >
-              WhatsApp {strings.whatsapp}
+              WhatsApp {whatsappNumber}
             </Link>
           </div>
         </Section>

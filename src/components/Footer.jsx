@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { strings } from '../lib/strings';
-import { getRestaurantProfile } from '../lib/restaurant-profile';
+import { getRestaurantProfile, toPublicRestaurantProfile } from '../lib/restaurant-profile';
 
 async function fetchSettingsHours() {
   const fallbackHours = {
@@ -45,11 +45,12 @@ async function fetchSettingsHours() {
   }
 }
 
-export default async function Footer() {
-  const [hours, profile] = await Promise.all([
+export default async function Footer({ profile: profileProp } = {}) {
+  const [hours, loadedProfile] = await Promise.all([
     fetchSettingsHours(),
-    getRestaurantProfile(),
+    profileProp ? Promise.resolve(profileProp) : getRestaurantProfile(),
   ]);
+  const profile = toPublicRestaurantProfile(loadedProfile);
 
   return (
     <footer className="mt-14 border-t border-neutral-200/70 bg-[#f3eadb] text-secondary">

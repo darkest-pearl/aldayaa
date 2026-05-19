@@ -103,7 +103,32 @@ const defaultAnnouncement = {
   isActive: false,
 };
 
-export default function SettingsClient({ initialSettings, initialAnnouncement }) {
+const PROFILE_FIELDS = [
+  { key: 'restaurantName', label: 'Restaurant name', type: 'text', required: true },
+  { key: 'tagline', label: 'Tagline', type: 'textarea', required: true },
+  { key: 'cuisineType', label: 'Cuisine type', type: 'text', required: true },
+  { key: 'whatsappNumber', label: 'WhatsApp number', type: 'tel', required: true },
+  { key: 'whatsappLink', label: 'WhatsApp link', type: 'text' },
+  { key: 'address', label: 'Address', type: 'textarea', required: true },
+  { key: 'googleMapsUrl', label: 'Google Maps URL', type: 'text' },
+  { key: 'googleMapsEmbedUrl', label: 'Google Maps embed URL', type: 'text' },
+  { key: 'instagramUrl', label: 'Instagram URL', type: 'text' },
+  { key: 'facebookUrl', label: 'Facebook URL', type: 'text' },
+  { key: 'tiktokUrl', label: 'TikTok URL', type: 'text' },
+  { key: 'linktreeUrl', label: 'Linktree URL', type: 'text' },
+  { key: 'logoUrl', label: 'Logo URL', type: 'text' },
+  { key: 'primaryColor', label: 'Primary color', type: 'color' },
+  { key: 'secondaryColor', label: 'Secondary color', type: 'color' },
+  { key: 'currency', label: 'Currency', type: 'text', required: true },
+];
+
+const defaultProfile = PROFILE_FIELDS.reduce(
+  (profile, field) => ({ ...profile, [field.key]: field.type === 'color' ? '#d6b15f' : '' }),
+  {},
+);
+defaultProfile.secondaryColor = '#183b32';
+
+export default function SettingsClient({ adminRole, initialSettings, initialAnnouncement, initialProfile }) {
   const [form, setForm] = useState(() => withWorkingHours(initialSettings || defaultState));
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -119,6 +144,15 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
   const [announcementFetching, setAnnouncementFetching] = useState(false);
   const [announcementError, setAnnouncementError] = useState(null);
   const [announcementMessage, setAnnouncementMessage] = useState(null);
+  const [profileForm, setProfileForm] = useState(() => ({
+    ...defaultProfile,
+    ...(initialProfile || {}),
+  }));
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileFetching, setProfileFetching] = useState(false);
+  const [profileError, setProfileError] = useState(null);
+  const [profileMessage, setProfileMessage] = useState(null);
+  const canUpdateProfile = adminRole === 'ADMIN';
 
   const load = async () => {
     setFetching(true);
@@ -151,6 +185,23 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
     }
   };
 
+  const loadProfile = async () => {
+    setProfileFetching(true);
+    setProfileError(null);
+    setProfileMessage(null);
+    try {
+      const data = await apiRequest('/api/admin/restaurant-profile');
+      setProfileForm({
+        ...defaultProfile,
+        ...(data.profile || {}),
+      });
+    } catch (err) {
+      setProfileError(err.message);
+    } finally {
+      setProfileFetching(false);
+    }
+  };
+
   useEffect(() => {
     if (initialSettings) return;
     load();
@@ -160,6 +211,12 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
     if (initialAnnouncement) return;
     loadAnnouncement();
   }, []);
+
+  useEffect(() => {
+    if (initialProfile) return;
+    loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProfile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -216,12 +273,47 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
     }
   };
 
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    if (!canUpdateProfile) {
+      setProfileError('Only ADMIN users can update the restaurant profile.');
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileError(null);
+    setProfileMessage(null);
+    try {
+      const payload = PROFILE_FIELDS.reduce(
+        (values, field) => ({ ...values, [field.key]: profileForm[field.key] || '' }),
+        {},
+      );
+      const data = await apiRequest('/api/admin/restaurant-profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      setProfileForm({
+        ...defaultProfile,
+        ...(data.profile || {}),
+      });
+      setProfileMessage('Restaurant profile updated successfully');
+    } catch (err) {
+      setProfileError(err.message);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleAnnouncementChange = (key, value) => {
     setAnnouncementForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleProfileChange = (key, value) => {
+    setProfileForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleDisplayHoursChange = (key, value) => {
@@ -271,6 +363,92 @@ export default function SettingsClient({ initialSettings, initialAnnouncement })
       {message && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{message}</div>
       )}
+
+      <AdminCard
+        title="Restaurant profile"
+        description="Manage public-facing restaurant identity, contact links, map URLs, logo, colors, and currency."
+        actions={profileFetching && <span className="text-xs text-neutral-500">Refreshing...</span>}
+      >
+        {profileError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {profileError}
+          </div>
+        )}
+        {profileMessage && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {profileMessage}
+          </div>
+        )}
+        {!canUpdateProfile && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Only ADMIN users can update the restaurant profile.
+          </div>
+        )}
+
+        <AdminForm
+          onSubmit={handleProfileSubmit}
+          submitLabel="Save profile"
+          submitting={profileLoading}
+          submitDisabled={!canUpdateProfile}
+          secondaryAction={
+            <button
+              type="button"
+              className="text-sm font-semibold text-neutral-700 underline"
+              onClick={loadProfile}
+              disabled={profileFetching}
+            >
+              Reload
+            </button>
+          }
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            {PROFILE_FIELDS.map((field) => (
+              <div
+                key={field.key}
+                className={field.type === 'textarea' || field.key === 'googleMapsEmbedUrl' ? 'space-y-2 md:col-span-2' : 'space-y-2'}
+              >
+                <label className="text-sm font-semibold text-neutral-800">{field.label}</label>
+                {field.type === 'textarea' ? (
+                  <textarea
+                    className="min-h-[84px] w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-neutral-50"
+                    value={profileForm[field.key] || ''}
+                    onChange={(e) => handleProfileChange(field.key, e.target.value)}
+                    disabled={!canUpdateProfile}
+                    required={field.required}
+                  />
+                ) : field.type === 'color' ? (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      className="h-10 w-14 rounded-lg border border-neutral-200 bg-white p-1 disabled:opacity-60"
+                      value={profileForm[field.key] || '#d6b15f'}
+                      onChange={(e) => handleProfileChange(field.key, e.target.value)}
+                      disabled={!canUpdateProfile}
+                    />
+                    <input
+                      type="text"
+                      className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-neutral-50"
+                      value={profileForm[field.key] || ''}
+                      onChange={(e) => handleProfileChange(field.key, e.target.value)}
+                      disabled={!canUpdateProfile}
+                      pattern="#[0-9a-fA-F]{6}"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    type={field.type}
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none disabled:bg-neutral-50"
+                    value={profileForm[field.key] || ''}
+                    onChange={(e) => handleProfileChange(field.key, e.target.value)}
+                    disabled={!canUpdateProfile}
+                    required={field.required}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </AdminForm>
+      </AdminCard>
 
       <AdminCard title="Operating hours & cancellations" description="Control when customers can book and how cancellations are handled." actions={fetching && <span className="text-xs text-neutral-500">Refreshing…</span>}>
         <AdminForm

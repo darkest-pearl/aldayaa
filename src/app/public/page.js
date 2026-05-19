@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import HomeClient from './HomeClient';
 import { prisma } from '../../lib/prisma';
+import { getRestaurantProfile, toPublicRestaurantProfile } from '../../lib/restaurant-profile';
 
 async function getRecommendedDishes() {
   const dishes = await prisma.menuItem.findMany({
@@ -19,7 +20,11 @@ async function getRecommendedDishes() {
 }
 
 export default async function HomePage() {
-  const recommendedDishes = await getRecommendedDishes();
+  const [recommendedDishes, profileRecord] = await Promise.all([
+    getRecommendedDishes(),
+    getRestaurantProfile(),
+  ]);
+  const profile = toPublicRestaurantProfile(profileRecord);
 
-      return <HomeClient recommendedDishes={recommendedDishes} />;
+  return <HomeClient recommendedDishes={recommendedDishes} profile={profile} />;
 }

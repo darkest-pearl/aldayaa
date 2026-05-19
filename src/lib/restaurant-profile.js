@@ -58,6 +58,17 @@ export function normalizeRestaurantProfile(profile = {}) {
   return normalized;
 }
 
+export function toPublicRestaurantProfile(profile = {}) {
+  const normalized = normalizeRestaurantProfile(profile);
+  return profileStringFields.reduce(
+    (publicProfile, field) => ({
+      ...publicProfile,
+      [field]: normalized[field],
+    }),
+    { id: normalized.id },
+  );
+}
+
 export async function getRestaurantProfile() {
   if (!process.env.DATABASE_URL) {
     return normalizeRestaurantProfile();
