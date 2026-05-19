@@ -211,11 +211,33 @@ function checkTableOrderContextFoundation() {
   assertIncludes(orderPage, 'qrToken: tableToken', 'Public order page validates table token');
   assertIncludes(orderPage, 'table={table}', 'Public order page passes table context');
   assertIncludes(orderClient, 'table = null', 'OrderClient table prop fallback');
-  assertIncludes(orderClient, 'tableSlug: table?.slug', 'OrderClient submits table slug');
-  assertIncludes(orderClient, 'tableToken: table?.tableToken', 'OrderClient submits table token');
+  assertIncludes(orderClient, 'tableSlug: table.slug', 'OrderClient submits table slug');
+  assertIncludes(orderClient, 'tableToken: table.tableToken', 'OrderClient submits table token');
   assertIncludes(ordersClient, 'contextFilter', 'Admin orders context filter');
   assertIncludes(ordersClient, 'order.orderContext', 'Admin orders context display');
   assertIncludes(ordersClient, 'order.tableLabel', 'Admin orders table label display');
+}
+
+function checkTableOrderUxRefinement() {
+  const orderRoute = read('src/app/api/orders/route.js');
+  const orderClient = read('src/components/OrderClient.jsx');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+  const publicTablePage = read('src/app/public/table/[slug]/page.js');
+
+  assertIncludes(orderRoute, 'const requestedTableSlugFromBody = getRequestedTableSlug(body)', 'Order POST detects table context before address validation');
+  assertIncludes(orderRoute, "const orderType = requestedTableSlugFromBody ? 'PICKUP' : body.deliveryType", 'Order POST coerces table orders to pickup');
+  assertIncludes(orderRoute, 'Table-context orders reuse PICKUP', 'Order POST table order deliveryType comment');
+  assertIncludes(orderRoute, "!hasTableContext && parsed.data.deliveryType === 'DELIVERY'", 'Order POST table orders bypass delivery address requirement');
+  assertIncludes(orderRoute, 'address: hasTableContext', 'Order POST clears table order address');
+  assertIncludes(orderRoute, 'qrToken: requestedTableToken', 'Order POST keeps table token validation');
+  assertIncludes(orderClient, 'Staff will receive this table order', 'OrderClient table-order checkout copy');
+  assertIncludes(orderClient, 'No delivery address is needed', 'OrderClient table-order address copy');
+  assertIncludes(orderClient, 'Send table order', 'OrderClient table-order submit label');
+  assertIncludes(ordersClient, 'Table order', 'Admin orders table-order badge');
+  assertIncludes(ordersClient, 'tableZone', 'Admin orders table zone display');
+  assertIncludes(publicTablePage, 'You are ordering for this table', 'Public table landing table-order copy');
+  assertIncludes(publicTablePage, 'Staff will see your table number', 'Public table landing staff visibility copy');
+  assertIncludes(publicTablePage, 'not a payment or POS checkout yet', 'Public table landing POS limitation copy');
 }
 
 const checks = [
@@ -228,6 +250,7 @@ const checks = [
   checkFeatureModulesFoundation,
   checkQrTableOrderingFoundation,
   checkTableOrderContextFoundation,
+  checkTableOrderUxRefinement,
 ];
 
 for (const check of checks) {

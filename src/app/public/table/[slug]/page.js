@@ -81,7 +81,8 @@ export default async function PublicTablePage({ params, searchParams = {} }) {
         <h1 className="mt-2 text-3xl font-semibold text-secondary">{table.label}</h1>
         {table.zone && <p className="mt-1 text-sm font-medium text-neutral-600">{table.zone}</p>}
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-neutral-600">
-          Browse the menu, add your favorites, and include any table notes before checkout.
+          You are ordering for this table. Staff will see your table number when the order is sent.
+          This is not a payment or POS checkout yet.
         </p>
         <Link
           href={orderHref}
