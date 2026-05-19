@@ -1,7 +1,6 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { strings } from '../lib/strings';
 import { gentleEase } from '../lib/easings';
@@ -16,8 +15,11 @@ const navLinks = [
   { href: '/public/contact', label: 'Contact' },
 ];
 
-export default function Header() {
+export default function Header({ profile = {} }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const restaurantName = profile.restaurantName || strings.restaurantName;
+  const tagline = profile.tagline || strings.tagline;
+  const logoUrl = profile.logoUrl || '/images/logo-al-dayaa.png';
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
   const closeMenu = () => setIsMenuOpen(false);
@@ -27,16 +29,14 @@ export default function Header() {
       <div className="site-container py-3">
         <div className="flex items-center justify-between gap-4">
           <Link href="/public" className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-white/60">
-            <Image
-              src="/images/logo-al-dayaa.png"
-              alt={strings.restaurantName}
-              width={48}
-              height={48}
-              className="rounded-full border border-white/60 shadow-sm"
+            <img
+              src={logoUrl}
+              alt={restaurantName}
+              className="h-12 w-12 rounded-full border border-white/60 object-cover shadow-sm"
             />
             <div className="leading-tight">
-              <p className="text-base md:text-lg font-semibold text-secondary">{strings.restaurantName}</p>
-              <p className="text-xs md:text-sm text-neutral-700">{strings.tagline}</p>
+              <p className="text-base md:text-lg font-semibold text-secondary">{restaurantName}</p>
+              <p className="text-xs md:text-sm text-neutral-700">{tagline}</p>
             </div>
           </Link>
           
@@ -111,8 +111,8 @@ export default function Header() {
               <div className="site-container py-4">
                 <div className="flex items-center justify-between pb-2">
                   <div className="leading-tight">
-                    <p className="text-sm font-semibold text-secondary">{strings.restaurantName}</p>
-                    <p className="text-xs text-neutral-600">{strings.tagline}</p>
+                    <p className="text-sm font-semibold text-secondary">{restaurantName}</p>
+                    <p className="text-xs text-neutral-600">{tagline}</p>
                   </div>
                   <button
                     type="button"

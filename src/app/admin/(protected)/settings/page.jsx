@@ -4,6 +4,7 @@ import SettingsClient from './SettingsClient';
 import { getAdminFromRequest } from '../../../../lib/auth';
 import { getRestaurantSettings } from '../../../../lib/restaurant-settings';
 import { getLatestAnnouncement } from '../../../../lib/announcement';
+import { getRestaurantProfile, toPublicRestaurantProfile } from '../../../../lib/restaurant-profile';
 
 export const metadata = { title: 'Restaurant Settings' };
 
@@ -13,8 +14,12 @@ export default async function AdminSettingsPage() {
     redirect('/admin/dashboard');
   }
 
-  const settings = await getRestaurantSettings();
-  const announcement = await getLatestAnnouncement();
+  const [settings, announcement, profileRecord] = await Promise.all([
+    getRestaurantSettings(),
+    getLatestAnnouncement(),
+    getRestaurantProfile(),
+  ]);
+  const profile = toPublicRestaurantProfile(profileRecord);
   const announcementData = announcement
     ? {
         id: announcement.id,
@@ -24,5 +29,12 @@ export default async function AdminSettingsPage() {
       }
     : null;
 
-  return <SettingsClient initialSettings={settings} initialAnnouncement={announcementData} />;
+  return (
+    <SettingsClient
+      adminRole={admin.role}
+      initialSettings={settings}
+      initialAnnouncement={announcementData}
+      initialProfile={profile}
+    />
+  );
 }

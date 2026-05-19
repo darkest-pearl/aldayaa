@@ -4,7 +4,13 @@ import { useState } from "react";
 import Button from "./Button";
 import { strings } from "../lib/strings";
 
-export default function ContactForm() {
+export default function ContactForm({ profile = {} }) {
+  const address = profile.address || strings.address;
+  const googleMapsUrl = profile.googleMapsUrl || strings.googleMaps;
+  const googleMapsEmbedUrl = profile.googleMapsEmbedUrl || strings.googleMapsEmbed;
+  const whatsappLink = profile.whatsappLink || strings.whatsappLink;
+  const whatsappNumber = profile.whatsappNumber || strings.whatsapp;
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -77,11 +83,12 @@ export default function ContactForm() {
             <span className="h-10 w-10 rounded-full bg-primary/15 text-secondary flex items-center justify-center text-base md:text-lg">📍</span>
             <div>
               <p className="font-semibold text-secondary">Visit us</p>
-              <p className="text-sm leading-relaxed text-neutral-700">{strings.address}</p>
+              <p className="text-sm leading-relaxed text-neutral-700">{address}</p>
               <a
-                href={strings.googleMaps}
+                href={googleMapsUrl}
                 className="text-primary font-semibold text-sm"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 View on Google Maps
               </a>
@@ -94,11 +101,12 @@ export default function ContactForm() {
             <div>
               <p className="font-semibold text-secondary">WhatsApp</p>
               <a
-                href={strings.whatsappLink}
+                href={whatsappLink}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-primary text-sm font-semibold"
               >
-                {strings.whatsapp}
+                {whatsappNumber}
               </a>
             </div>
           </div>
@@ -117,7 +125,8 @@ export default function ContactForm() {
         {/* Updated Google Maps iframe */}
         <iframe
           className="w-full h-48 rounded-2xl border border-neutral-200/80 shadow-soft"
-          src={strings.googleMapsEmbed}
+          src={googleMapsEmbedUrl}
+          title="Restaurant location map"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         ></iframe>

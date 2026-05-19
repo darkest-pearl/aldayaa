@@ -100,12 +100,30 @@ function checkRestaurantProfileFoundation() {
   assertIncludes(apiRoute, 'profileSchema.safeParse', 'Restaurant profile API validation');
 }
 
+function checkRestaurantProfileUiWiring() {
+  const settingsClient = read('src/app/admin/(protected)/settings/SettingsClient.jsx');
+  const publicLayout = read('src/app/public/layout.js');
+  const header = read('src/components/Header.jsx');
+  const contactForm = read('src/components/ContactForm.jsx');
+  const footer = read('src/components/Footer.jsx');
+
+  assert(fs.existsSync(path.join(root, 'src/app/api/admin/restaurant-profile/route.js')), 'Restaurant profile API route is missing');
+  assertIncludes(settingsClient, '/api/admin/restaurant-profile', 'Admin settings profile API usage');
+  assertIncludes(settingsClient, "adminRole === 'ADMIN'", 'Admin settings profile update role guard');
+  assertIncludes(settingsClient, 'submitDisabled={!canUpdateProfile}', 'Admin settings non-ADMIN submit disable');
+  assertIncludes(publicLayout, 'getRestaurantProfile', 'Public layout profile loading');
+  assertIncludes(header, 'profile = {}', 'Header profile prop fallback');
+  assertIncludes(contactForm, 'profile = {}', 'Contact form profile prop fallback');
+  assertIncludes(footer, 'profile: profileProp', 'Footer profile prop support');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
   checkAdminUserHardening,
   checkEnvExample,
   checkRestaurantProfileFoundation,
+  checkRestaurantProfileUiWiring,
 ];
 
 for (const check of checks) {
