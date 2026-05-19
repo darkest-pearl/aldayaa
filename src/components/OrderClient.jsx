@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Button from "./Button";
 import MenuItemImage from "./MenuItemImage";
 
-export default function OrderClient({ categories }) {
+export default function OrderClient({ categories, table = null }) {
   const [cart, setCart] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -89,6 +89,7 @@ export default function OrderClient({ categories }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          tableSlug: table?.slug,
           items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
           paidOnline: false,
         }),

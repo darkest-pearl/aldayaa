@@ -51,6 +51,7 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - `RestaurantTable` supports QR-ready table labels, slugs, tokens, zones, seats, active status, and notes.
 - Admin users can manage tables under `/admin/tables`; SUPPORT users can view links in read-only mode.
 - Public QR links use `/public/table/[slug]` and hand off to `/public/order?table=...`.
+- Table order context can now be persisted on orders for admin visibility.
 - This is a foundation only. It does not add full waiter-assisted ordering, POS behavior, payments, inventory, or dine-in order records yet.
 
 ## Production Notes

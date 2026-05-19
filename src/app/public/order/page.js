@@ -39,7 +39,14 @@ export default async function OrderPage({ searchParams = {} }) {
   const profile = toPublicRestaurantProfile(profileRecord);
   const tableOrderingEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.TABLE_QR_ORDERING);
   const tableRecord = tableOrderingEnabled && tableSlug ? await getActiveTable(tableSlug) : null;
-  const table = tableRecord ? normalizeTable(tableRecord) : null;
+  const normalizedTable = tableRecord ? normalizeTable(tableRecord) : null;
+  const table = normalizedTable
+    ? {
+        label: normalizedTable.label,
+        slug: normalizedTable.slug,
+        zone: normalizedTable.zone,
+      }
+    : null;
   const categories = JSON.parse(JSON.stringify(menu));
 
   return (
@@ -59,7 +66,7 @@ export default async function OrderPage({ searchParams = {} }) {
         </div>
       )}
 
-      <OrderClient categories={categories} />
+      <OrderClient categories={categories} table={table} />
     </Section>
   );
 }

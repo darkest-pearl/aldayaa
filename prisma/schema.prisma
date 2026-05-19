@@ -69,19 +69,27 @@ model Reservation {
 }
 
 model Order {
-  id              String      @id @default(cuid())
+  id              String           @id @default(cuid())
   name            String
   phone           String
   deliveryType    String
   address         String?
   notes           String?
   totalPrice      Float
-  status          String      @default("NEW")
-  createdAt       DateTime    @default(now())
-  notifyWhenReady Boolean     @default(false)
-  paidOnline      Boolean     @default(false)
-  reference       String      @unique
+  status          String           @default("NEW")
+  createdAt       DateTime         @default(now())
+  notifyWhenReady Boolean          @default(false)
+  paidOnline      Boolean          @default(false)
+  reference       String           @unique
+  tableId         String?
+  tableLabel      String?
+  tableSlug       String?
+  orderContext    String           @default("STANDARD")
+  table           RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
   items           OrderItem[]
+
+  @@index([tableId])
+  @@index([orderContext])
 }
 
 model OrderItem {
@@ -149,6 +157,7 @@ model RestaurantTable {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orders    Order[]
 
   @@index([isActive])
   @@index([zone])
