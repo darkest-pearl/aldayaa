@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminCard from '../../components/AdminCard.jsx';
 import AdminForm from '../../components/AdminForm.jsx';
 import AdminPageHeader from '../../components/AdminPageHeader.jsx';
@@ -171,7 +171,7 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
   const [profileMessage, setProfileMessage] = useState(null);
   const canUpdateProfile = adminRole === 'ADMIN';
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setFetching(true);
     setError(null);
     setMessage(null);
@@ -183,9 +183,9 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
     } finally {
       setFetching(false);
     }
-  };
+  }, []);
 
-  const loadAnnouncement = async () => {
+  const loadAnnouncement = useCallback(async () => {
     setAnnouncementFetching(true);
     setAnnouncementError(null);
     setAnnouncementMessage(null);
@@ -200,9 +200,9 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
     } finally {
       setAnnouncementFetching(false);
     }
-  };
+  }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     setProfileFetching(true);
     setProfileError(null);
     setProfileMessage(null);
@@ -217,23 +217,22 @@ export default function SettingsClient({ adminRole, initialSettings, initialAnno
     } finally {
       setProfileFetching(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (initialSettings) return;
     load();
-  }, []);
+  }, [initialSettings, load]);
 
   useEffect(() => {
     if (initialAnnouncement) return;
     loadAnnouncement();
-  }, []);
+  }, [initialAnnouncement, loadAnnouncement]);
 
   useEffect(() => {
     if (initialProfile) return;
     loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialProfile]);
+  }, [initialProfile, loadProfile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
