@@ -99,6 +99,8 @@ export default function OrdersClient() {
           o.phone,
           o.deliveryType,
           o.orderContext,
+          o.orderSource,
+          o.createdByAdminEmail,
           o.tableLabel,
           o.tableSlug,
           o.table?.label,
@@ -293,6 +295,32 @@ export default function OrdersClient() {
                       {context === 'TABLE' && tableZone && (
                         <p className="text-xs text-neutral-500">
                           Zone: {tableZone}
+                        </p>
+                      )}
+                    </div>
+                  );
+                },
+              },
+              {
+                key: 'orderSource',
+                header: 'Source',
+                render: (_val, order) => {
+                  const isStaffAssisted = order.orderSource === 'STAFF_ASSISTED';
+
+                  return (
+                    <div>
+                      <span
+                        className={
+                          isStaffAssisted
+                            ? 'rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800'
+                            : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700'
+                        }
+                      >
+                        {isStaffAssisted ? 'Staff-assisted' : 'Customer'}
+                      </span>
+                      {isStaffAssisted && order.createdByAdminEmail && (
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {order.createdByAdminEmail}
                         </p>
                       )}
                     </div>

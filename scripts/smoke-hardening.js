@@ -240,6 +240,46 @@ function checkTableOrderUxRefinement() {
   assertIncludes(publicTablePage, 'not a payment or POS checkout yet', 'Public table landing POS limitation copy');
 }
 
+function checkWaiterAssistedOrderingFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const assistedRoutePath = path.join(root, 'src/app/api/admin/orders/assisted/route.js');
+  const assistedPagePath = path.join(root, 'src/app/admin/(protected)/assisted-order/page.jsx');
+  const assistedClientPath = path.join(root, 'src/app/admin/(protected)/assisted-order/AssistedOrderClient.jsx');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+
+  assertIncludes(schema, 'orderSource', 'Order orderSource field');
+  assertIncludes(schema, 'createdByAdminId', 'Order createdByAdminId field');
+  assertIncludes(schema, 'createdByAdminEmail', 'Order createdByAdminEmail field');
+  assert(fs.existsSync(assistedRoutePath), 'Assisted order API route is missing');
+  assert(fs.existsSync(assistedPagePath), 'Assisted order admin page is missing');
+  assert(fs.existsSync(assistedClientPath), 'Assisted order admin client is missing');
+
+  const assistedRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const assistedClient = read('src/app/admin/(protected)/assisted-order/AssistedOrderClient.jsx');
+
+  assertIncludes(assistedRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Assisted order API role guard');
+  assertIncludes(assistedRoute, 'FEATURE_KEYS.WAITER_ASSISTED_ORDERING', 'Assisted order feature flag check');
+  assertIncludes(assistedRoute, 'prisma.menuItem.findMany', 'Assisted order DB menu item lookup');
+  assertIncludes(assistedRoute, 'name: menuItem.name', 'Assisted order item name DB snapshot');
+  assertIncludes(assistedRoute, 'price: menuItem.price', 'Assisted order item price DB snapshot');
+  assertIncludes(assistedRoute, "orderSource: 'STAFF_ASSISTED'", 'Assisted order source persistence');
+  assertIncludes(assistedRoute, 'createdByAdminId: admin.id', 'Assisted order admin id persistence');
+  assertIncludes(assistedRoute, 'createdByAdminEmail: admin.email', 'Assisted order admin email persistence');
+  assertIncludes(assistedRoute, 'prisma.restaurantTable.findFirst', 'Assisted order table lookup');
+  assertIncludes(assistedRoute, 'isActive: true', 'Assisted order active table guard');
+  assertNotIncludes(assistedRoute, 'Number(item.price)', 'Assisted order client price trust');
+  assertIncludes(assistedClient, '/api/admin/orders/assisted', 'Assisted order UI API usage');
+  assertIncludes(assistedClient, '/api/menu/items', 'Assisted order UI menu loading');
+  assertIncludes(assistedClient, '/api/admin/tables', 'Assisted order UI table loading');
+  assertIncludes(adminShell, "'/admin/assisted-order'", 'Assisted order admin navigation');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Assisted order admin navigation roles');
+  assertIncludes(ordersClient, 'createdByAdminEmail', 'Admin orders staff source search');
+  assertIncludes(ordersClient, 'Staff-assisted', 'Admin orders staff-assisted label');
+  assertIncludes(orderRoute, 'prisma.menuItem.findMany', 'Customer order route still uses DB pricing');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -251,6 +291,7 @@ const checks = [
   checkQrTableOrderingFoundation,
   checkTableOrderContextFoundation,
   checkTableOrderUxRefinement,
+  checkWaiterAssistedOrderingFoundation,
 ];
 
 for (const check of checks) {
