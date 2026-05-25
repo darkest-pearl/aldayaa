@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { requireAdmin } from '../../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../../lib/api-response';
 import { prisma } from '../../../../../lib/prisma';
-import { FEATURE_KEYS, isFeatureEnabled } from '../../../../../lib/features';
+import { FEATURE_KEYS } from '../../../../../lib/features';
+import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
 import { generateReference } from '../../../../../lib/reference';
 import { ORDER_CONTEXTS, ORDER_SOURCES } from '../../../../../lib/order-status';
@@ -30,10 +31,7 @@ export async function POST(request) {
   try {
     const admin = await requireAdmin(request, ['ADMIN', 'MANAGER']);
     const profile = await getRestaurantProfile();
-
-    if (!isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.WAITER_ASSISTED_ORDERING)) {
-      return failure('Waiter-assisted ordering is not enabled', 400);
-    }
+    requireFeatureEnabled(profile, FEATURE_KEYS.WAITER_ASSISTED_ORDERING);
 
     const body = await request.json();
     const parsed = assistedOrderSchema.safeParse(body);

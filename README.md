@@ -73,6 +73,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - The queue reuses the existing order status workflow and excludes completed/cancelled orders.
 - This is not a full kitchen display, POS, printing, or realtime system yet.
 
+## Module Access Polish
+
+- Module disabled-state UX added for admin features.
+- Disabled table QR ordering, waiter-assisted ordering, and kitchen queue modules now show clearer admin states instead of relying only on API failures.
+- No billing or subscription system has been added.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.

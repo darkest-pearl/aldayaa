@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AdminCard from '../../components/AdminCard.jsx';
 import AdminForm from '../../components/AdminForm.jsx';
@@ -42,7 +43,11 @@ function toPayload(form) {
   };
 }
 
-export default function TablesClient() {
+export default function TablesClient({
+  tableQrOrderingEnabled = true,
+  tableQrOrderingMessage = 'QR table ordering is disabled',
+  canEnableModules = false,
+}) {
   const admin = useAdmin();
   const canManage = ['ADMIN', 'MANAGER'].includes(admin?.role);
   const [tables, setTables] = useState([]);
@@ -152,6 +157,27 @@ export default function TablesClient() {
       {!canManage && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           SUPPORT users can view table QR links, but only ADMIN and MANAGER users can change them.
+        </div>
+      )}
+      {!tableQrOrderingEnabled && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="font-semibold">{tableQrOrderingMessage}</p>
+              <p>
+                You can prepare tables now, but public QR table ordering stays unavailable until this
+                module is enabled.
+              </p>
+            </div>
+            {canEnableModules && (
+              <Link
+                href="/admin/settings"
+                className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-semibold text-amber-900 transition hover:bg-amber-100"
+              >
+                Open Settings
+              </Link>
+            )}
+          </div>
         </div>
       )}
 
