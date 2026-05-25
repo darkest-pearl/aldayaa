@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/admin/gallery', label: 'Gallery' },
   { href: '/admin/reservations', label: 'Reservations' },
   { href: '/admin/orders', label: 'Orders' },
+  { href: '/admin/kitchen', label: 'Kitchen', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/assisted-order', label: 'Assisted Order', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/tables', label: 'Tables', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
   { href: '/admin/settings', label: 'Settings', roles: ['ADMIN'] },

@@ -8,6 +8,7 @@ export const FEATURE_KEYS = Object.freeze({
   CONTACT_WHATSAPP: 'CONTACT_WHATSAPP',
   TABLE_QR_ORDERING: 'TABLE_QR_ORDERING',
   WAITER_ASSISTED_ORDERING: 'WAITER_ASSISTED_ORDERING',
+  KITCHEN_QUEUE: 'KITCHEN_QUEUE',
   INVENTORY: 'INVENTORY',
   RECIPE_CONSUMPTION: 'RECIPE_CONSUMPTION',
   SUPPLIER_REQUESTS: 'SUPPLIER_REQUESTS',
@@ -74,6 +75,12 @@ export const FEATURE_DEFINITIONS = Object.freeze([
     key: FEATURE_KEYS.WAITER_ASSISTED_ORDERING,
     label: 'Waiter-assisted ordering',
     description: 'Future waiter-assisted order entry module.',
+    category: 'Ordering',
+  },
+  {
+    key: FEATURE_KEYS.KITCHEN_QUEUE,
+    label: 'Kitchen queue',
+    description: 'Simple active order queue for kitchen and preparation staff.',
     category: 'Ordering',
   },
   {
