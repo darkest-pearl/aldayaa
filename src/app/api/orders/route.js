@@ -7,6 +7,14 @@ import { FEATURE_KEYS, isFeatureEnabled } from '../../../lib/features';
 import { generateReference } from "../../../lib/reference";
 import { getRestaurantProfile } from '../../../lib/restaurant-profile';
 import { sendWhatsAppMessage } from "../../../lib/whatsapp";
+import {
+  ORDER_CONTEXTS,
+  ORDER_SOURCES,
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+  getOrderStatusLabel,
+  isValidOrderStatus,
+} from '../../../lib/order-status';
 
 const itemSchema = z.object({
   id: z.string().min(1),
@@ -27,8 +35,10 @@ const orderSchema = z.object({
   tableToken: z.string().trim().min(8).max(200).optional().nullable(),
 });
 
-const ORDER_STATUSES = ['NEW', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-const updateSchema = z.object({ id: z.string().min(3), status: z.enum(ORDER_STATUSES) });
+const updateSchema = z.object({
+  id: z.string().min(3),
+  status: z.string().refine(isValidOrderStatus, 'Invalid order status'),
+});
 const deleteSchema = z.object({ id: z.string().min(3) });
 
 function getRequestedTableSlug(orderData) {
@@ -168,7 +178,8 @@ export async function POST(request) {
         tableId: tableContext?.id || null,
         tableLabel: tableContext?.label || null,
         tableSlug: tableContext?.slug || null,
-        orderContext: tableContext ? 'TABLE' : 'STANDARD',
+        orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD,
+        orderSource: ORDER_SOURCES.CUSTOMER,
         items: {
           create: orderItems,
         },
@@ -198,14 +209,31 @@ export async function PUT(request) {
         details: parsed.error.flatten(),
       });
 
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: parsed.data.id },
+      select: { id: true, status: true },
+    });
+
+    if (!existingOrder) {
+      return failure('Order not found', 404);
+    }
+
+    if (!canTransitionOrderStatus(existingOrder.status, parsed.data.status)) {
+      return failure(
+        `Cannot move order from ${getOrderStatusLabel(existingOrder.status)} to ${getOrderStatusLabel(parsed.data.status)}.`,
+        400
+      );
+    }
+
     const order = await prisma.order.update({
       where: { id: parsed.data.id },
       data: { status: parsed.data.status },
     });
 
     if (
-      order.status === 'COMPLETED' &&
-      order.deliveryType === 'PICKUP' &&
+      existingOrder.status !== ORDER_STATUSES.COMPLETED &&
+      order.status === ORDER_STATUSES.COMPLETED &&
+      order.deliveryType === "PICKUP" &&
       order.notifyWhenReady === true &&
       order.phone
     ) {

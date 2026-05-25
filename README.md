@@ -61,6 +61,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Staff-created orders use the same server-side menu pricing snapshots as customer orders and can optionally include table context.
 - This is not full POS, kitchen display, payment processing, inventory, payroll, AI ordering, or advanced staff shift logic.
 
+## Order Status Workflow
+
+- Order status workflow helpers added.
+- Admin order updates now use a small centralized status transition rule set for NEW, IN_PROGRESS, COMPLETED, and CANCELLED.
+- This is still not a kitchen display or POS workflow.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
