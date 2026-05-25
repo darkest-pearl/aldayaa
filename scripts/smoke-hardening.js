@@ -355,6 +355,10 @@ function checkKitchenQueueFoundation() {
   const kitchenClient = read('src/app/admin/(protected)/kitchen/KitchenQueueClient.jsx');
 
   assertIncludes(kitchenRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Kitchen queue API role guard');
+  assertIncludes(kitchenRoute, 'FEATURE_KEYS.KITCHEN_QUEUE', 'Kitchen queue API feature key check');
+  assertIncludes(kitchenRoute, 'getRestaurantProfile', 'Kitchen queue API restaurant profile loading');
+  assertIncludes(kitchenRoute, 'isFeatureEnabled', 'Kitchen queue API feature enabled check');
+  assertIncludes(kitchenRoute, 'Kitchen queue is not enabled', 'Kitchen queue API disabled feature error');
   assertIncludes(kitchenRoute, 'ORDER_STATUSES.NEW', 'Kitchen queue API NEW status filter');
   assertIncludes(kitchenRoute, 'ORDER_STATUSES.IN_PROGRESS', 'Kitchen queue API IN_PROGRESS status filter');
   assertIncludes(kitchenRoute, 'notIn: [ORDER_STATUSES.COMPLETED, ORDER_STATUSES.CANCELLED]', 'Kitchen queue API completed/cancelled exclusion');
