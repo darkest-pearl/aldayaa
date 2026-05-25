@@ -1,5 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+} from '../src/lib/order-status.js';
 
 const root = process.cwd();
 
@@ -204,7 +208,7 @@ function checkTableOrderContextFoundation() {
   assertIncludes(orderRoute, 'prisma.restaurantTable.findFirst', 'Order POST RestaurantTable lookup');
   assertIncludes(orderRoute, 'qrToken: requestedTableToken', 'Order POST RestaurantTable token lookup');
   assertIncludes(orderRoute, 'if (!requestedTableToken)', 'Order POST table token required');
-  assertIncludes(orderRoute, "orderContext: tableContext ? 'TABLE' : 'STANDARD'", 'Order context persistence');
+  assertIncludes(orderRoute, 'orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD', 'Order context persistence');
   assertIncludes(orderRoute, 'tableLabel: tableContext?.label', 'Order table label snapshot');
   assertIncludes(orderRoute, 'include: { items: true, table: true }', 'Orders API table relation output');
   assertIncludes(orderPage, 'searchParams.tableToken', 'Public order page reads tableToken');
@@ -233,7 +237,7 @@ function checkTableOrderUxRefinement() {
   assertIncludes(orderClient, 'Staff will receive this table order', 'OrderClient table-order checkout copy');
   assertIncludes(orderClient, 'No delivery address is needed', 'OrderClient table-order address copy');
   assertIncludes(orderClient, 'Send table order', 'OrderClient table-order submit label');
-  assertIncludes(ordersClient, 'Table order', 'Admin orders table-order badge');
+  assertIncludes(ordersClient, 'getOrderContextLabel(context)', 'Admin orders table-order badge');
   assertIncludes(ordersClient, 'tableZone', 'Admin orders table zone display');
   assertIncludes(publicTablePage, 'You are ordering for this table', 'Public table landing table-order copy');
   assertIncludes(publicTablePage, 'Staff will see your table number', 'Public table landing staff visibility copy');
@@ -264,7 +268,7 @@ function checkWaiterAssistedOrderingFoundation() {
   assertIncludes(assistedRoute, 'prisma.menuItem.findMany', 'Assisted order DB menu item lookup');
   assertIncludes(assistedRoute, 'name: menuItem.name', 'Assisted order item name DB snapshot');
   assertIncludes(assistedRoute, 'price: menuItem.price', 'Assisted order item price DB snapshot');
-  assertIncludes(assistedRoute, "orderSource: 'STAFF_ASSISTED'", 'Assisted order source persistence');
+  assertIncludes(assistedRoute, 'orderSource: ORDER_SOURCES.STAFF_ASSISTED', 'Assisted order source persistence');
   assertIncludes(assistedRoute, 'createdByAdminId: admin.id', 'Assisted order admin id persistence');
   assertIncludes(assistedRoute, 'createdByAdminEmail: admin.email', 'Assisted order admin email persistence');
   assertIncludes(assistedRoute, 'prisma.restaurantTable.findFirst', 'Assisted order table lookup');
@@ -276,8 +280,58 @@ function checkWaiterAssistedOrderingFoundation() {
   assertIncludes(adminShell, "'/admin/assisted-order'", 'Assisted order admin navigation');
   assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Assisted order admin navigation roles');
   assertIncludes(ordersClient, 'createdByAdminEmail', 'Admin orders staff source search');
-  assertIncludes(ordersClient, 'Staff-assisted', 'Admin orders staff-assisted label');
+  assertIncludes(ordersClient, 'getOrderSourceLabel(source)', 'Admin orders staff-assisted label');
   assertIncludes(orderRoute, 'prisma.menuItem.findMany', 'Customer order route still uses DB pricing');
+}
+
+function checkOrderStatusWorkflowRefinement() {
+  const helperPath = path.join(root, 'src/lib/order-status.js');
+  assert(fs.existsSync(helperPath), 'src/lib/order-status.js does not exist');
+
+  const helper = read('src/lib/order-status.js');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const assistedRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+  const readme = read('README.md');
+
+  for (const expected of [
+    'ORDER_STATUSES',
+    'ORDER_CONTEXTS',
+    'ORDER_SOURCES',
+    'isValidOrderStatus',
+    'getOrderStatusLabel',
+    'getOrderContextLabel',
+    'getOrderSourceLabel',
+    'canTransitionOrderStatus',
+  ]) {
+    assertIncludes(helper, expected, `Order status helper ${expected}`);
+  }
+
+  assertIncludes(orderRoute, 'canTransitionOrderStatus', 'Orders API transition guard');
+  assertIncludes(orderRoute, 'isValidOrderStatus', 'Orders API status validation helper');
+  assertIncludes(orderRoute, 'ORDER_CONTEXTS.TABLE', 'Customer order route table context constant');
+  assertIncludes(orderRoute, 'ORDER_CONTEXTS.STANDARD', 'Customer order route standard context constant');
+  assertIncludes(orderRoute, 'ORDER_SOURCES.CUSTOMER', 'Customer order route source constant');
+  assertIncludes(assistedRoute, 'ORDER_CONTEXTS.TABLE', 'Assisted order route table context constant');
+  assertIncludes(assistedRoute, 'ORDER_SOURCES.STAFF_ASSISTED', 'Assisted order route source constant');
+  assertIncludes(ordersClient, 'Status update failed:', 'Admin orders transition error display');
+  assertIncludes(ordersClient, 'canTransitionOrderStatus', 'Admin orders disabled transition options');
+  assertIncludes(ordersClient, 'getOrderStatusLabel', 'Admin orders status labels');
+  assertIncludes(readme, 'Order status workflow helpers added.', 'README order status workflow note');
+  assertIncludes(readme, 'not a kitchen display or POS workflow', 'README kitchen/POS limitation');
+
+  assert(
+    canTransitionOrderStatus(ORDER_STATUSES.NEW, ORDER_STATUSES.COMPLETED),
+    'Order status transition NEW -> COMPLETED should be allowed',
+  );
+  assert(
+    !canTransitionOrderStatus(ORDER_STATUSES.COMPLETED, ORDER_STATUSES.IN_PROGRESS),
+    'Order status transition COMPLETED -> IN_PROGRESS should be blocked',
+  );
+  assert(
+    !canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.NEW),
+    'Order status transition CANCELLED -> NEW should be blocked',
+  );
 }
 
 const checks = [
@@ -292,6 +346,7 @@ const checks = [
   checkTableOrderContextFoundation,
   checkTableOrderUxRefinement,
   checkWaiterAssistedOrderingFoundation,
+  checkOrderStatusWorkflowRefinement,
 ];
 
 for (const check of checks) {

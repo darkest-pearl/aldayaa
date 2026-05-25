@@ -5,6 +5,15 @@ import AdminCard from '../../components/AdminCard.jsx';
 import AdminPageHeader from '../../components/AdminPageHeader.jsx';
 import AdminTable from '../../components/AdminTable.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
+import {
+  ORDER_CONTEXTS,
+  ORDER_SOURCES,
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+  getOrderContextLabel,
+  getOrderSourceLabel,
+  getOrderStatusLabel,
+} from '../../../../lib/order-status';
 
 async function apiRequest(url, options = {}) {
   const res = await fetch(url, {
@@ -26,6 +35,20 @@ async function apiRequest(url, options = {}) {
     throw new Error(data?.error || 'Request failed');
   }
   return data.data;
+}
+
+const ORDER_STATUS_OPTIONS = Object.values(ORDER_STATUSES);
+const ORDER_CONTEXT_OPTIONS = Object.values(ORDER_CONTEXTS);
+
+const STATUS_BADGE_CLASSES = {
+  [ORDER_STATUSES.NEW]: 'bg-blue-50 text-blue-700 ring-blue-200',
+  [ORDER_STATUSES.IN_PROGRESS]: 'bg-amber-50 text-amber-800 ring-amber-200',
+  [ORDER_STATUSES.COMPLETED]: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  [ORDER_STATUSES.CANCELLED]: 'bg-red-50 text-red-700 ring-red-200',
+};
+
+function getStatusBadgeClass(status) {
+  return STATUS_BADGE_CLASSES[status] || 'bg-neutral-100 text-neutral-700 ring-neutral-200';
 }
 
 export default function OrdersClient() {
@@ -67,13 +90,14 @@ export default function OrdersClient() {
 
   const updateStatus = async (id, status) => {
     try {
+      setError(null);
       await apiRequest('/api/orders', {
         method: 'PUT',
         body: JSON.stringify({ id, status }),
       });
       await load();
     } catch (err) {
-      setError(err.message);
+      setError(`Status update failed: ${err.message}`);
     }
   };
 
@@ -117,7 +141,7 @@ export default function OrdersClient() {
 
       if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
       if (typeFilter !== 'ALL' && o.deliveryType !== typeFilter) return false;
-      if (contextFilter !== 'ALL' && (o.orderContext || 'STANDARD') !== contextFilter) return false;
+      if (contextFilter !== 'ALL' && (o.orderContext || ORDER_CONTEXTS.STANDARD) !== contextFilter) return false;
 
       if (fromDate || toDate) {
         const createdAtTime = o.createdAt ? new Date(o.createdAt).getTime() : null;
@@ -177,10 +201,11 @@ export default function OrdersClient() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="ALL">All</option>
-              <option value="NEW">New</option>
-              <option value="IN_PROGRESS">In progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              {ORDER_STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {getOrderStatusLabel(status)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -209,8 +234,11 @@ export default function OrdersClient() {
               onChange={(e) => setContextFilter(e.target.value)}
             >
               <option value="ALL">All</option>
-              <option value="STANDARD">Standard</option>
-              <option value="TABLE">Table</option>
+              {ORDER_CONTEXT_OPTIONS.map((context) => (
+                <option key={context} value={context}>
+                  {getOrderContextLabel(context)}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -272,7 +300,7 @@ export default function OrdersClient() {
                 key: 'orderContext',
                 header: 'Context',
                 render: (_val, order) => {
-                  const context = order.orderContext || 'STANDARD';
+                  const context = order.orderContext || ORDER_CONTEXTS.STANDARD;
                   const tableLabel = order.tableLabel || order.table?.label || order.tableSlug;
                   const tableZone = order.table?.zone;
 
@@ -280,19 +308,19 @@ export default function OrdersClient() {
                     <div>
                       <span
                         className={
-                          context === 'TABLE'
+                          context === ORDER_CONTEXTS.TABLE
                             ? 'rounded-full bg-primary/15 px-2 py-1 text-xs font-semibold text-secondary'
                             : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700'
                         }
                       >
-                        {context === 'TABLE' ? 'Table order' : 'Standard'}
+                        {getOrderContextLabel(context)}
                       </span>
-                      {context === 'TABLE' && tableLabel && (
+                      {context === ORDER_CONTEXTS.TABLE && tableLabel && (
                         <p className="mt-1 text-xs text-neutral-500">
                           Table: {tableLabel}
                         </p>
                       )}
-                      {context === 'TABLE' && tableZone && (
+                      {context === ORDER_CONTEXTS.TABLE && tableZone && (
                         <p className="text-xs text-neutral-500">
                           Zone: {tableZone}
                         </p>
@@ -305,7 +333,8 @@ export default function OrdersClient() {
                 key: 'orderSource',
                 header: 'Source',
                 render: (_val, order) => {
-                  const isStaffAssisted = order.orderSource === 'STAFF_ASSISTED';
+                  const source = order.orderSource || ORDER_SOURCES.CUSTOMER;
+                  const isStaffAssisted = source === ORDER_SOURCES.STAFF_ASSISTED;
 
                   return (
                     <div>
@@ -316,7 +345,7 @@ export default function OrdersClient() {
                             : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700'
                         }
                       >
-                        {isStaffAssisted ? 'Staff-assisted' : 'Customer'}
+                        {getOrderSourceLabel(source)}
                       </span>
                       {isStaffAssisted && order.createdByAdminEmail && (
                         <p className="mt-1 text-xs text-neutral-500">
@@ -331,18 +360,34 @@ export default function OrdersClient() {
               {
                 key: 'status',
                 header: 'Status',
-                render: (val, row) => (
-                  <select
-                    className="min-h-[36px] rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
-                    value={row.status}
-                    onChange={(e) => updateStatus(row.id, e.target.value)}
-                  >
-                    <option value="NEW">New</option>
-                    <option value="IN_PROGRESS">In progress</option>
-                    <option value="COMPLETED">Completed</option>
-                    <option value="CANCELLED">Cancelled</option>
-                  </select>
-                ),
+                render: (_val, row) => {
+                  const currentStatus = row.status || ORDER_STATUSES.NEW;
+
+                  return (
+                    <div className="space-y-2">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getStatusBadgeClass(currentStatus)}`}
+                      >
+                        {getOrderStatusLabel(currentStatus)}
+                      </span>
+                      <select
+                        className="min-h-[36px] rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                        value={currentStatus}
+                        onChange={(e) => updateStatus(row.id, e.target.value)}
+                      >
+                        {ORDER_STATUS_OPTIONS.map((status) => (
+                          <option
+                            key={status}
+                            value={status}
+                            disabled={!canTransitionOrderStatus(currentStatus, status)}
+                          >
+                            {getOrderStatusLabel(status)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                },
               },
               {
                 key: 'items',

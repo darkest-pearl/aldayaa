@@ -6,6 +6,7 @@ import { prisma } from '../../../../../lib/prisma';
 import { FEATURE_KEYS, isFeatureEnabled } from '../../../../../lib/features';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
 import { generateReference } from '../../../../../lib/reference';
+import { ORDER_CONTEXTS, ORDER_SOURCES } from '../../../../../lib/order-status';
 
 const itemSchema = z.object({
   id: z.string().trim().min(1),
@@ -105,8 +106,8 @@ export async function POST(request) {
         tableId: tableContext?.id || null,
         tableLabel: tableContext?.label || null,
         tableSlug: tableContext?.slug || null,
-        orderContext: tableContext ? 'TABLE' : 'STANDARD',
-        orderSource: 'STAFF_ASSISTED',
+        orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD,
+        orderSource: ORDER_SOURCES.STAFF_ASSISTED,
         createdByAdminId: admin.id,
         createdByAdminEmail: admin.email,
         items: {
