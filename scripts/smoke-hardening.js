@@ -1,5 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {
+  ORDER_STATUSES,
+  canTransitionOrderStatus,
+} from '../src/lib/order-status.js';
 
 const root = process.cwd();
 
@@ -315,6 +319,19 @@ function checkOrderStatusWorkflowRefinement() {
   assertIncludes(ordersClient, 'getOrderStatusLabel', 'Admin orders status labels');
   assertIncludes(readme, 'Order status workflow helpers added.', 'README order status workflow note');
   assertIncludes(readme, 'not a kitchen display or POS workflow', 'README kitchen/POS limitation');
+
+  assert(
+    canTransitionOrderStatus(ORDER_STATUSES.NEW, ORDER_STATUSES.COMPLETED),
+    'Order status transition NEW -> COMPLETED should be allowed',
+  );
+  assert(
+    !canTransitionOrderStatus(ORDER_STATUSES.COMPLETED, ORDER_STATUSES.IN_PROGRESS),
+    'Order status transition COMPLETED -> IN_PROGRESS should be blocked',
+  );
+  assert(
+    !canTransitionOrderStatus(ORDER_STATUSES.CANCELLED, ORDER_STATUSES.NEW),
+    'Order status transition CANCELLED -> NEW should be blocked',
+  );
 }
 
 const checks = [
