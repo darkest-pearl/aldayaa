@@ -55,6 +55,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Table-order UX and admin visibility refined for clearer customer checkout and easier order scanning.
 - This is a foundation only. It does not add full waiter-assisted ordering, POS behavior, kitchen workflow, payments, inventory, or dine-in order records yet.
 
+## Waiter-Assisted Ordering Foundation
+
+- Waiter-assisted ordering foundation added for ADMIN/MANAGER staff order entry from the admin area.
+- Staff-created orders use the same server-side menu pricing snapshots as customer orders and can optionally include table context.
+- This is not full POS, kitchen display, payment processing, inventory, payroll, AI ordering, or advanced staff shift logic.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
