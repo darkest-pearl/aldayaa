@@ -357,8 +357,7 @@ function checkKitchenQueueFoundation() {
   assertIncludes(kitchenRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Kitchen queue API role guard');
   assertIncludes(kitchenRoute, 'FEATURE_KEYS.KITCHEN_QUEUE', 'Kitchen queue API feature key check');
   assertIncludes(kitchenRoute, 'getRestaurantProfile', 'Kitchen queue API restaurant profile loading');
-  assertIncludes(kitchenRoute, 'isFeatureEnabled', 'Kitchen queue API feature enabled check');
-  assertIncludes(kitchenRoute, 'Kitchen queue is not enabled', 'Kitchen queue API disabled feature error');
+  assertIncludes(kitchenRoute, 'requireFeatureEnabled', 'Kitchen queue API feature enabled check');
   assertIncludes(kitchenRoute, 'ORDER_STATUSES.NEW', 'Kitchen queue API NEW status filter');
   assertIncludes(kitchenRoute, 'ORDER_STATUSES.IN_PROGRESS', 'Kitchen queue API IN_PROGRESS status filter');
   assertIncludes(kitchenRoute, 'notIn: [ORDER_STATUSES.COMPLETED, ORDER_STATUSES.CANCELLED]', 'Kitchen queue API completed/cancelled exclusion');
@@ -378,6 +377,64 @@ function checkKitchenQueueFoundation() {
   assertIncludes(readme, 'not a full kitchen display, POS, printing, or realtime system', 'README kitchen limitation');
 }
 
+function checkModuleAccessPolish() {
+  const moduleAccessPath = path.join(root, 'src/lib/module-access.js');
+  const moduleUnavailablePath = path.join(root, 'src/app/admin/components/ModuleUnavailable.jsx');
+  const kitchenRoute = read('src/app/api/admin/kitchen/orders/route.js');
+  const assistedRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const kitchenPage = read('src/app/admin/(protected)/kitchen/page.jsx');
+  const assistedPage = read('src/app/admin/(protected)/assisted-order/page.jsx');
+  const tablesPage = read('src/app/admin/(protected)/tables/page.jsx');
+  const tablesClient = read('src/app/admin/(protected)/tables/TablesClient.jsx');
+  const features = read('src/lib/features.js');
+  const readme = read('README.md');
+
+  assert(fs.existsSync(moduleAccessPath), 'Module access helper is missing');
+  assert(fs.existsSync(moduleUnavailablePath), 'ModuleUnavailable component is missing');
+
+  const moduleAccess = read('src/lib/module-access.js');
+  const moduleUnavailable = read('src/app/admin/components/ModuleUnavailable.jsx');
+
+  assertIncludes(moduleAccess, 'getModuleUnavailableMessage', 'Module unavailable message helper');
+  assertIncludes(moduleAccess, 'requireFeatureEnabled', 'Require feature helper');
+  assertIncludes(moduleAccess, 'getFeatureRouteAccess', 'Feature route access helper');
+  assertIncludes(moduleAccess, 'isFeatureEnabled', 'Module access feature enabled check');
+  assertIncludes(moduleUnavailable, 'ModuleUnavailable', 'ModuleUnavailable component export');
+  assertIncludes(moduleUnavailable, '/admin/settings', 'ModuleUnavailable settings link');
+
+  assertIncludes(kitchenPage, 'FEATURE_KEYS.KITCHEN_QUEUE', 'Kitchen page module access feature key');
+  assertIncludes(kitchenPage, 'getRestaurantProfile', 'Kitchen page profile loading');
+  assertIncludes(kitchenPage, 'getFeatureRouteAccess', 'Kitchen page module access helper');
+  assertIncludes(kitchenPage, '<ModuleUnavailable', 'Kitchen page disabled module state');
+  assertIncludes(kitchenPage, '<KitchenQueueClient />', 'Kitchen page enabled queue render');
+
+  assertIncludes(assistedPage, 'FEATURE_KEYS.WAITER_ASSISTED_ORDERING', 'Assisted order page module access feature key');
+  assertIncludes(assistedPage, 'getRestaurantProfile', 'Assisted order page profile loading');
+  assertIncludes(assistedPage, 'getFeatureRouteAccess', 'Assisted order page module access helper');
+  assertIncludes(assistedPage, '<ModuleUnavailable', 'Assisted order page disabled module state');
+  assertIncludes(assistedPage, '<AssistedOrderClient />', 'Assisted order page enabled client render');
+
+  assertIncludes(tablesPage, 'FEATURE_KEYS.TABLE_QR_ORDERING', 'Tables page module access feature key');
+  assertIncludes(tablesPage, 'getRestaurantProfile', 'Tables page profile loading');
+  assertIncludes(tablesPage, 'getFeatureRouteAccess', 'Tables page module access helper');
+  assertIncludes(tablesPage, 'tableQrOrderingEnabled', 'Tables page passes module state');
+  assertIncludes(tablesClient, 'QR table ordering is disabled', 'Tables page disabled setup warning');
+  assertIncludes(tablesClient, 'You can prepare tables now', 'Tables page setup warning copy');
+
+  assertIncludes(kitchenRoute, 'requireFeatureEnabled', 'Kitchen API module access enforcement');
+  assertIncludes(kitchenRoute, 'FEATURE_KEYS.KITCHEN_QUEUE', 'Kitchen API module access feature key');
+  assertIncludes(assistedRoute, 'requireFeatureEnabled', 'Assisted order API module access enforcement');
+  assertIncludes(assistedRoute, 'FEATURE_KEYS.WAITER_ASSISTED_ORDERING', 'Assisted order API module access feature key');
+
+  const defaultBlockMatch = features.match(/const DEFAULT_ENABLED_FEATURES = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert(defaultBlockMatch, 'Default enabled features block not found for module access check');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.KITCHEN_QUEUE', 'KITCHEN_QUEUE default enabled features');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.WAITER_ASSISTED_ORDERING', 'WAITER_ASSISTED_ORDERING default enabled features');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.TABLE_QR_ORDERING', 'TABLE_QR_ORDERING default enabled features');
+  assertIncludes(readme, 'Module disabled-state UX added for admin features.', 'README module disabled UX note');
+  assertIncludes(readme, 'No billing or subscription system has been added', 'README no billing note');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -392,6 +449,7 @@ const checks = [
   checkWaiterAssistedOrderingFoundation,
   checkOrderStatusWorkflowRefinement,
   checkKitchenQueueFoundation,
+  checkModuleAccessPolish,
 ];
 
 for (const check of checks) {
