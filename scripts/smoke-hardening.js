@@ -334,6 +334,50 @@ function checkOrderStatusWorkflowRefinement() {
   );
 }
 
+function checkKitchenQueueFoundation() {
+  const features = read('src/lib/features.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const readme = read('README.md');
+  const kitchenRoutePath = path.join(root, 'src/app/api/admin/kitchen/orders/route.js');
+  const kitchenPagePath = path.join(root, 'src/app/admin/(protected)/kitchen/page.jsx');
+  const kitchenClientPath = path.join(root, 'src/app/admin/(protected)/kitchen/KitchenQueueClient.jsx');
+
+  assertIncludes(features, 'KITCHEN_QUEUE', 'KITCHEN_QUEUE feature key');
+  const defaultBlockMatch = features.match(/const DEFAULT_ENABLED_FEATURES = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert(defaultBlockMatch, 'Default enabled features block not found for kitchen queue check');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.KITCHEN_QUEUE', 'KITCHEN_QUEUE default enabled features');
+  assert(fs.existsSync(kitchenRoutePath), 'Kitchen queue API route is missing');
+  assert(fs.existsSync(kitchenPagePath), 'Kitchen queue admin page is missing');
+  assert(fs.existsSync(kitchenClientPath), 'Kitchen queue admin client is missing');
+
+  const kitchenRoute = read('src/app/api/admin/kitchen/orders/route.js');
+  const kitchenPage = read('src/app/admin/(protected)/kitchen/page.jsx');
+  const kitchenClient = read('src/app/admin/(protected)/kitchen/KitchenQueueClient.jsx');
+
+  assertIncludes(kitchenRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Kitchen queue API role guard');
+  assertIncludes(kitchenRoute, 'FEATURE_KEYS.KITCHEN_QUEUE', 'Kitchen queue API feature key check');
+  assertIncludes(kitchenRoute, 'getRestaurantProfile', 'Kitchen queue API restaurant profile loading');
+  assertIncludes(kitchenRoute, 'isFeatureEnabled', 'Kitchen queue API feature enabled check');
+  assertIncludes(kitchenRoute, 'Kitchen queue is not enabled', 'Kitchen queue API disabled feature error');
+  assertIncludes(kitchenRoute, 'ORDER_STATUSES.NEW', 'Kitchen queue API NEW status filter');
+  assertIncludes(kitchenRoute, 'ORDER_STATUSES.IN_PROGRESS', 'Kitchen queue API IN_PROGRESS status filter');
+  assertIncludes(kitchenRoute, 'notIn: [ORDER_STATUSES.COMPLETED, ORDER_STATUSES.CANCELLED]', 'Kitchen queue API completed/cancelled exclusion');
+  assertIncludes(kitchenRoute, 'include: { items: true, table: true }', 'Kitchen queue API order details');
+  assertIncludes(kitchenPage, "['ADMIN', 'MANAGER']", 'Kitchen queue page role guard');
+  assertIncludes(adminShell, "'/admin/kitchen'", 'Kitchen queue admin navigation');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Kitchen queue admin navigation roles');
+  assertIncludes(kitchenClient, '/api/admin/kitchen/orders', 'Kitchen queue UI API usage');
+  assertIncludes(kitchenClient, '/api/orders', 'Kitchen queue status action uses orders API');
+  assertIncludes(kitchenClient, "method: 'PUT'", 'Kitchen queue status action PUT method');
+  assertIncludes(kitchenClient, 'canTransitionOrderStatus', 'Kitchen queue centralized transition helper usage');
+  assertIncludes(kitchenClient, 'getOrderContextLabel', 'Kitchen queue context label helper');
+  assertIncludes(kitchenClient, 'getOrderSourceLabel', 'Kitchen queue source label helper');
+  assertIncludes(kitchenClient, 'setInterval', 'Kitchen queue light polling');
+  assertIncludes(kitchenClient, 'Refresh', 'Kitchen queue manual refresh');
+  assertIncludes(readme, 'Kitchen queue foundation added.', 'README kitchen queue note');
+  assertIncludes(readme, 'not a full kitchen display, POS, printing, or realtime system', 'README kitchen limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -347,6 +391,7 @@ const checks = [
   checkTableOrderUxRefinement,
   checkWaiterAssistedOrderingFoundation,
   checkOrderStatusWorkflowRefinement,
+  checkKitchenQueueFoundation,
 ];
 
 for (const check of checks) {

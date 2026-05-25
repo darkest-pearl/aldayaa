@@ -67,6 +67,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Admin order updates now use a small centralized status transition rule set for NEW, IN_PROGRESS, COMPLETED, and CANCELLED.
 - This is still not a kitchen display or POS workflow.
 
+## Kitchen Queue Foundation
+
+- Kitchen queue foundation added. ADMIN/MANAGER staff can review active NEW and IN_PROGRESS orders.
+- The queue reuses the existing order status workflow and excludes completed/cancelled orders.
+- This is not a full kitchen display, POS, printing, or realtime system yet.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
