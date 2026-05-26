@@ -10,6 +10,7 @@ import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import {
   INVENTORY_MOVEMENT_TYPES,
   INVENTORY_MOVEMENT_TYPE_LABELS,
+  INVENTORY_STOCK_STATUSES,
 } from '../../../../lib/inventory';
 
 const emptyItemForm = {
@@ -33,6 +34,18 @@ const emptyMovementForm = {
 };
 
 const movementTypes = Object.values(INVENTORY_MOVEMENT_TYPES);
+const allFilterValue = 'ALL';
+const statusFilterOptions = [
+  { value: allFilterValue, label: 'All' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'INACTIVE', label: 'Inactive' },
+];
+const stockFilterOptions = [
+  { value: allFilterValue, label: 'All' },
+  { value: INVENTORY_STOCK_STATUSES.LOW_STOCK, label: 'Low stock' },
+  { value: INVENTORY_STOCK_STATUSES.OUT_OF_STOCK, label: 'Out of stock' },
+  { value: INVENTORY_STOCK_STATUSES.OK, label: 'OK' },
+];
 
 async function apiRequest(url, options = {}) {
   const res = await fetch(url, {
@@ -70,6 +83,22 @@ function formatDate(value) {
   return new Date(value).toLocaleString();
 }
 
+function getStockStatusBadgeClass(status) {
+  if (status === INVENTORY_STOCK_STATUSES.OUT_OF_STOCK) {
+    return 'rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700';
+  }
+  if (status === INVENTORY_STOCK_STATUSES.LOW_STOCK) {
+    return 'rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800';
+  }
+  return 'rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700';
+}
+
+function getStockTextClass(status) {
+  if (status === INVENTORY_STOCK_STATUSES.OUT_OF_STOCK) return 'font-semibold text-red-700';
+  if (status === INVENTORY_STOCK_STATUSES.LOW_STOCK) return 'font-semibold text-amber-800';
+  return 'font-semibold text-neutral-900';
+}
+
 function toItemPayload(form) {
   return {
     name: form.name.trim(),
@@ -97,6 +126,10 @@ export default function InventoryClient() {
   const [moving, setMoving] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState(allFilterValue);
+  const [stockFilter, setStockFilter] = useState(allFilterValue);
+  const [categoryFilter, setCategoryFilter] = useState(allFilterValue);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +153,36 @@ export default function InventoryClient() {
   }, [load]);
 
   const activeItems = useMemo(() => items.filter((item) => item.isActive !== false), [items]);
+  const categories = useMemo(() => {
+    return [...new Set(items.map((item) => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  }, [items]);
+  const summary = useMemo(() => {
+    return {
+      totalItems: items.length,
+      activeItemsCount: items.filter((item) => item.isActive !== false).length,
+      lowStockCount: items.filter((item) => item.stockStatus === INVENTORY_STOCK_STATUSES.LOW_STOCK).length,
+      outOfStockCount: items.filter((item) => item.stockStatus === INVENTORY_STOCK_STATUSES.OUT_OF_STOCK).length,
+    };
+  }, [items]);
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return items.filter((item) => {
+      const matchesSearch = !query || [item.name, item.sku, item.category]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query);
+      const matchesStatus =
+        statusFilter === allFilterValue ||
+        (statusFilter === 'ACTIVE' && item.isActive !== false) ||
+        (statusFilter === 'INACTIVE' && item.isActive === false);
+      const matchesStock = stockFilter === allFilterValue || item.stockStatus === stockFilter;
+      const matchesCategory = categoryFilter === allFilterValue || item.category === categoryFilter;
+
+      return matchesSearch && matchesStatus && matchesStock && matchesCategory;
+    });
+  }, [items, search, statusFilter, stockFilter, categoryFilter]);
   const selectedMovementItem = useMemo(
     () => items.find((item) => item.id === movementForm.itemId) || null,
     [items, movementForm.itemId],
@@ -236,6 +299,20 @@ export default function InventoryClient() {
           SUPPORT users can view inventory items and movements, but only ADMIN and MANAGER users can change stock.
         </div>
       )}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: 'Total items', value: summary.totalItems },
+          { label: 'Active items', value: summary.activeItemsCount },
+          { label: 'Low stock', value: summary.lowStockCount },
+          { label: 'Out of stock', value: summary.outOfStockCount },
+        ].map((item) => (
+          <div key={item.label} className="rounded-lg border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs font-semibold uppercase text-neutral-500">{item.label}</p>
+            <p className="mt-1 text-2xl font-bold text-neutral-900">{item.value}</p>
+          </div>
+        ))}
+      </div>
 
       <div className={canManage ? 'grid gap-4 xl:grid-cols-[minmax(0,0.85fr),minmax(0,1.15fr)]' : 'grid gap-4'}>
         {canManage && (
@@ -383,7 +460,13 @@ export default function InventoryClient() {
 
                 {selectedMovementItem && (
                   <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-secondary">
-                    Current stock: {formatQuantity(selectedMovementItem.currentStock)} {selectedMovementItem.unit}
+                    <p>
+                      Current stock: {formatQuantity(selectedMovementItem.currentStock)} {selectedMovementItem.unit}
+                    </p>
+                    <p>Status: {selectedMovementItem.stockStatusLabel}</p>
+                    {selectedMovementItem.reorderLevel !== null && (
+                      <p>Reorder level: {formatQuantity(selectedMovementItem.reorderLevel)} {selectedMovementItem.unit}</p>
+                    )}
                   </div>
                 )}
 
@@ -446,6 +529,55 @@ export default function InventoryClient() {
           description="Current stock, unit, and reorder visibility for active and inactive items."
           actions={loading && <span className="text-xs text-neutral-500">Refreshing...</span>}
         >
+          <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Search</label>
+              <input
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Name, SKU, or category"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Status</label>
+              <select
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                {statusFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Stock</label>
+              <select
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={stockFilter}
+                onChange={(event) => setStockFilter(event.target.value)}
+              >
+                {stockFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Category</label>
+              <select
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+              >
+                <option value={allFilterValue}>All</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <AdminTable
             dense
             columns={[
@@ -465,12 +597,12 @@ export default function InventoryClient() {
                 header: 'Current stock',
                 render: (_value, row) => (
                   <div>
-                    <p className="font-semibold text-neutral-900">
+                    <p className={getStockTextClass(row.stockStatus)}>
                       {formatQuantity(row.currentStock)} {row.unit}
                     </p>
                     {row.reorderLevel !== null && (
-                      <p className={row.isLowStock ? 'text-xs font-semibold text-red-600' : 'text-xs text-neutral-500'}>
-                        Reorder at {formatQuantity(row.reorderLevel)}
+                      <p className={row.isLowStock ? 'text-xs font-semibold text-amber-800' : 'text-xs text-neutral-500'}>
+                        Reorder level: {formatQuantity(row.reorderLevel)} {row.unit}
                       </p>
                     )}
                   </div>
@@ -485,17 +617,20 @@ export default function InventoryClient() {
                 key: 'isActive',
                 header: 'Status',
                 render: (value, row) => (
-                  <span
-                    className={
-                      value
-                        ? row.isLowStock
-                          ? 'rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700'
-                          : 'rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700'
-                        : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600'
-                    }
-                  >
-                    {value ? (row.isLowStock ? 'Low stock' : 'Active') : 'Inactive'}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className={getStockStatusBadgeClass(row.stockStatus)}>
+                      {row.stockStatusLabel}
+                    </span>
+                    <span
+                      className={
+                        value
+                          ? 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700'
+                          : 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-600'
+                      }
+                    >
+                      {value ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 ),
               },
               {
@@ -530,8 +665,8 @@ export default function InventoryClient() {
                 ),
               },
             ]}
-            rows={items}
-            emptyMessage={loading ? 'Loading inventory items...' : 'No inventory items yet'}
+            rows={filteredItems}
+            emptyMessage={loading ? 'Loading inventory items...' : items.length ? 'No inventory items match the current filters' : 'No inventory items yet'}
           />
         </AdminCard>
       </div>

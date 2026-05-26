@@ -539,6 +539,45 @@ function checkInventoryFoundation() {
   assertIncludes(readme, 'no supplier request automation', 'README inventory supplier limitation');
 }
 
+function checkInventoryLowStockUxFilters() {
+  const helper = read('src/lib/inventory.js');
+  const client = read('src/app/admin/(protected)/inventory/InventoryClient.jsx');
+  const readme = read('README.md');
+  const inventorySource = [helper, client].join('\n');
+
+  assertIncludes(helper, 'INVENTORY_STOCK_STATUSES', 'Inventory stock status constants');
+  assertIncludes(helper, 'OUT_OF_STOCK', 'Inventory out-of-stock status');
+  assertIncludes(helper, 'LOW_STOCK', 'Inventory low-stock status');
+  assertIncludes(helper, 'OK', 'Inventory OK stock status');
+  assertIncludes(helper, 'getInventoryStockStatus', 'Inventory stock status helper');
+  assertIncludes(helper, 'getInventoryStockStatusLabel', 'Inventory stock status label helper');
+  assertIncludes(helper, 'stockStatus', 'Normalized inventory item stockStatus');
+  assertIncludes(helper, 'stockStatusLabel', 'Normalized inventory item stockStatusLabel');
+  assertIncludes(helper, 'currentStock <= 0', 'Inventory out-of-stock calculation');
+  assertIncludes(helper, 'currentStock <= reorderLevel', 'Inventory low-stock calculation');
+
+  assertIncludes(client, 'search', 'Inventory UI search state');
+  assertIncludes(client, 'statusFilter', 'Inventory UI status filter state');
+  assertIncludes(client, 'stockFilter', 'Inventory UI stock filter state');
+  assertIncludes(client, 'categoryFilter', 'Inventory UI category filter state');
+  assertIncludes(client, 'filteredItems', 'Inventory UI filtered item list');
+  assertIncludes(client, 'Total items', 'Inventory UI total items summary');
+  assertIncludes(client, 'Active items', 'Inventory UI active items summary');
+  assertIncludes(client, 'Low stock', 'Inventory UI low stock summary');
+  assertIncludes(client, 'Out of stock', 'Inventory UI out of stock summary');
+  assertIncludes(client, 'stockStatusLabel', 'Inventory UI stock status label display');
+  assertIncludes(client, 'selectedMovementItem.stockStatusLabel', 'Inventory movement selected item stock status');
+  assertIncludes(client, 'selectedMovementItem.reorderLevel', 'Inventory movement selected item reorder level');
+
+  assertNotIncludes(inventorySource, 'RECIPE_CONSUMPTION', 'Inventory low-stock UX recipe consumption logic');
+  assertNotIncludes(inventorySource, 'SUPPLIER_REQUESTS', 'Inventory low-stock UX supplier request logic');
+  assertNotIncludes(inventorySource, 'automaticStockDeduction', 'Inventory low-stock UX automatic deduction logic');
+  assertIncludes(readme, 'Inventory low-stock UX and filters added.', 'README inventory low-stock UX note');
+  assertIncludes(readme, 'Still no recipe consumption', 'README inventory polish recipe limitation');
+  assertIncludes(readme, 'automatic deduction', 'README inventory polish deduction limitation');
+  assertIncludes(readme, 'supplier automation', 'README inventory polish supplier limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -555,6 +594,7 @@ const checks = [
   checkKitchenQueueFoundation,
   checkModuleAccessPolish,
   checkInventoryFoundation,
+  checkInventoryLowStockUxFilters,
 ];
 
 for (const check of checks) {
