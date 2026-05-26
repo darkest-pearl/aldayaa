@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireAdmin } from '../../../../../lib/auth';
 import { failure, handleApiError, success } from '../../../../../lib/api-response';
 import { FEATURE_KEYS } from '../../../../../lib/features';
-import { normalizeInventoryItem } from '../../../../../lib/inventory';
+import { normalizeInventoryItem, normalizeInventoryUnit } from '../../../../../lib/inventory';
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
@@ -58,7 +58,7 @@ export async function POST(request) {
         name: parsed.data.name.trim(),
         sku: cleanOptionalString(parsed.data.sku),
         category: cleanOptionalString(parsed.data.category),
-        unit: parsed.data.unit.trim(),
+        unit: normalizeInventoryUnit(parsed.data.unit),
         currentStock: parsed.data.currentStock,
         reorderLevel: parsed.data.reorderLevel ?? null,
         costPerUnit: parsed.data.costPerUnit ?? null,

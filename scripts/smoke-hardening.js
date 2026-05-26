@@ -578,6 +578,47 @@ function checkInventoryLowStockUxFilters() {
   assertIncludes(readme, 'supplier automation', 'README inventory polish supplier limitation');
 }
 
+function checkInventoryUnitCategoryPolish() {
+  const schema = read('prisma/schema.prisma');
+  const helper = read('src/lib/inventory.js');
+  const itemsRoute = read('src/app/api/admin/inventory/items/route.js');
+  const itemRoute = read('src/app/api/admin/inventory/items/[id]/route.js');
+  const client = read('src/app/admin/(protected)/inventory/InventoryClient.jsx');
+  const readme = read('README.md');
+  const inventorySource = [helper, itemsRoute, itemRoute, client].join('\n');
+
+  assertIncludes(helper, 'INVENTORY_UNIT_OPTIONS', 'Inventory unit option registry');
+  for (const unit of ['kg', 'g', 'liter', 'ml', 'piece', 'pack', 'carton', 'box', 'bottle', 'bag']) {
+    assertIncludes(helper, `value: '${unit}'`, `Inventory common unit option ${unit}`);
+  }
+  assertIncludes(helper, 'normalizeInventoryUnit', 'Inventory unit normalization helper');
+  assertIncludes(helper, 'getInventoryUnitLabel', 'Inventory unit label helper');
+  assertIncludes(helper, 'getInventoryUnitOptions', 'Inventory unit options helper');
+
+  assertIncludes(itemsRoute, 'normalizeInventoryUnit', 'Inventory create API unit normalization');
+  assertIncludes(itemsRoute, 'unit: normalizeInventoryUnit(parsed.data.unit)', 'Inventory create API normalized unit persistence');
+  assertIncludes(itemsRoute, 'category: cleanOptionalString(parsed.data.category)', 'Inventory create API category cleanup');
+  assertIncludes(itemsRoute, 'sku: cleanOptionalString(parsed.data.sku)', 'Inventory create API SKU cleanup');
+  assertIncludes(itemRoute, 'normalizeInventoryUnit', 'Inventory update API unit normalization');
+  assertIncludes(itemRoute, 'unit: normalizeInventoryUnit(parsed.data.unit)', 'Inventory update API normalized unit persistence');
+  assertIncludes(itemRoute, 'category: cleanOptionalString(parsed.data.category)', 'Inventory update API category cleanup');
+  assertIncludes(itemRoute, 'sku: cleanOptionalString(parsed.data.sku)', 'Inventory update API SKU cleanup');
+
+  assertIncludes(client, 'getInventoryUnitOptions', 'Inventory UI unit options import');
+  assertIncludes(client, 'unitOptions', 'Inventory UI unit options');
+  assertIncludes(client, 'inventory-unit-options', 'Inventory UI unit datalist');
+  assertIncludes(client, 'categorySuggestions', 'Inventory UI category suggestions');
+  assertIncludes(client, 'inventory-category-options', 'Inventory UI category datalist');
+
+  assertNotIncludes(schema, 'model InventoryCategory', 'Separate inventory category table');
+  assertNotIncludes(schema, 'model InventoryUnit', 'Separate inventory unit table');
+  assertNotIncludes(inventorySource, 'RECIPE_CONSUMPTION', 'Inventory unit/category polish recipe consumption logic');
+  assertNotIncludes(inventorySource, 'SUPPLIER_REQUESTS', 'Inventory unit/category polish supplier request logic');
+  assertNotIncludes(inventorySource, 'automaticStockDeduction', 'Inventory unit/category polish automatic deduction logic');
+  assertIncludes(readme, 'Inventory unit/category polish added.', 'README inventory unit/category polish note');
+  assertIncludes(readme, 'No recipe consumption or automatic deduction has been added.', 'README inventory unit/category limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -595,6 +636,7 @@ const checks = [
   checkModuleAccessPolish,
   checkInventoryFoundation,
   checkInventoryLowStockUxFilters,
+  checkInventoryUnitCategoryPolish,
 ];
 
 for (const check of checks) {
