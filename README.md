@@ -85,6 +85,8 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - This module is disabled by default for operations setup.
 - ADMIN/MANAGER users can create stock items and record manual stock movements when the module is enabled; SUPPORT users can view inventory data.
 - No recipe consumption, no automatic stock deduction, and no supplier request automation has been added yet.
+- Inventory low-stock UX and filters added.
+- Still no recipe consumption, automatic deduction, or supplier automation has been added.
 
 ## Production Notes
 

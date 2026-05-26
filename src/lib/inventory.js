@@ -14,6 +14,18 @@ export const INVENTORY_MOVEMENT_TYPE_LABELS = Object.freeze({
   [INVENTORY_MOVEMENT_TYPES.COUNT_CORRECTION]: 'Count correction',
 });
 
+export const INVENTORY_STOCK_STATUSES = Object.freeze({
+  OUT_OF_STOCK: 'OUT_OF_STOCK',
+  LOW_STOCK: 'LOW_STOCK',
+  OK: 'OK',
+});
+
+export const INVENTORY_STOCK_STATUS_LABELS = Object.freeze({
+  [INVENTORY_STOCK_STATUSES.OUT_OF_STOCK]: 'Out of stock',
+  [INVENTORY_STOCK_STATUSES.LOW_STOCK]: 'Low stock',
+  [INVENTORY_STOCK_STATUSES.OK]: 'OK',
+});
+
 const inventoryMovementTypeValues = Object.freeze(Object.values(INVENTORY_MOVEMENT_TYPES));
 
 function toNumber(value, fallback = 0) {
@@ -27,6 +39,27 @@ export function isValidInventoryMovementType(type) {
 
 export function getInventoryMovementTypeLabel(type) {
   return INVENTORY_MOVEMENT_TYPE_LABELS[type] || type || 'Movement';
+}
+
+export function getInventoryStockStatus(item = {}) {
+  const currentStock = toNumber(item.currentStock);
+  const reorderLevel = item.reorderLevel === null || item.reorderLevel === undefined
+    ? null
+    : toNumber(item.reorderLevel);
+
+  if (currentStock <= 0) {
+    return INVENTORY_STOCK_STATUSES.OUT_OF_STOCK;
+  }
+
+  if (reorderLevel !== null && currentStock <= reorderLevel) {
+    return INVENTORY_STOCK_STATUSES.LOW_STOCK;
+  }
+
+  return INVENTORY_STOCK_STATUSES.OK;
+}
+
+export function getInventoryStockStatusLabel(status) {
+  return INVENTORY_STOCK_STATUS_LABELS[status] || status || 'Stock status';
 }
 
 export function calculateStockAfterMovement(currentStock, type, quantity) {
@@ -53,6 +86,7 @@ export function normalizeInventoryItem(item = {}) {
   const reorderLevel = item.reorderLevel === null || item.reorderLevel === undefined
     ? null
     : toNumber(item.reorderLevel);
+  const stockStatus = getInventoryStockStatus({ currentStock, reorderLevel });
 
   return {
     id: item.id,
@@ -65,7 +99,9 @@ export function normalizeInventoryItem(item = {}) {
     costPerUnit: item.costPerUnit === null || item.costPerUnit === undefined ? null : toNumber(item.costPerUnit),
     isActive: item.isActive !== false,
     notes: item.notes || null,
-    isLowStock: reorderLevel !== null && currentStock <= reorderLevel,
+    isLowStock: stockStatus === INVENTORY_STOCK_STATUSES.LOW_STOCK,
+    stockStatus,
+    stockStatusLabel: getInventoryStockStatusLabel(stockStatus),
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   };
