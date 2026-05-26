@@ -168,6 +168,43 @@ model RestaurantTable {
   @@index([zone])
 }
 
+model InventoryItem {
+  id           String              @id @default(cuid())
+  name         String
+  sku          String?             @unique
+  category     String?
+  unit         String
+  currentStock Float               @default(0)
+  reorderLevel Float?
+  costPerUnit  Float?
+  isActive     Boolean             @default(true)
+  notes        String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  movements    InventoryMovement[]
+
+  @@index([name])
+  @@index([category])
+  @@index([isActive])
+}
+
+model InventoryMovement {
+  id                  String        @id @default(cuid())
+  itemId              String
+  item                InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  type                String
+  quantity            Float
+  reason              String?
+  source              String?
+  createdByAdminId    String?
+  createdByAdminEmail String?
+  createdAt           DateTime      @default(now())
+
+  @@index([itemId])
+  @@index([type])
+  @@index([createdAt])
+}
+
 model Announcement {
   id        String   @id @default(cuid())
   message   String

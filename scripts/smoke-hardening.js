@@ -435,6 +435,110 @@ function checkModuleAccessPolish() {
   assertIncludes(readme, 'No billing or subscription system has been added', 'README no billing note');
 }
 
+function checkInventoryFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const features = read('src/lib/features.js');
+  const helperPath = path.join(root, 'src/lib/inventory.js');
+  const pagePath = path.join(root, 'src/app/admin/(protected)/inventory/page.jsx');
+  const clientPath = path.join(root, 'src/app/admin/(protected)/inventory/InventoryClient.jsx');
+  const itemsRoutePath = path.join(root, 'src/app/api/admin/inventory/items/route.js');
+  const itemRoutePath = path.join(root, 'src/app/api/admin/inventory/items/[id]/route.js');
+  const movementsRoutePath = path.join(root, 'src/app/api/admin/inventory/movements/route.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const readme = read('README.md');
+
+  assertIncludes(schema, 'model InventoryItem', 'InventoryItem Prisma model');
+  assertIncludes(schema, 'model InventoryMovement', 'InventoryMovement Prisma model');
+  assert(/movements\s+InventoryMovement\[\]/.test(schema), 'InventoryItem movements relation missing');
+  assert(/item\s+InventoryItem\s+@relation/.test(schema), 'InventoryMovement item relation missing');
+  assertIncludes(schema, '@@index([name])', 'InventoryItem name index');
+  assertIncludes(schema, '@@index([category])', 'InventoryItem category index');
+  assertIncludes(schema, '@@index([isActive])', 'InventoryItem isActive index');
+  assertIncludes(schema, '@@index([itemId])', 'InventoryMovement itemId index');
+  assertIncludes(schema, '@@index([type])', 'InventoryMovement type index');
+  assertIncludes(schema, '@@index([createdAt])', 'InventoryMovement createdAt index');
+
+  const defaultBlockMatch = features.match(/const DEFAULT_ENABLED_FEATURES = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert(defaultBlockMatch, 'Default enabled features block not found for inventory check');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.INVENTORY', 'INVENTORY default enabled features');
+
+  assert(fs.existsSync(helperPath), 'Inventory helper is missing');
+  assert(fs.existsSync(pagePath), 'Admin inventory page is missing');
+  assert(fs.existsSync(clientPath), 'Admin inventory client is missing');
+  assert(fs.existsSync(itemsRoutePath), 'Inventory items API route is missing');
+  assert(fs.existsSync(itemRoutePath), 'Inventory item API route is missing');
+  assert(fs.existsSync(movementsRoutePath), 'Inventory movements API route is missing');
+
+  const helper = read('src/lib/inventory.js');
+  const page = read('src/app/admin/(protected)/inventory/page.jsx');
+  const client = read('src/app/admin/(protected)/inventory/InventoryClient.jsx');
+  const itemsRoute = read('src/app/api/admin/inventory/items/route.js');
+  const itemRoute = read('src/app/api/admin/inventory/items/[id]/route.js');
+  const movementsRoute = read('src/app/api/admin/inventory/movements/route.js');
+
+  for (const expected of [
+    'INVENTORY_MOVEMENT_TYPES',
+    'normalizeInventoryItem',
+    'normalizeInventoryMovement',
+    'calculateStockAfterMovement',
+    'isValidInventoryMovementType',
+    'STOCK_IN',
+    'STOCK_OUT',
+    'ADJUSTMENT',
+    'WASTE',
+    'COUNT_CORRECTION',
+  ]) {
+    assertIncludes(helper, expected, `Inventory helper ${expected}`);
+  }
+
+  assertIncludes(page, 'FEATURE_KEYS.INVENTORY', 'Inventory page feature key');
+  assertIncludes(page, 'getFeatureRouteAccess', 'Inventory page module access helper');
+  assertIncludes(page, '<ModuleUnavailable', 'Inventory page disabled module state');
+  assertIncludes(page, '<InventoryClient />', 'Inventory page enabled client render');
+  assertIncludes(adminShell, "'/admin/inventory'", 'Inventory admin navigation');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER', 'SUPPORT']", 'Inventory admin navigation roles');
+
+  for (const [route, label] of [
+    [itemsRoute, 'Inventory items API'],
+    [itemRoute, 'Inventory item API'],
+    [movementsRoute, 'Inventory movements API'],
+  ]) {
+    assertIncludes(route, 'FEATURE_KEYS.INVENTORY', `${label} feature key`);
+    assertIncludes(route, 'getRestaurantProfile', `${label} profile loading`);
+    assertIncludes(route, 'requireFeatureEnabled', `${label} feature enforcement`);
+  }
+
+  assertIncludes(itemsRoute, "requireInventoryFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT'])", 'Inventory items API SUPPORT view access');
+  assertIncludes(itemsRoute, "requireInventoryFeature(request, ['ADMIN', 'MANAGER'])", 'Inventory items API manage access');
+  assertIncludes(itemRoute, 'requireInventoryFeature(request)', 'Inventory item API manage access');
+  assertIncludes(itemRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Inventory item API requireAdmin roles');
+  assertIncludes(movementsRoute, "requireInventoryFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT'])", 'Inventory movements API SUPPORT view access');
+  assertIncludes(movementsRoute, "requireInventoryFeature(request, ['ADMIN', 'MANAGER'])", 'Inventory movements API manage access');
+  assertIncludes(itemsRoute, 'currentStock: z.coerce.number().min(0)', 'Inventory item non-negative stock validation');
+  assertIncludes(itemRoute, 'isActive: false', 'Inventory item soft deactivate');
+  assertIncludes(movementsRoute, 'calculateStockAfterMovement', 'Inventory movement server-side stock calculation');
+  assertIncludes(movementsRoute, 'resultingStock < 0', 'Inventory movement below-zero prevention');
+  assertIncludes(movementsRoute, 'prisma.$transaction(async', 'Inventory movement interactive transaction');
+  assert(
+    movementsRoute.includes('tx.inventoryItem.findUnique') || movementsRoute.includes('tx.inventoryItem.findFirst'),
+    'Inventory movement transaction item lookup missing',
+  );
+  assertIncludes(movementsRoute, 'tx.inventoryItem.update', 'Inventory movement transaction stock update');
+  assertIncludes(movementsRoute, 'tx.inventoryMovement.create', 'Inventory movement transaction create');
+  assertIncludes(client, '/api/admin/inventory/items', 'Inventory UI items API usage');
+  assertIncludes(client, '/api/admin/inventory/movements', 'Inventory UI movements API usage');
+  assertIncludes(client, 'Current stock', 'Inventory UI current stock display');
+  assertIncludes(client, 'Recent movements', 'Inventory UI recent movements display');
+
+  const inventorySource = [helper, page, client, itemsRoute, itemRoute, movementsRoute].join('\n');
+  assertNotIncludes(inventorySource, 'RECIPE_CONSUMPTION', 'Inventory foundation recipe consumption logic');
+  assertNotIncludes(inventorySource, 'SUPPLIER_REQUESTS', 'Inventory foundation supplier request logic');
+  assertIncludes(readme, 'Inventory foundation added.', 'README inventory foundation note');
+  assertIncludes(readme, 'No recipe consumption', 'README inventory recipe limitation');
+  assertIncludes(readme, 'no automatic stock deduction', 'README inventory stock deduction limitation');
+  assertIncludes(readme, 'no supplier request automation', 'README inventory supplier limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -450,6 +554,7 @@ const checks = [
   checkOrderStatusWorkflowRefinement,
   checkKitchenQueueFoundation,
   checkModuleAccessPolish,
+  checkInventoryFoundation,
 ];
 
 for (const check of checks) {
