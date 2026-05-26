@@ -79,6 +79,13 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Disabled table QR ordering, waiter-assisted ordering, and kitchen queue modules now show clearer admin states instead of relying only on API failures.
 - No billing or subscription system has been added.
 
+## Inventory Foundation
+
+- Inventory foundation added.
+- This module is disabled by default for operations setup.
+- ADMIN/MANAGER users can create stock items and record manual stock movements when the module is enabled; SUPPORT users can view inventory data.
+- No recipe consumption, no automatic stock deduction, and no supplier request automation has been added yet.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
