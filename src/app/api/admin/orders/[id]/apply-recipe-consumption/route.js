@@ -152,11 +152,6 @@ export async function POST(request, { params }) {
         if (!item || item.isActive === false) {
           throw new RecipeConsumptionApplyError('Inventory item is not available for recipe consumption', 400);
         }
-
-        const resultingStock = toNumber(item.currentStock) - toNumber(requiredByInventoryItemId.get(inventoryItemId));
-        if (resultingStock < 0) {
-          throw new RecipeConsumptionApplyError('Recipe consumption cannot reduce stock below zero', 400);
-        }
       }
 
       const movements = [];
@@ -180,11 +175,22 @@ export async function POST(request, { params }) {
 
       const updatedItems = [];
       for (const inventoryItemId of inventoryItemIds) {
-        const item = inventoryItemsById.get(inventoryItemId);
-        const resultingStock = toNumber(item.currentStock) - toNumber(requiredByInventoryItemId.get(inventoryItemId));
-        const updatedItem = await tx.inventoryItem.update({
+        const requiredQuantity = toNumber(requiredByInventoryItemId.get(inventoryItemId));
+        const updateResult = await tx.inventoryItem.updateMany({
+          where: {
+            id: inventoryItemId,
+            isActive: true,
+            currentStock: { gte: requiredQuantity },
+          },
+          data: { currentStock: { decrement: requiredQuantity } },
+        });
+
+        if (updateResult.count !== 1) {
+          throw new RecipeConsumptionApplyError('Recipe consumption cannot reduce stock below zero', 400);
+        }
+
+        const updatedItem = await tx.inventoryItem.findUnique({
           where: { id: inventoryItemId },
-          data: { currentStock: resultingStock },
         });
         updatedItems.push(updatedItem);
       }

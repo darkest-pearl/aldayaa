@@ -827,7 +827,11 @@ function checkManualRecipeConsumptionApply() {
   assertIncludes(applyRoute, 'Recipe mappings are incomplete', 'Apply recipe consumption incomplete mapping error');
   assertIncludes(applyRoute, 'prisma.$transaction(async', 'Apply recipe consumption interactive transaction');
   assertIncludes(applyRoute, 'tx.inventoryItem.findMany', 'Apply recipe consumption transaction inventory reread');
-  assertIncludes(applyRoute, 'resultingStock < 0', 'Apply recipe consumption below-zero stock guard');
+  assertIncludes(applyRoute, 'tx.inventoryItem.updateMany', 'Apply recipe consumption atomic stock update');
+  assertIncludes(applyRoute, 'currentStock: { gte: requiredQuantity }', 'Apply recipe consumption stock floor update guard');
+  assertIncludes(applyRoute, 'currentStock: { decrement: requiredQuantity }', 'Apply recipe consumption atomic stock decrement');
+  assertIncludes(applyRoute, 'updateResult.count !== 1', 'Apply recipe consumption atomic update count guard');
+  assertNotIncludes(applyRoute, 'data: { currentStock: resultingStock }', 'Apply recipe consumption stale absolute stock write');
   assertIncludes(applyRoute, 'tx.inventoryMovement.create', 'Apply recipe consumption movement creation');
   assertIncludes(applyRoute, 'INVENTORY_MOVEMENT_TYPES.STOCK_OUT', 'Apply recipe consumption STOCK_OUT movement type');
   assertIncludes(applyRoute, 'ORDER_RECIPE_CONSUMPTION', 'Apply recipe consumption movement source');
