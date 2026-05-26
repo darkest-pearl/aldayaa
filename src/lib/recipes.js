@@ -13,6 +13,30 @@ export function normalizeRecipeIngredientUnit(unit) {
   return normalizeInventoryUnit(unit);
 }
 
+export function getMenuItemIngredientCount(menuItem = {}) {
+  const count = menuItem.ingredientCount ?? menuItem.ingredients?.length ?? 0;
+  return Math.max(0, Math.trunc(toNumber(count)));
+}
+
+export function hasRecipeMapping(menuItem = {}) {
+  return getMenuItemIngredientCount(menuItem) > 0;
+}
+
+export function getRecipeMappingCoverage(menuItems = []) {
+  const items = Array.isArray(menuItems) ? menuItems : [];
+  const totalMenuItems = items.length;
+  const mappedMenuItems = items.filter(hasRecipeMapping).length;
+  const unmappedMenuItems = Math.max(totalMenuItems - mappedMenuItems, 0);
+  const totalIngredientMappings = items.reduce((sum, item) => sum + getMenuItemIngredientCount(item), 0);
+
+  return {
+    totalMenuItems,
+    mappedMenuItems,
+    unmappedMenuItems,
+    totalIngredientMappings,
+  };
+}
+
 export function normalizeMenuItemIngredient(ingredient = {}) {
   const inventoryItem = ingredient.inventoryItem ? normalizeInventoryItem(ingredient.inventoryItem) : null;
 

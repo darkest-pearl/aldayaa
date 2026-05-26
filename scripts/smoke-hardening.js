@@ -713,6 +713,48 @@ function checkRecipeIngredientMappingFoundation() {
   assertIncludes(readme, 'no costing analytics', 'README recipe costing limitation');
 }
 
+function checkRecipeMappingUxPolish() {
+  const helper = read('src/lib/recipes.js');
+  const client = read('src/app/admin/(protected)/recipes/RecipesClient.jsx');
+  const menuItemsRoute = read('src/app/api/admin/recipes/menu-items/route.js');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const assistedRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const readme = read('README.md');
+
+  assertIncludes(helper, 'getRecipeMappingCoverage', 'Recipe mapping coverage helper');
+  assertIncludes(helper, 'getMenuItemIngredientCount', 'Recipe menu item ingredient count helper');
+  assertIncludes(helper, 'hasRecipeMapping', 'Recipe mapped menu item helper');
+  assertIncludes(helper, 'mappedMenuItems', 'Recipe mapping coverage mapped count');
+  assertIncludes(helper, 'unmappedMenuItems', 'Recipe mapping coverage unmapped count');
+  assertIncludes(helper, 'totalIngredientMappings', 'Recipe mapping coverage ingredient count');
+
+  assertIncludes(menuItemsRoute, 'ingredientCount', 'Recipe menu-items API ingredient count');
+  assertIncludes(menuItemsRoute, 'hasRecipeMapping', 'Recipe menu-items API mapping flag');
+
+  assertIncludes(client, 'mappingCoverage', 'Recipes UI mapping summary data');
+  assertIncludes(client, 'Total menu items', 'Recipes UI total menu items summary');
+  assertIncludes(client, 'Mapped menu items', 'Recipes UI mapped menu items summary');
+  assertIncludes(client, 'Unmapped menu items', 'Recipes UI unmapped menu items summary');
+  assertIncludes(client, 'Total ingredient mappings', 'Recipes UI ingredient mappings summary');
+  assertIncludes(client, 'coverageFilter', 'Recipes UI mapped/unmapped filter state');
+  assertIncludes(client, "value=\"MAPPED\"", 'Recipes UI mapped filter option');
+  assertIncludes(client, "value=\"UNMAPPED\"", 'Recipes UI unmapped filter option');
+  assertIncludes(client, 'No ingredients mapped yet', 'Recipes UI selected item empty state');
+  assertIncludes(client, 'This defines recipe usage only. It does not deduct stock yet.', 'Recipes UI no stock deduction copy retained');
+  assertIncludes(client, 'selectedInventoryItem.stockStatusLabel', 'Recipes UI selected inventory stock status');
+  assertIncludes(client, 'selectedInventoryItem.unit', 'Recipes UI selected inventory unit');
+  assertIncludes(client, 'unit: editingId ? prev.unit : inventoryItem?.unit || prev.unit', 'Recipes UI default unit from inventory item');
+
+  assertNotIncludes(orderRoute, 'MenuItemIngredient', 'Recipe UX customer order automatic deduction');
+  assertNotIncludes(orderRoute, 'inventoryMovement', 'Recipe UX customer order automatic inventory movement');
+  assertNotIncludes(assistedRoute, 'MenuItemIngredient', 'Recipe UX assisted order automatic deduction');
+  assertNotIncludes(assistedRoute, 'inventoryMovement', 'Recipe UX assisted order automatic inventory movement');
+  assertIncludes(readme, 'Recipe mapping UX and coverage summary added.', 'README recipe mapping UX note');
+  assertIncludes(readme, 'No automatic deduction', 'README recipe UX no deduction limitation');
+  assertIncludes(readme, 'no supplier automation', 'README recipe UX supplier limitation');
+  assertIncludes(readme, 'no costing analytics', 'README recipe UX costing limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -732,6 +774,7 @@ const checks = [
   checkInventoryLowStockUxFilters,
   checkInventoryUnitCategoryPolish,
   checkRecipeIngredientMappingFoundation,
+  checkRecipeMappingUxPolish,
 ];
 
 for (const check of checks) {

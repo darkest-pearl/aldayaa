@@ -95,6 +95,8 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Recipe ingredient mapping foundation added.
 - ADMIN/MANAGER users can map menu items to inventory items when the recipe consumption module is enabled; SUPPORT users can view mappings.
 - No automatic inventory deduction, no supplier automation, and no costing analytics have been added yet.
+- Recipe mapping UX and coverage summary added.
+- No automatic deduction, no supplier automation, and no costing analytics have been added yet.
 
 ## Production Notes
 
