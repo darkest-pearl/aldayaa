@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireAdmin } from '../../../../../../lib/auth';
 import { failure, handleApiError, success } from '../../../../../../lib/api-response';
 import { FEATURE_KEYS } from '../../../../../../lib/features';
-import { normalizeInventoryItem } from '../../../../../../lib/inventory';
+import { normalizeInventoryItem, normalizeInventoryUnit } from '../../../../../../lib/inventory';
 import { requireFeatureEnabled } from '../../../../../../lib/module-access';
 import { prisma } from '../../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../../lib/restaurant-profile';
@@ -49,7 +49,7 @@ export async function PUT(request, { params }) {
         ...(parsed.data.name !== undefined ? { name: parsed.data.name.trim() } : {}),
         ...(parsed.data.sku !== undefined ? { sku: cleanOptionalString(parsed.data.sku) } : {}),
         ...(parsed.data.category !== undefined ? { category: cleanOptionalString(parsed.data.category) } : {}),
-        ...(parsed.data.unit !== undefined ? { unit: parsed.data.unit.trim() } : {}),
+        ...(parsed.data.unit !== undefined ? { unit: normalizeInventoryUnit(parsed.data.unit) } : {}),
         ...(parsed.data.currentStock !== undefined ? { currentStock: parsed.data.currentStock } : {}),
         ...(parsed.data.reorderLevel !== undefined ? { reorderLevel: parsed.data.reorderLevel ?? null } : {}),
         ...(parsed.data.costPerUnit !== undefined ? { costPerUnit: parsed.data.costPerUnit ?? null } : {}),

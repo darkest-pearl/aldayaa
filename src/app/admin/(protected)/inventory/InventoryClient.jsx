@@ -11,6 +11,8 @@ import {
   INVENTORY_MOVEMENT_TYPES,
   INVENTORY_MOVEMENT_TYPE_LABELS,
   INVENTORY_STOCK_STATUSES,
+  getInventoryUnitOptions,
+  normalizeInventoryUnit,
 } from '../../../../lib/inventory';
 
 const emptyItemForm = {
@@ -34,6 +36,7 @@ const emptyMovementForm = {
 };
 
 const movementTypes = Object.values(INVENTORY_MOVEMENT_TYPES);
+const unitOptions = getInventoryUnitOptions();
 const allFilterValue = 'ALL';
 const statusFilterOptions = [
   { value: allFilterValue, label: 'All' },
@@ -104,7 +107,7 @@ function toItemPayload(form) {
     name: form.name.trim(),
     sku: form.sku.trim() || null,
     category: form.category.trim() || null,
-    unit: form.unit.trim(),
+    unit: normalizeInventoryUnit(form.unit),
     currentStock: Number(form.currentStock || 0),
     reorderLevel: toOptionalNumber(form.reorderLevel),
     costPerUnit: toOptionalNumber(form.costPerUnit),
@@ -153,7 +156,7 @@ export default function InventoryClient() {
   }, [load]);
 
   const activeItems = useMemo(() => items.filter((item) => item.isActive !== false), [items]);
-  const categories = useMemo(() => {
+  const categorySuggestions = useMemo(() => {
     return [...new Set(items.map((item) => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   }, [items]);
   const summary = useMemo(() => {
@@ -364,8 +367,14 @@ export default function InventoryClient() {
                       className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                       value={itemForm.category}
                       onChange={(event) => setItemForm((prev) => ({ ...prev, category: event.target.value }))}
+                      list="inventory-category-options"
                       placeholder="Dry goods"
                     />
+                    <datalist id="inventory-category-options">
+                      {categorySuggestions.map((category) => (
+                        <option key={category} value={category} />
+                      ))}
+                    </datalist>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-neutral-800">Unit</label>
@@ -373,9 +382,17 @@ export default function InventoryClient() {
                       className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
                       value={itemForm.unit}
                       onChange={(event) => setItemForm((prev) => ({ ...prev, unit: event.target.value }))}
+                      list="inventory-unit-options"
                       placeholder="kg"
                       required
                     />
+                    <datalist id="inventory-unit-options">
+                      {unitOptions.map((unit) => (
+                        <option key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </option>
+                      ))}
+                    </datalist>
                   </div>
                 </div>
 
@@ -571,7 +588,7 @@ export default function InventoryClient() {
                 onChange={(event) => setCategoryFilter(event.target.value)}
               >
                 <option value={allFilterValue}>All</option>
-                {categories.map((category) => (
+                {categorySuggestions.map((category) => (
                   <option key={category} value={category}>{category}</option>
                 ))}
               </select>
