@@ -778,6 +778,7 @@ function checkRecipeConsumptionDryRun() {
   assertIncludes(route, 'requireFeatureEnabled', 'Recipe preview API feature enforcement');
   assertIncludes(route, 'prisma.order.findUnique', 'Recipe preview API order lookup');
   assertIncludes(route, 'include: { items: true }', 'Recipe preview API order items include');
+  assertIncludes(route, 'item.menuItemId || item.itemId', 'Recipe preview API historical itemId fallback');
   assertIncludes(route, 'prisma.menuItemIngredient.findMany', 'Recipe preview API recipe mapping lookup');
   assertIncludes(route, 'include: { inventoryItem: true }', 'Recipe preview API inventory item include');
   assertIncludes(route, 'calculateRecipeConsumptionForOrder', 'Recipe preview API dry-run helper usage');

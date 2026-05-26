@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
     }
 
     const menuItemIds = [
-      ...new Set((order.items || []).map((item) => item.menuItemId).filter(Boolean)),
+      ...new Set((order.items || []).map((item) => item.menuItemId || item.itemId).filter(Boolean)),
     ];
 
     const recipeIngredients = menuItemIds.length
@@ -43,10 +43,13 @@ export async function GET(request, { params }) {
 
     const orderWithRecipeIngredients = {
       ...order,
-      items: (order.items || []).map((item) => ({
-        ...item,
-        recipeIngredients: item.menuItemId ? ingredientsByMenuItemId.get(item.menuItemId) || [] : [],
-      })),
+      items: (order.items || []).map((item) => {
+        const menuItemId = item.menuItemId || item.itemId;
+        return {
+          ...item,
+          recipeIngredients: menuItemId ? ingredientsByMenuItemId.get(menuItemId) || [] : [],
+        };
+      }),
     };
 
     return success({
