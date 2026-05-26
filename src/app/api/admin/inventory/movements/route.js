@@ -25,6 +25,13 @@ function cleanOptionalString(value) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
+class InventoryMovementError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function requireInventoryFeature(request, roles) {
   const admin = await requireAdmin(request, roles);
   const profile = await getRestaurantProfile();
@@ -63,22 +70,23 @@ export async function POST(request) {
       return failure('Invalid inventory movement type', 400);
     }
 
-    const item = await prisma.inventoryItem.findUnique({ where: { id: parsed.data.itemId } });
-    if (!item || item.isActive === false) {
-      return failure('Inventory item is not available', 404);
-    }
+    const { updatedItem, movement } = await prisma.$transaction(async (tx) => {
+      const item = await tx.inventoryItem.findUnique({ where: { id: parsed.data.itemId } });
+      if (!item || item.isActive === false) {
+        throw new InventoryMovementError('Inventory item is not available', 404);
+      }
 
-    const resultingStock = calculateStockAfterMovement(item.currentStock, parsed.data.type, parsed.data.quantity);
-    if (resultingStock < 0) {
-      return failure('Inventory movement cannot reduce stock below zero', 400);
-    }
+      const resultingStock = calculateStockAfterMovement(item.currentStock, parsed.data.type, parsed.data.quantity);
+      if (resultingStock < 0) {
+        throw new InventoryMovementError('Inventory movement cannot reduce stock below zero', 400);
+      }
 
-    const [updatedItem, movement] = await prisma.$transaction([
-      prisma.inventoryItem.update({
+      const updatedItem = await tx.inventoryItem.update({
         where: { id: item.id },
         data: { currentStock: resultingStock },
-      }),
-      prisma.inventoryMovement.create({
+      });
+
+      const movement = await tx.inventoryMovement.create({
         data: {
           itemId: item.id,
           type: parsed.data.type,
@@ -89,8 +97,10 @@ export async function POST(request) {
           createdByAdminEmail: admin.email,
         },
         include: { item: true },
-      }),
-    ]);
+      });
+
+      return { updatedItem, movement };
+    });
 
     return success({
       item: normalizeInventoryItem(updatedItem),

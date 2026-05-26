@@ -518,7 +518,13 @@ function checkInventoryFoundation() {
   assertIncludes(itemRoute, 'isActive: false', 'Inventory item soft deactivate');
   assertIncludes(movementsRoute, 'calculateStockAfterMovement', 'Inventory movement server-side stock calculation');
   assertIncludes(movementsRoute, 'resultingStock < 0', 'Inventory movement below-zero prevention');
-  assertIncludes(movementsRoute, 'prisma.$transaction', 'Inventory movement transactional stock update');
+  assertIncludes(movementsRoute, 'prisma.$transaction(async', 'Inventory movement interactive transaction');
+  assert(
+    movementsRoute.includes('tx.inventoryItem.findUnique') || movementsRoute.includes('tx.inventoryItem.findFirst'),
+    'Inventory movement transaction item lookup missing',
+  );
+  assertIncludes(movementsRoute, 'tx.inventoryItem.update', 'Inventory movement transaction stock update');
+  assertIncludes(movementsRoute, 'tx.inventoryMovement.create', 'Inventory movement transaction create');
   assertIncludes(client, '/api/admin/inventory/items', 'Inventory UI items API usage');
   assertIncludes(client, '/api/admin/inventory/movements', 'Inventory UI movements API usage');
   assertIncludes(client, 'Current stock', 'Inventory UI current stock display');
