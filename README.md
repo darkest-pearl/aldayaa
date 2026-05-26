@@ -97,6 +97,8 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - No automatic inventory deduction, no supplier automation, and no costing analytics have been added yet.
 - Recipe mapping UX and coverage summary added.
 - No automatic deduction, no supplier automation, and no costing analytics have been added yet.
+- Recipe consumption dry-run added.
+- No automatic stock deduction, no inventory movement creation, and no supplier automation has been added yet.
 
 ## Production Notes
 

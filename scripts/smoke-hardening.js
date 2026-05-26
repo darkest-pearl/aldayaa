@@ -755,6 +755,50 @@ function checkRecipeMappingUxPolish() {
   assertIncludes(readme, 'no costing analytics', 'README recipe UX costing limitation');
 }
 
+function checkRecipeConsumptionDryRun() {
+  const helper = read('src/lib/recipes.js');
+  const routePath = path.join(root, 'src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+  const recipesClient = read('src/app/admin/(protected)/recipes/RecipesClient.jsx');
+  const readme = read('README.md');
+
+  assertIncludes(helper, 'calculateRecipeConsumptionForOrder', 'Recipe consumption dry-run order helper');
+  assertIncludes(helper, 'aggregateRecipeConsumption', 'Recipe consumption aggregate helper');
+  assertIncludes(helper, 'normalizeRecipeConsumptionLine', 'Recipe consumption line normalizer');
+  assertIncludes(helper, 'totalRequiredQuantity', 'Recipe consumption total required quantity');
+  assertIncludes(helper, 'missingMapping', 'Recipe consumption missing mapping flag');
+  assertNotIncludes(helper, 'linesByKey', 'Recipe consumption dry-run mapped line aggregation map');
+
+  assert(fs.existsSync(routePath), 'Recipe consumption preview API route is missing');
+  const route = read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js');
+
+  assertIncludes(route, "await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT'])", 'Recipe preview API role guard');
+  assertIncludes(route, 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'Recipe preview API feature key');
+  assertIncludes(route, 'getRestaurantProfile', 'Recipe preview API profile loading');
+  assertIncludes(route, 'requireFeatureEnabled', 'Recipe preview API feature enforcement');
+  assertIncludes(route, 'prisma.order.findUnique', 'Recipe preview API order lookup');
+  assertIncludes(route, 'include: { items: true }', 'Recipe preview API order items include');
+  assertIncludes(route, 'item.menuItemId || item.itemId', 'Recipe preview API historical itemId fallback');
+  assertIncludes(route, 'prisma.menuItemIngredient.findMany', 'Recipe preview API recipe mapping lookup');
+  assertIncludes(route, 'include: { inventoryItem: true }', 'Recipe preview API inventory item include');
+  assertIncludes(route, 'calculateRecipeConsumptionForOrder', 'Recipe preview API dry-run helper usage');
+  assertNotIncludes(route, 'inventoryMovement.create', 'Recipe preview API inventory movement creation');
+  assertNotIncludes(route, 'inventoryItem.update', 'Recipe preview API inventory stock update');
+
+  assertIncludes(ordersClient, 'Recipe preview', 'Admin orders UI recipe preview action');
+  assertIncludes(ordersClient, 'recipePreview', 'Admin orders UI recipe preview state');
+  assertIncludes(ordersClient, 'recipe-consumption-preview', 'Admin orders UI recipe preview API usage');
+  assertIncludes(ordersClient, 'would be consumed', 'Admin orders UI dry-run copy');
+  assertIncludes(ordersClient, 'No inventory is deducted', 'Admin orders UI no deduction copy');
+  assertIncludes(ordersClient, 'missingMapping', 'Admin orders UI missing mapping display');
+  assertIncludes(recipesClient, 'previewed from orders', 'Admin recipes UI preview copy');
+
+  assertIncludes(readme, 'Recipe consumption dry-run added.', 'README recipe dry-run note');
+  assertIncludes(readme, 'No automatic stock deduction', 'README recipe dry-run no deduction');
+  assertIncludes(readme, 'no inventory movement creation', 'README recipe dry-run no movement');
+  assertIncludes(readme, 'no supplier automation', 'README recipe dry-run supplier limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -775,6 +819,7 @@ const checks = [
   checkInventoryUnitCategoryPolish,
   checkRecipeIngredientMappingFoundation,
   checkRecipeMappingUxPolish,
+  checkRecipeConsumptionDryRun,
 ];
 
 for (const check of checks) {
