@@ -15,7 +15,13 @@ export async function GET(request, { params }) {
 
     const order = await prisma.order.findUnique({
       where: { id: params.id },
-      include: { items: true },
+      include: {
+        items: true,
+        recipeConsumptions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
     if (!order) {
@@ -60,6 +66,7 @@ export async function GET(request, { params }) {
         createdAt: order.createdAt,
       },
       consumption: calculateRecipeConsumptionForOrder(orderWithRecipeIngredients),
+      appliedConsumption: order.recipeConsumptions?.[0] || null,
     });
   } catch (error) {
     return handleApiError(error);

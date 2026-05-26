@@ -70,32 +70,48 @@ model Reservation {
 }
 
 model Order {
-  id                  String           @id @default(cuid())
+  id                  String                   @id @default(cuid())
   name                String
   phone               String
   deliveryType        String
   address             String?
   notes               String?
   totalPrice          Float
-  status              String           @default("NEW")
-  createdAt           DateTime         @default(now())
-  notifyWhenReady     Boolean          @default(false)
-  paidOnline          Boolean          @default(false)
-  reference           String           @unique
+  status              String                   @default("NEW")
+  createdAt           DateTime                 @default(now())
+  notifyWhenReady     Boolean                  @default(false)
+  paidOnline          Boolean                  @default(false)
+  reference           String                   @unique
   tableId             String?
   tableLabel          String?
   tableSlug           String?
-  orderContext        String           @default("STANDARD")
+  orderContext        String                   @default("STANDARD")
   createdByAdminId    String?
   createdByAdminEmail String?
-  orderSource         String           @default("CUSTOMER")
-  table               RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  orderSource         String                   @default("CUSTOMER")
+  table               RestaurantTable?         @relation(fields: [tableId], references: [id], onDelete: SetNull)
   items               OrderItem[]
+  recipeConsumptions  OrderRecipeConsumption[]
 
   @@index([tableId])
   @@index([orderContext])
   @@index([createdByAdminId])
   @@index([orderSource])
+}
+
+model OrderRecipeConsumption {
+  id                  String   @id @default(cuid())
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  appliedByAdminId    String?
+  appliedByAdminEmail String?
+  status              String   @default("APPLIED")
+  notes               String?
+  createdAt           DateTime @default(now())
+
+  @@unique([orderId, status])
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 model OrderItem {
