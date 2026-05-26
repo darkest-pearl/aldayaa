@@ -8,6 +8,11 @@ import AdminTable from '../../components/AdminTable.jsx';
 import { useAdmin } from '../../components/AdminShell.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import { getInventoryUnitOptions, normalizeInventoryUnit } from '../../../../lib/inventory';
+import {
+  getMenuItemIngredientCount,
+  getRecipeMappingCoverage,
+  hasRecipeMapping,
+} from '../../../../lib/recipes';
 
 const emptyIngredientForm = {
   inventoryItemId: '',
@@ -64,6 +69,7 @@ export default function RecipesClient() {
   const [ingredientForm, setIngredientForm] = useState(emptyIngredientForm);
   const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState('');
+  const [coverageFilter, setCoverageFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -93,18 +99,37 @@ export default function RecipesClient() {
     load();
   }, [load]);
 
+  const mappingCoverage = useMemo(() => getRecipeMappingCoverage(menuItems), [menuItems]);
+
+  const mappingSummaryItems = useMemo(
+    () => [
+      { label: 'Total menu items', value: mappingCoverage.totalMenuItems },
+      { label: 'Mapped menu items', value: mappingCoverage.mappedMenuItems },
+      { label: 'Unmapped menu items', value: mappingCoverage.unmappedMenuItems },
+      { label: 'Total ingredient mappings', value: mappingCoverage.totalIngredientMappings },
+    ],
+    [mappingCoverage],
+  );
+
   const filteredMenuItems = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return menuItems;
 
     return menuItems.filter((item) => {
-      return [item.name, item.categoryName]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(query);
+      const matchesSearch = query
+        ? [item.name, item.categoryName]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(query)
+        : true;
+      const matchesCoverage =
+        coverageFilter === 'ALL' ||
+        (coverageFilter === 'MAPPED' && hasRecipeMapping(item)) ||
+        (coverageFilter === 'UNMAPPED' && !hasRecipeMapping(item));
+
+      return matchesSearch && matchesCoverage;
     });
-  }, [menuItems, search]);
+  }, [coverageFilter, menuItems, search]);
 
   const selectedMenuItem = useMemo(
     () => menuItems.find((item) => item.id === selectedMenuItemId) || null,
@@ -114,6 +139,11 @@ export default function RecipesClient() {
   const selectedInventoryItem = useMemo(
     () => inventoryItems.find((item) => item.id === ingredientForm.inventoryItemId) || null,
     [inventoryItems, ingredientForm.inventoryItemId],
+  );
+
+  const selectedIngredientCount = useMemo(
+    () => (selectedMenuItem ? getMenuItemIngredientCount(selectedMenuItem) : 0),
+    [selectedMenuItem],
   );
 
   const resetIngredientForm = () => {
@@ -216,6 +246,15 @@ export default function RecipesClient() {
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{message}</div>
       )}
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {mappingSummaryItems.map((item) => (
+          <div key={item.label} className="rounded-lg border border-neutral-200 bg-white px-4 py-3">
+            <p className="text-xs font-semibold uppercase text-neutral-500">{item.label}</p>
+            <p className="mt-1 text-2xl font-bold text-neutral-950">{item.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className={canManage ? 'grid gap-4 xl:grid-cols-[minmax(260px,0.8fr),minmax(0,1.2fr)]' : 'grid gap-4'}>
         <div className="space-y-4">
           <AdminCard
@@ -232,27 +271,56 @@ export default function RecipesClient() {
                 placeholder="Menu item or category"
               />
             </div>
+            <div className="mb-3 space-y-2">
+              <label className="text-sm font-semibold text-neutral-800">Mapping filter</label>
+              <select
+                className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                value={coverageFilter}
+                onChange={(event) => setCoverageFilter(event.target.value)}
+              >
+                <option value="ALL">All</option>
+                <option value="MAPPED">Mapped</option>
+                <option value="UNMAPPED">Unmapped</option>
+              </select>
+            </div>
             <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
-              {filteredMenuItems.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`w-full rounded-lg border px-3 py-2 text-left transition ${
-                    selectedMenuItemId === item.id
-                      ? 'border-primary bg-primary/10 text-secondary'
-                      : 'border-neutral-200 bg-white hover:bg-neutral-50'
-                  }`}
-                  onClick={() => {
-                    setSelectedMenuItemId(item.id);
-                    resetIngredientForm();
-                  }}
-                >
-                  <span className="block text-sm font-semibold">{item.name}</span>
-                  <span className="text-xs text-neutral-500">
-                    {item.categoryName || 'No category'} - {item.ingredients?.length || 0} ingredients
-                  </span>
-                </button>
-              ))}
+              {filteredMenuItems.map((item) => {
+                const ingredientCount = getMenuItemIngredientCount(item);
+                const isMapped = hasRecipeMapping(item);
+                const isSelected = selectedMenuItemId === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`w-full rounded-lg border px-3 py-2 text-left transition ${
+                      isSelected
+                        ? 'border-primary bg-primary/10 text-secondary ring-2 ring-primary/20'
+                        : 'border-neutral-200 bg-white hover:bg-neutral-50'
+                    }`}
+                    onClick={() => {
+                      setSelectedMenuItemId(item.id);
+                      resetIngredientForm();
+                    }}
+                  >
+                    <span className="flex items-start justify-between gap-2">
+                      <span>
+                        <span className="block text-sm font-semibold">{item.name}</span>
+                        <span className="text-xs text-neutral-500">
+                          {item.categoryName || 'No category'} - {ingredientCount} ingredients
+                        </span>
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                          isMapped ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {isMapped ? 'Mapped' : 'Unmapped'}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
               {!loading && filteredMenuItems.length === 0 && (
                 <p className="rounded-lg border border-neutral-200 px-3 py-4 text-center text-sm text-neutral-500">
                   No menu items found
@@ -302,10 +370,21 @@ export default function RecipesClient() {
 
                 {selectedInventoryItem && (
                   <div className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-secondary">
-                    <p>
-                      Current stock: {formatQuantity(selectedInventoryItem.currentStock)} {selectedInventoryItem.unit}
-                    </p>
-                    <p>Status: {selectedInventoryItem.stockStatusLabel}</p>
+                    <p className="font-semibold">Selected inventory stock</p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <p>
+                        <span className="block text-xs font-semibold uppercase text-secondary/70">Current stock</span>
+                        {formatQuantity(selectedInventoryItem.currentStock)} {selectedInventoryItem.unit}
+                      </p>
+                      <p>
+                        <span className="block text-xs font-semibold uppercase text-secondary/70">Status</span>
+                        {selectedInventoryItem.stockStatusLabel}
+                      </p>
+                      <p>
+                        <span className="block text-xs font-semibold uppercase text-secondary/70">Recipe unit</span>
+                        {selectedInventoryItem.unit}
+                      </p>
+                    </div>
                   </div>
                 )}
 
@@ -360,6 +439,32 @@ export default function RecipesClient() {
           title={selectedMenuItem ? selectedMenuItem.name : 'Ingredient mappings'}
           description="Inventory items and quantities mapped to this menu item."
         >
+          {selectedMenuItem && (
+            <div className="mb-4 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase text-neutral-500">Selected menu item</p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <p className="text-base font-semibold text-neutral-950">{selectedMenuItem.name}</p>
+                <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-neutral-600">
+                  {selectedMenuItem.categoryName || 'No category'}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                    selectedIngredientCount > 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {selectedIngredientCount > 0 ? 'Mapped' : 'Unmapped'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {selectedMenuItem && !loading && selectedIngredientCount === 0 && (
+            <div className="mb-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="font-semibold">No ingredients mapped yet</p>
+              <p>Choose an inventory item and quantity to start mapping this recipe.</p>
+            </div>
+          )}
+
           <AdminTable
             dense
             columns={[

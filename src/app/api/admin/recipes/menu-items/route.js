@@ -6,7 +6,11 @@ import { normalizeInventoryItem } from '../../../../../lib/inventory';
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
-import { normalizeMenuItemIngredient } from '../../../../../lib/recipes';
+import {
+  getMenuItemIngredientCount,
+  hasRecipeMapping,
+  normalizeMenuItemIngredient,
+} from '../../../../../lib/recipes';
 
 async function requireRecipeFeature(request, roles) {
   await requireAdmin(request, roles);
@@ -15,6 +19,9 @@ async function requireRecipeFeature(request, roles) {
 }
 
 function normalizeMenuItem(item = {}) {
+  const ingredients = (item.ingredients || []).map(normalizeMenuItemIngredient);
+  const ingredientCount = getMenuItemIngredientCount({ ...item, ingredients });
+
   return {
     id: item.id,
     name: item.name || '',
@@ -23,7 +30,9 @@ function normalizeMenuItem(item = {}) {
     isAvailable: item.isAvailable !== false,
     categoryId: item.categoryId,
     categoryName: item.category?.name || null,
-    ingredients: (item.ingredients || []).map(normalizeMenuItemIngredient),
+    ingredientCount,
+    hasRecipeMapping: hasRecipeMapping({ ...item, ingredientCount }),
+    ingredients,
   };
 }
 
