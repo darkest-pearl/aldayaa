@@ -233,6 +233,7 @@ export default function RecipesClient() {
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
         This defines recipe usage only. It does not deduct stock yet.
+        Recipe mappings can be previewed from orders before automatic deduction is enabled.
       </div>
       {!canManage && (
         <div className="rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700">

@@ -51,10 +51,17 @@ function getStatusBadgeClass(status) {
   return STATUS_BADGE_CLASSES[status] || 'bg-neutral-100 text-neutral-700 ring-neutral-200';
 }
 
+function formatQuantity(value) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(Number(value || 0));
+}
+
 export default function OrdersClient() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [recipePreview, setRecipePreview] = useState(null);
+  const [recipePreviewError, setRecipePreviewError] = useState(null);
+  const [recipePreviewLoadingId, setRecipePreviewLoadingId] = useState(null);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -113,6 +120,21 @@ export default function OrdersClient() {
     }
   };
 
+  const loadRecipePreview = async (order) => {
+    setRecipePreviewError(null);
+    setRecipePreviewLoadingId(order.id);
+
+    try {
+      const data = await apiRequest(`/api/admin/orders/${order.id}/recipe-consumption-preview`);
+      setRecipePreview(data);
+    } catch (err) {
+      setRecipePreview(null);
+      setRecipePreviewError(`Recipe preview failed: ${err.message}`);
+    } finally {
+      setRecipePreviewLoadingId(null);
+    }
+  };
+
   const filteredOrders = useMemo(() => {
     return (orders || []).filter((o) => {
       const query = search.toLowerCase().trim();
@@ -164,6 +186,8 @@ export default function OrdersClient() {
     });
   }, [orders, search, statusFilter, typeFilter, contextFilter, fromDate, toDate]);
 
+  const recipePreviewLines = recipePreview?.consumption?.lines || [];
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -174,6 +198,11 @@ export default function OrdersClient() {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+      {recipePreviewError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {recipePreviewError}
         </div>
       )}
 
@@ -267,6 +296,75 @@ export default function OrdersClient() {
           </div>
         </div>
       </AdminCard>
+
+      {recipePreview && (
+        <AdminCard
+          title={`Recipe preview${recipePreview.order?.reference ? ` ${recipePreview.order.reference}` : ''}`}
+          description="Inventory items that would be consumed by this order."
+          actions={
+            <button
+              type="button"
+              className="rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50"
+              onClick={() => setRecipePreview(null)}
+            >
+              Close
+            </button>
+          }
+        >
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            This is a dry-run preview of what would be consumed. No inventory is deducted and no stock movement is created.
+          </div>
+          <div className="-mx-4 overflow-x-auto sm:mx-0">
+            <table className="min-w-full divide-y divide-neutral-200 text-left text-sm">
+              <thead className="bg-neutral-50 text-xs uppercase text-neutral-500">
+                <tr>
+                  <th className="px-3 py-2">Menu item</th>
+                  <th className="px-3 py-2">Inventory item</th>
+                  <th className="px-3 py-2">Recipe qty</th>
+                  <th className="px-3 py-2">Order qty</th>
+                  <th className="px-3 py-2">Required</th>
+                  <th className="px-3 py-2">Current stock</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100 bg-white">
+                {recipePreviewLines.map((line, index) => (
+                  <tr key={`${line.menuItemId || line.menuItemName}-${line.inventoryItemId || 'missing'}-${index}`}>
+                    <td className="px-3 py-2 font-semibold text-neutral-900">{line.menuItemName}</td>
+                    <td className="px-3 py-2">
+                      {line.missingMapping ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                          Missing recipe mapping
+                        </span>
+                      ) : (
+                        line.inventoryItemName || 'Inventory item'
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {line.missingMapping ? '-' : `${formatQuantity(line.recipeQuantity)} ${line.unit}`}
+                    </td>
+                    <td className="px-3 py-2">{formatQuantity(line.orderQuantity)}</td>
+                    <td className="px-3 py-2 font-semibold text-neutral-900">
+                      {line.missingMapping ? '-' : `${formatQuantity(line.totalRequiredQuantity)} ${line.unit}`}
+                    </td>
+                    <td className="px-3 py-2">
+                      {line.currentStock === null || line.currentStock === undefined
+                        ? '-'
+                        : `${formatQuantity(line.currentStock)} ${line.unit}`}
+                    </td>
+                    <td className="px-3 py-2">{line.stockStatusLabel || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {recipePreviewLines.length === 0 && (
+              <p className="rounded-lg border border-neutral-200 px-3 py-4 text-center text-sm text-neutral-500">
+                No recipe consumption lines are available for this order.
+              </p>
+            )}
+          </div>
+        </AdminCard>
+      )}
 
       <AdminCard
         title="Orders list"
@@ -407,6 +505,14 @@ export default function OrdersClient() {
                 header: 'Actions',
                 render: (_val, row) => (
                   <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => loadRecipePreview(row)}
+                      disabled={recipePreviewLoadingId === row.id}
+                    >
+                      {recipePreviewLoadingId === row.id ? 'Loading...' : 'Recipe preview'}
+                    </button>
                     <ConfirmDialog
                       confirmLabel="Delete"
                       description={`Delete order from ${row.name}?`}
