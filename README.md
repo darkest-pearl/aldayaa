@@ -90,6 +90,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Inventory unit/category polish added.
 - No recipe consumption or automatic deduction has been added.
 
+## Recipe Mapping Foundation
+
+- Recipe ingredient mapping foundation added.
+- ADMIN/MANAGER users can map menu items to inventory items when the recipe consumption module is enabled; SUPPORT users can view mappings.
+- No automatic inventory deduction, no supplier automation, and no costing analytics have been added yet.
+
 ## Production Notes
 
 - Rotate leaked credentials immediately if this repo history contained secrets.

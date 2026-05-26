@@ -17,6 +17,7 @@ const navLinks = [
   { href: '/admin/kitchen', label: 'Kitchen', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/assisted-order', label: 'Assisted Order', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/inventory', label: 'Inventory', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
+  { href: '/admin/recipes', label: 'Recipes', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
   { href: '/admin/tables', label: 'Tables', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
   { href: '/admin/settings', label: 'Settings', roles: ['ADMIN'] },
   { href: '/admin/users', label: 'Admins' },
@@ -37,7 +38,7 @@ export default function AdminShell({ admin, children }) {
   const canNavigate = (link) => {
     if (!admin) return false;
     if (link.roles && !link.roles.includes(admin.role)) return false;
-    if (admin.role === 'SUPPORT' && !['/admin/dashboard', '/admin/tables', '/admin/inventory'].includes(link.href)) return false;
+    if (admin.role === 'SUPPORT' && !['/admin/dashboard', '/admin/tables', '/admin/inventory', '/admin/recipes'].includes(link.href)) return false;
     if (admin.role === 'MANAGER' && link.href === '/admin/users') return false;
     return true;
   };

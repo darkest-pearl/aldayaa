@@ -18,19 +18,20 @@ model MenuCategory {
 }
 
 model MenuItem {
-  id          String       @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String
   description String?
   price       Float
-  isAvailable Boolean      @default(true)
+  isAvailable Boolean              @default(true)
   imageUrl    String?
-  recommended Boolean      @default(false)
-  isSignature Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  recommended Boolean              @default(false)
+  isSignature Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   categoryId  String
-  category    MenuCategory @relation(fields: [categoryId], references: [id])
+  category    MenuCategory         @relation(fields: [categoryId], references: [id])
   orders      OrderItem[]
+  ingredients MenuItemIngredient[]
 
   @@index([isSignature])
 }
@@ -169,23 +170,41 @@ model RestaurantTable {
 }
 
 model InventoryItem {
-  id           String              @id @default(cuid())
-  name         String
-  sku          String?             @unique
-  category     String?
-  unit         String
-  currentStock Float               @default(0)
-  reorderLevel Float?
-  costPerUnit  Float?
-  isActive     Boolean             @default(true)
-  notes        String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  movements    InventoryMovement[]
+  id                String               @id @default(cuid())
+  name              String
+  sku               String?              @unique
+  category          String?
+  unit              String
+  currentStock      Float                @default(0)
+  reorderLevel      Float?
+  costPerUnit       Float?
+  isActive          Boolean              @default(true)
+  notes             String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  movements         InventoryMovement[]
+  recipeIngredients MenuItemIngredient[]
 
   @@index([name])
   @@index([category])
   @@index([isActive])
+}
+
+model MenuItemIngredient {
+  id              String        @id @default(cuid())
+  menuItemId      String
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  quantity        Float
+  unit            String
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([menuItemId, inventoryItemId])
+  @@index([menuItemId])
+  @@index([inventoryItemId])
 }
 
 model InventoryMovement {
