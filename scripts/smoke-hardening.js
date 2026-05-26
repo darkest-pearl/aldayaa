@@ -619,6 +619,100 @@ function checkInventoryUnitCategoryPolish() {
   assertIncludes(readme, 'No recipe consumption or automatic deduction has been added.', 'README inventory unit/category limitation');
 }
 
+function checkRecipeIngredientMappingFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const features = read('src/lib/features.js');
+  const helperPath = path.join(root, 'src/lib/recipes.js');
+  const pagePath = path.join(root, 'src/app/admin/(protected)/recipes/page.jsx');
+  const clientPath = path.join(root, 'src/app/admin/(protected)/recipes/RecipesClient.jsx');
+  const menuItemsRoutePath = path.join(root, 'src/app/api/admin/recipes/menu-items/route.js');
+  const ingredientsRoutePath = path.join(root, 'src/app/api/admin/recipes/ingredients/route.js');
+  const ingredientRoutePath = path.join(root, 'src/app/api/admin/recipes/ingredients/[id]/route.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const assistedRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const readme = read('README.md');
+
+  assertIncludes(schema, 'model MenuItemIngredient', 'MenuItemIngredient Prisma model');
+  assertIncludes(schema, 'menuItemId', 'MenuItemIngredient menuItemId field');
+  assertIncludes(schema, 'inventoryItemId', 'MenuItemIngredient inventoryItemId field');
+  assertIncludes(schema, 'quantity', 'MenuItemIngredient quantity field');
+  assertIncludes(schema, 'unit', 'MenuItemIngredient unit field');
+  assertIncludes(schema, '@@index([menuItemId])', 'MenuItemIngredient menuItemId index');
+  assertIncludes(schema, '@@index([inventoryItemId])', 'MenuItemIngredient inventoryItemId index');
+  assertIncludes(schema, '@@unique([menuItemId, inventoryItemId])', 'MenuItemIngredient unique menu/inventory mapping');
+  assertIncludes(schema, 'ingredients MenuItemIngredient[]', 'MenuItem recipe ingredient relation');
+  assertIncludes(schema, 'recipeIngredients MenuItemIngredient[]', 'InventoryItem recipe ingredient relation');
+
+  const defaultBlockMatch = features.match(/const DEFAULT_ENABLED_FEATURES = Object\.freeze\(\[([\s\S]*?)\]\);/);
+  assert(defaultBlockMatch, 'Default enabled features block not found for recipe check');
+  assertNotIncludes(defaultBlockMatch[1], 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'RECIPE_CONSUMPTION default enabled features');
+
+  assert(fs.existsSync(helperPath), 'Recipe helper is missing');
+  assert(fs.existsSync(pagePath), 'Admin recipes page is missing');
+  assert(fs.existsSync(clientPath), 'Admin recipes client is missing');
+  assert(fs.existsSync(menuItemsRoutePath), 'Recipe menu-items API route is missing');
+  assert(fs.existsSync(ingredientsRoutePath), 'Recipe ingredients API route is missing');
+  assert(fs.existsSync(ingredientRoutePath), 'Recipe ingredient item API route is missing');
+
+  const helper = read('src/lib/recipes.js');
+  const page = read('src/app/admin/(protected)/recipes/page.jsx');
+  const client = read('src/app/admin/(protected)/recipes/RecipesClient.jsx');
+  const menuItemsRoute = read('src/app/api/admin/recipes/menu-items/route.js');
+  const ingredientsRoute = read('src/app/api/admin/recipes/ingredients/route.js');
+  const ingredientRoute = read('src/app/api/admin/recipes/ingredients/[id]/route.js');
+  const recipeSource = [helper, page, client, menuItemsRoute, ingredientsRoute, ingredientRoute].join('\n');
+
+  assertIncludes(helper, 'normalizeMenuItemIngredient', 'Recipe helper normalizeMenuItemIngredient');
+  assertIncludes(helper, 'validateRecipeIngredientQuantity', 'Recipe helper quantity validation');
+  assertIncludes(helper, 'normalizeRecipeIngredientUnit', 'Recipe helper unit normalization');
+  assertIncludes(helper, 'normalizeInventoryUnit', 'Recipe helper inventory unit normalization reuse');
+
+  for (const [route, label] of [
+    [menuItemsRoute, 'Recipe menu-items API'],
+    [ingredientsRoute, 'Recipe ingredients API'],
+    [ingredientRoute, 'Recipe ingredient item API'],
+  ]) {
+    assertIncludes(route, 'FEATURE_KEYS.RECIPE_CONSUMPTION', `${label} feature key`);
+    assertIncludes(route, 'getRestaurantProfile', `${label} profile loading`);
+    assertIncludes(route, 'requireFeatureEnabled', `${label} feature enforcement`);
+  }
+
+  assertIncludes(menuItemsRoute, "requireRecipeFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT'])", 'Recipe menu-items API SUPPORT view access');
+  assertIncludes(ingredientsRoute, "requireRecipeFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT'])", 'Recipe ingredients API SUPPORT view access');
+  assertIncludes(ingredientsRoute, "requireRecipeFeature(request, ['ADMIN', 'MANAGER'])", 'Recipe ingredients API manage access');
+  assertIncludes(ingredientRoute, "requireRecipeFeature(request, ['ADMIN', 'MANAGER'])", 'Recipe ingredient item API manage access');
+  assertIncludes(ingredientsRoute, 'quantity: z.coerce.number().positive()', 'Recipe ingredient positive quantity validation');
+  assertIncludes(ingredientsRoute, 'normalizeRecipeIngredientUnit(parsed.data.unit)', 'Recipe ingredient create unit normalization');
+  assertIncludes(ingredientRoute, 'normalizeRecipeIngredientUnit(parsed.data.unit)', 'Recipe ingredient update unit normalization');
+  assertIncludes(ingredientsRoute, 'isActive: true', 'Recipe ingredient active inventory guard');
+  assertIncludes(ingredientsRoute, 'prisma.menuItem.findUnique', 'Recipe ingredient menu item existence check');
+  assertIncludes(ingredientsRoute, 'prisma.inventoryItem.findFirst', 'Recipe ingredient inventory item availability check');
+
+  assertIncludes(page, 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'Recipes page feature key');
+  assertIncludes(page, 'getFeatureRouteAccess', 'Recipes page module access helper');
+  assertIncludes(page, '<ModuleUnavailable', 'Recipes page disabled module state');
+  assertIncludes(page, '<RecipesClient />', 'Recipes page enabled client render');
+  assertIncludes(client, '/api/admin/recipes/menu-items', 'Recipes UI menu-items API usage');
+  assertIncludes(client, '/api/admin/recipes/ingredients', 'Recipes UI ingredients API usage');
+  assertIncludes(client, 'This defines recipe usage only. It does not deduct stock yet.', 'Recipes UI no stock deduction copy');
+  assertIncludes(client, 'currentStock', 'Recipes UI inventory current stock display');
+  assertIncludes(client, 'stockStatusLabel', 'Recipes UI inventory stock status display');
+  assertIncludes(adminShell, "'/admin/recipes'", 'Recipes admin navigation');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER', 'SUPPORT']", 'Recipes admin navigation roles');
+
+  assertNotIncludes(orderRoute, 'MenuItemIngredient', 'Customer order automatic recipe deduction');
+  assertNotIncludes(orderRoute, 'inventoryMovement', 'Customer order automatic inventory movement');
+  assertNotIncludes(assistedRoute, 'MenuItemIngredient', 'Assisted order automatic recipe deduction');
+  assertNotIncludes(assistedRoute, 'inventoryMovement', 'Assisted order automatic inventory movement');
+  assertNotIncludes(recipeSource, 'SUPPLIER_REQUESTS', 'Recipe mapping supplier request logic');
+  assertNotIncludes(recipeSource, 'costingAnalytics', 'Recipe mapping costing analytics logic');
+  assertIncludes(readme, 'Recipe ingredient mapping foundation added.', 'README recipe mapping note');
+  assertIncludes(readme, 'No automatic inventory deduction', 'README recipe no deduction limitation');
+  assertIncludes(readme, 'no supplier automation', 'README recipe supplier limitation');
+  assertIncludes(readme, 'no costing analytics', 'README recipe costing limitation');
+}
+
 const checks = [
   checkOrderHardening,
   checkReservationCancellationHardening,
@@ -637,6 +731,7 @@ const checks = [
   checkInventoryFoundation,
   checkInventoryLowStockUxFilters,
   checkInventoryUnitCategoryPolish,
+  checkRecipeIngredientMappingFoundation,
 ];
 
 for (const check of checks) {
