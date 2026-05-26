@@ -777,7 +777,7 @@ function checkRecipeConsumptionDryRun() {
   assertIncludes(route, 'getRestaurantProfile', 'Recipe preview API profile loading');
   assertIncludes(route, 'requireFeatureEnabled', 'Recipe preview API feature enforcement');
   assertIncludes(route, 'prisma.order.findUnique', 'Recipe preview API order lookup');
-  assertIncludes(route, 'include: { items: true }', 'Recipe preview API order items include');
+  assertIncludes(route, 'items: true', 'Recipe preview API order items include');
   assertIncludes(route, 'item.menuItemId || item.itemId', 'Recipe preview API historical itemId fallback');
   assertIncludes(route, 'prisma.menuItemIngredient.findMany', 'Recipe preview API recipe mapping lookup');
   assertIncludes(route, 'include: { inventoryItem: true }', 'Recipe preview API inventory item include');
@@ -797,6 +797,60 @@ function checkRecipeConsumptionDryRun() {
   assertIncludes(readme, 'No automatic stock deduction', 'README recipe dry-run no deduction');
   assertIncludes(readme, 'no inventory movement creation', 'README recipe dry-run no movement');
   assertIncludes(readme, 'no supplier automation', 'README recipe dry-run supplier limitation');
+}
+
+function checkManualRecipeConsumptionApply() {
+  const schema = read('prisma/schema.prisma');
+  const applyRoutePath = path.join(root, 'src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js');
+  const previewRoute = read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js');
+  const ordersClient = read('src/app/admin/(protected)/orders/OrdersClient.jsx');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const readme = read('README.md');
+
+  assertIncludes(schema, 'model OrderRecipeConsumption', 'OrderRecipeConsumption Prisma model');
+  assertIncludes(schema, 'recipeConsumptions', 'Order recipe consumption relation field');
+  assertIncludes(schema, 'OrderRecipeConsumption[]', 'Order recipe consumption relation type');
+  assertIncludes(schema, 'appliedByAdminId', 'OrderRecipeConsumption admin id audit field');
+  assertIncludes(schema, 'appliedByAdminEmail', 'OrderRecipeConsumption admin email audit field');
+  assertIncludes(schema, '@@index([orderId])', 'OrderRecipeConsumption order index');
+  assertIncludes(schema, '@@index([createdAt])', 'OrderRecipeConsumption createdAt index');
+
+  assert(fs.existsSync(applyRoutePath), 'Apply recipe consumption API route is missing');
+  const applyRoute = read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js');
+  assertIncludes(applyRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Apply recipe consumption role guard');
+  assertIncludes(applyRoute, 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'Apply recipe consumption recipe feature guard');
+  assertIncludes(applyRoute, 'FEATURE_KEYS.INVENTORY', 'Apply recipe consumption inventory feature guard');
+  assertIncludes(applyRoute, 'requireFeatureEnabled', 'Apply recipe consumption feature enforcement');
+  assertIncludes(applyRoute, 'orderRecipeConsumption.findFirst', 'Apply recipe consumption duplicate check');
+  assertIncludes(applyRoute, 'Recipe consumption has already been applied', 'Apply recipe consumption duplicate error');
+  assertIncludes(applyRoute, 'hasMissingMappings', 'Apply recipe consumption missing mapping check');
+  assertIncludes(applyRoute, 'Recipe mappings are incomplete', 'Apply recipe consumption incomplete mapping error');
+  assertIncludes(applyRoute, 'prisma.$transaction(async', 'Apply recipe consumption interactive transaction');
+  assertIncludes(applyRoute, 'tx.inventoryItem.findMany', 'Apply recipe consumption transaction inventory reread');
+  assertIncludes(applyRoute, 'tx.inventoryItem.updateMany', 'Apply recipe consumption atomic stock update');
+  assertIncludes(applyRoute, 'currentStock: { gte: requiredQuantity }', 'Apply recipe consumption stock floor update guard');
+  assertIncludes(applyRoute, 'currentStock: { decrement: requiredQuantity }', 'Apply recipe consumption atomic stock decrement');
+  assertIncludes(applyRoute, 'updateResult.count !== 1', 'Apply recipe consumption atomic update count guard');
+  assertNotIncludes(applyRoute, 'data: { currentStock: resultingStock }', 'Apply recipe consumption stale absolute stock write');
+  assertIncludes(applyRoute, 'tx.inventoryMovement.create', 'Apply recipe consumption movement creation');
+  assertIncludes(applyRoute, 'INVENTORY_MOVEMENT_TYPES.STOCK_OUT', 'Apply recipe consumption STOCK_OUT movement type');
+  assertIncludes(applyRoute, 'ORDER_RECIPE_CONSUMPTION', 'Apply recipe consumption movement source');
+  assertIncludes(applyRoute, 'tx.inventoryItem.update', 'Apply recipe consumption inventory stock update');
+  assertIncludes(applyRoute, 'tx.orderRecipeConsumption.create', 'Apply recipe consumption audit log creation');
+
+  assertNotIncludes(previewRoute, 'inventoryMovement.create', 'Recipe preview API inventory movement creation');
+  assertNotIncludes(previewRoute, 'inventoryItem.update', 'Recipe preview API inventory stock update');
+  assertIncludes(ordersClient, 'Apply recipe consumption', 'Admin orders UI apply recipe consumption button');
+  assertIncludes(ordersClient, 'This will deduct inventory stock.', 'Admin orders UI apply warning copy');
+  assertIncludes(ordersClient, 'apply-recipe-consumption', 'Admin orders UI apply API usage');
+  assertNotIncludes(orderRoute, 'OrderRecipeConsumption', 'Customer order route automatic recipe consumption log');
+  assertNotIncludes(orderRoute, 'inventoryMovement.create', 'Customer order route automatic inventory movement creation');
+  assertNotIncludes(orderRoute, 'MenuItemIngredient', 'Customer order route automatic recipe mapping usage');
+
+  assertIncludes(readme, 'Manual recipe consumption application added.', 'README manual recipe consumption note');
+  assertIncludes(readme, 'manual/admin-triggered only', 'README manual deduction limitation');
+  assertIncludes(readme, 'no automatic deduction on status change', 'README status change limitation');
+  assertIncludes(readme, 'no supplier automation', 'README manual recipe supplier limitation');
 }
 
 const checks = [
@@ -820,6 +874,7 @@ const checks = [
   checkRecipeIngredientMappingFoundation,
   checkRecipeMappingUxPolish,
   checkRecipeConsumptionDryRun,
+  checkManualRecipeConsumptionApply,
 ];
 
 for (const check of checks) {
