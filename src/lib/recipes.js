@@ -86,7 +86,7 @@ export function normalizeRecipeConsumptionLine(line = {}) {
 
 export function aggregateRecipeConsumption(orderItems = []) {
   const items = Array.isArray(orderItems) ? orderItems : [];
-  const linesByKey = new Map();
+  const lines = [];
   const missingMappings = [];
 
   for (const orderItem of items) {
@@ -96,31 +96,15 @@ export function aggregateRecipeConsumption(orderItems = []) {
     const recipeIngredients = orderItem.recipeIngredients || orderItem.ingredients || orderItem.menuItem?.ingredients || [];
 
     if (!recipeIngredients.length) {
-      const key = `missing:${menuItemId || orderItem.id || menuItemName}`;
-      const existing = linesByKey.get(key);
-      if (existing) {
-        linesByKey.set(key, {
-          ...existing,
-          orderQuantity: existing.orderQuantity + orderQuantity,
-        });
-      } else {
-        const line = normalizeRecipeConsumptionLine({
-          menuItemId,
-          menuItemName,
-          orderItemId: orderItem.id,
-          orderQuantity,
-          missingMapping: true,
-        });
-        linesByKey.set(key, line);
-      }
-
-      missingMappings.push({
+      const line = normalizeRecipeConsumptionLine({
         menuItemId,
         menuItemName,
         orderItemId: orderItem.id,
         orderQuantity,
         missingMapping: true,
       });
+      lines.push(line);
+      missingMappings.push(line);
       continue;
     }
 
@@ -129,21 +113,9 @@ export function aggregateRecipeConsumption(orderItems = []) {
       const recipeQuantity = toNumber(ingredient.quantity);
       const unit = normalizeRecipeIngredientUnit(ingredient.unit || inventoryItem?.unit || '');
       const inventoryItemId = ingredient.inventoryItemId || inventoryItem?.id || null;
-      const key = `${menuItemId || menuItemName}:${inventoryItemId || ingredient.id}:${unit}`;
-      const existing = linesByKey.get(key);
       const nextRequired = recipeQuantity * orderQuantity;
 
-      if (existing) {
-        linesByKey.set(key, {
-          ...existing,
-          orderQuantity: existing.orderQuantity + orderQuantity,
-          totalRequiredQuantity: existing.totalRequiredQuantity + nextRequired,
-        });
-        continue;
-      }
-
-      linesByKey.set(
-        key,
+      lines.push(
         normalizeRecipeConsumptionLine({
           menuItemId,
           menuItemName,
@@ -160,8 +132,6 @@ export function aggregateRecipeConsumption(orderItems = []) {
       );
     }
   }
-
-  const lines = Array.from(linesByKey.values());
 
   return {
     lines,

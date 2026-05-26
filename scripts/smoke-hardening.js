@@ -767,6 +767,7 @@ function checkRecipeConsumptionDryRun() {
   assertIncludes(helper, 'normalizeRecipeConsumptionLine', 'Recipe consumption line normalizer');
   assertIncludes(helper, 'totalRequiredQuantity', 'Recipe consumption total required quantity');
   assertIncludes(helper, 'missingMapping', 'Recipe consumption missing mapping flag');
+  assertNotIncludes(helper, 'linesByKey', 'Recipe consumption dry-run mapped line aggregation map');
 
   assert(fs.existsSync(routePath), 'Recipe consumption preview API route is missing');
   const route = read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js');
