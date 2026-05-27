@@ -247,3 +247,18 @@ model Announcement {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model GatewayLead {
+  id                String   @id @default(cuid())
+  restaurantName    String
+  contactName       String
+  phone             String
+  email             String?
+  interestedModules String?
+  message           String?
+  status            String   @default("NEW")
+  createdAt         DateTime @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -93,6 +93,53 @@ function checkEnvExample() {
   }
 }
 
+function checkBusinessGatewayFoundation() {
+  const rootPage = read('src/app/page.js');
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const leadFormPath = path.join(root, 'src/components/GatewayLeadForm.jsx');
+  const leadApiPath = path.join(root, 'src/app/api/gateway/leads/route.js');
+  const publicPagePath = path.join(root, 'src/app/public/page.js');
+
+  assert(fs.existsSync(publicPagePath), '/public restaurant app page is missing');
+  assertNotIncludes(rootPage, 'redirect("/public")', 'Root gateway page redirect');
+  assertIncludes(rootPage, 'Restaurant automation system', 'Root gateway hero copy');
+  assertIncludes(rootPage, 'href="/public"', 'Root gateway live demo link');
+  assertIncludes(rootPage, 'digital menus', 'Root gateway product module copy');
+  assertIncludes(rootPage, 'QR table', 'Root gateway QR module copy');
+  assertIncludes(rootPage, 'inventory', 'Root gateway inventory module copy');
+  assertIncludes(rootPage, 'Starter', 'Root gateway package placeholder');
+  assertIncludes(rootPage, 'Operations', 'Root gateway package placeholder');
+  assertIncludes(rootPage, 'Advanced / Custom', 'Root gateway package placeholder');
+  assertIncludes(rootPage, 'GatewayLeadForm', 'Root gateway lead form usage');
+
+  assert(fs.existsSync(leadFormPath), 'Gateway lead form component is missing');
+  const leadForm = read('src/components/GatewayLeadForm.jsx');
+  assertIncludes(leadForm, 'restaurantName', 'Gateway lead form restaurant field');
+  assertIncludes(leadForm, 'contactName', 'Gateway lead form contact field');
+  assertIncludes(leadForm, 'phone', 'Gateway lead form phone field');
+  assertIncludes(leadForm, 'interestedModules', 'Gateway lead form interested modules field');
+  assertIncludes(leadForm, '/api/gateway/leads', 'Gateway lead form API submit');
+
+  assertIncludes(schema, 'model GatewayLead', 'GatewayLead Prisma model');
+  assertIncludes(schema, 'restaurantName', 'GatewayLead restaurant field');
+  assertIncludes(schema, 'interestedModules', 'GatewayLead interested modules field');
+  assert(fs.existsSync(leadApiPath), 'Gateway lead API route is missing');
+  const leadApi = read('src/app/api/gateway/leads/route.js');
+  assertIncludes(leadApi, 'leadSchema.safeParse', 'Gateway lead API validation');
+  assertIncludes(leadApi, 'prisma.gatewayLead.create', 'Gateway lead API persistence');
+  assertIncludes(leadApi, 'failure(', 'Gateway lead API error response');
+
+  assertNotIncludes(packageJson, '"stripe"', 'Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Billing API route should not exist yet');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Provisioning API route should not exist yet');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Multi-tenant Restaurant model should not exist yet');
+  assertIncludes(readme, 'Business gateway foundation added at `/`.', 'README business gateway note');
+  assertIncludes(readme, '`/public` remains the live Al Dayaa restaurant demo.', 'README public demo note');
+  assertIncludes(readme, 'No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model', 'README gateway scope limits');
+}
+
 function checkRestaurantProfileFoundation() {
   const schema = read('prisma/schema.prisma');
   const helper = read('src/lib/restaurant-profile.js');
@@ -885,6 +932,7 @@ const checks = [
   checkReservationCancellationHardening,
   checkAdminUserHardening,
   checkEnvExample,
+  checkBusinessGatewayFoundation,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,

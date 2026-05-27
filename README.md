@@ -32,6 +32,7 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 
 ## Features
 
+- Business gateway foundation at `/` for the restaurant automation product.
 - Public website pages for home, menu, reservations, ordering, gallery, about, and contact.
 - Menu, orders, reservations, gallery, settings, announcements, and WhatsApp integration.
 - Admin dashboard at `/admin/login` for operational management.
@@ -39,6 +40,13 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - Responsive Tailwind UI with Prisma-backed API routes.
 - Non-interactive Next.js linting and a focused production-hardening smoke check.
 - Restaurant profile/config foundation for one restaurant profile, with admin API support.
+
+## Business Gateway Foundation
+
+- Business gateway foundation added at `/`.
+- `/public` remains the live Al Dayaa restaurant demo.
+- Gateway leads can be submitted through a small DB-backed request form.
+- No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model has been added yet.
 
 ## Feature Modules Foundation
 
