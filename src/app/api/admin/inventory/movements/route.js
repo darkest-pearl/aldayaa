@@ -34,7 +34,7 @@ class InventoryMovementError extends Error {
 
 async function requireInventoryFeature(request, roles) {
   const admin = await requireAdmin(request, roles);
-  const profile = await getRestaurantProfile();
+  const profile = await getRestaurantProfile({ fallbackOnError: false });
   requireFeatureEnabled(profile, FEATURE_KEYS.INVENTORY);
   return admin;
 }

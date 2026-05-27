@@ -25,7 +25,7 @@ function cleanOptionalString(value) {
 
 async function requireRecipeFeature(request, roles) {
   await requireAdmin(request, roles);
-  const profile = await getRestaurantProfile();
+  const profile = await getRestaurantProfile({ fallbackOnError: false });
   requireFeatureEnabled(profile, FEATURE_KEYS.RECIPE_CONSUMPTION);
 }
 

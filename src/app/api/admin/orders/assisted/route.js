@@ -30,7 +30,7 @@ function cleanOptionalString(value) {
 export async function POST(request) {
   try {
     const admin = await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const profile = await getRestaurantProfile();
+    const profile = await getRestaurantProfile({ fallbackOnError: false });
     requireFeatureEnabled(profile, FEATURE_KEYS.WAITER_ASSISTED_ORDERING);
 
     const body = await request.json();

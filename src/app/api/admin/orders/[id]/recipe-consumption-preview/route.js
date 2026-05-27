@@ -10,7 +10,7 @@ import { calculateRecipeConsumptionForOrder } from '../../../../../../lib/recipe
 export async function GET(request, { params }) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const profile = await getRestaurantProfile();
+    const profile = await getRestaurantProfile({ fallbackOnError: false });
     requireFeatureEnabled(profile, FEATURE_KEYS.RECIPE_CONSUMPTION);
 
     const order = await prisma.order.findUnique({

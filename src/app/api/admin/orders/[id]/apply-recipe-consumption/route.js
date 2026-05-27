@@ -43,7 +43,7 @@ async function readJsonBody(request) {
 
 async function requireRecipeConsumptionApplyAccess(request) {
   const admin = await requireAdmin(request, ['ADMIN', 'MANAGER']);
-  const profile = await getRestaurantProfile();
+  const profile = await getRestaurantProfile({ fallbackOnError: false });
   requireFeatureEnabled(profile, FEATURE_KEYS.RECIPE_CONSUMPTION);
   requireFeatureEnabled(profile, FEATURE_KEYS.INVENTORY);
   return admin;
