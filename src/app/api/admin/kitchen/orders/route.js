@@ -10,7 +10,7 @@ import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const profile = await getRestaurantProfile();
+    const profile = await getRestaurantProfile({ fallbackOnError: false });
     requireFeatureEnabled(profile, FEATURE_KEYS.KITCHEN_QUEUE);
 
     const orders = await prisma.order.findMany({

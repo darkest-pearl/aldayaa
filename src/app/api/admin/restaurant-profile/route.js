@@ -7,7 +7,7 @@ import { prisma } from '../../../../lib/prisma';
 import {
   defaultRestaurantProfile,
   getRestaurantProfile,
-  normalizeRestaurantProfile,
+  setRestaurantProfileCache,
   toPrismaRestaurantProfileData,
 } from '../../../../lib/restaurant-profile';
 
@@ -61,7 +61,7 @@ function cleanProfilePayload(payload) {
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const profile = await getRestaurantProfile();
+    const profile = await getRestaurantProfile({ fallbackOnError: false });
     return success({ profile });
   } catch (error) {
     return handleApiError(error);
@@ -90,7 +90,7 @@ export async function PUT(request) {
       update: updates,
     });
 
-    return success({ profile: normalizeRestaurantProfile(profile) });
+    return success({ profile: setRestaurantProfileCache(profile) });
   } catch (error) {
     return handleApiError(error);
   }

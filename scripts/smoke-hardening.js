@@ -101,8 +101,35 @@ function checkRestaurantProfileFoundation() {
   assertIncludes(schema, 'model RestaurantProfile', 'RestaurantProfile Prisma model');
   assertIncludes(schema, 'enabledFeatures', 'RestaurantProfile enabledFeatures field');
   assertIncludes(helper, 'getRestaurantProfile', 'Restaurant profile helper');
+  assertIncludes(helper, 'restaurantProfile.findUnique', 'Restaurant profile read-first lookup');
+  assertNotIncludes(helper, 'restaurantProfile.upsert', 'Restaurant profile helper normal read path');
+  assertIncludes(helper, 'ensureRestaurantProfile', 'Restaurant profile controlled default creation helper');
+  assertIncludes(helper, 'pendingProfileLoad', 'Restaurant profile concurrent read guard');
+  assertIncludes(helper, 'pendingDefaultProfileCreate', 'Restaurant profile concurrent create guard');
+  assertIncludes(helper, 'fallbackOnError = true', 'Restaurant profile public fallback option');
+  assertIncludes(helper, 'return normalizeRestaurantProfile();', 'Restaurant profile default fallback behavior');
   assertIncludes(apiRoute, "await requireAdmin(request, ['ADMIN'", 'Restaurant profile admin API auth');
+  assertIncludes(apiRoute, 'getRestaurantProfile({ fallbackOnError: false })', 'Restaurant profile admin API surfaces load errors');
+  assertIncludes(apiRoute, 'prisma.restaurantProfile.upsert', 'Restaurant profile admin update persistence');
+  assertIncludes(apiRoute, 'setRestaurantProfileCache', 'Restaurant profile admin update cache refresh');
   assertIncludes(apiRoute, 'profileSchema.safeParse', 'Restaurant profile API validation');
+
+  const adminProfileGuardRoutes = [
+    ['src/app/api/admin/inventory/items/route.js', 'Inventory items API'],
+    ['src/app/api/admin/inventory/items/[id]/route.js', 'Inventory item API'],
+    ['src/app/api/admin/inventory/movements/route.js', 'Inventory movements API'],
+    ['src/app/api/admin/kitchen/orders/route.js', 'Kitchen orders API'],
+    ['src/app/api/admin/orders/assisted/route.js', 'Assisted orders API'],
+    ['src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js', 'Recipe consumption apply API'],
+    ['src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js', 'Recipe consumption preview API'],
+    ['src/app/api/admin/recipes/ingredients/route.js', 'Recipe ingredients API'],
+    ['src/app/api/admin/recipes/ingredients/[id]/route.js', 'Recipe ingredient API'],
+    ['src/app/api/admin/recipes/menu-items/route.js', 'Recipe menu-items API'],
+  ];
+
+  for (const [routePath, label] of adminProfileGuardRoutes) {
+    assertIncludes(read(routePath), 'getRestaurantProfile({ fallbackOnError: false })', `${label} profile errors surface`);
+  }
 }
 
 function checkRestaurantProfileUiWiring() {
