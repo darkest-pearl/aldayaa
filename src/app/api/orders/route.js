@@ -240,7 +240,7 @@ export async function PUT(request) {
       try {
         await sendWhatsAppMessage(
           order.phone,
-          `Your order ${order.reference} is ready for pickup at Al Dayaa Al Shamiah.`
+          `Your order ${order.reference} is ready for pickup at Demo Restaurant.`
         );
       } catch (err) {
         console.error('Failed to send WhatsApp notification:', err);

@@ -1,7 +1,7 @@
 import GatewayLeadForm from '../components/GatewayLeadForm';
 
 export const metadata = {
-  title: 'Restaurant automation system | Al Dayaa platform demo',
+  title: 'Restaurant automation system | Platform gateway',
   description:
     'A restaurant automation gateway for digital menus, ordering, table QR, kitchen queue, inventory, recipes, and configurable restaurant operations.',
 };
@@ -64,7 +64,7 @@ const faqs = [
   {
     question: 'Can we see the live restaurant experience?',
     answer:
-      'Yes. Al Dayaa is the live demo at /public, with menu, ordering, reservations, gallery, and contact flows available for review.',
+      'Yes. Demo Restaurant is the live demo at /public, with menu, ordering, reservations, gallery, and contact flows available for review.',
   },
   {
     question: 'Does this include subscriptions or payments?',
@@ -143,7 +143,7 @@ export default function BusinessGatewayPage() {
                 href="/public"
                 className="rounded-full bg-[#2f7d5b] px-6 py-3 text-sm font-semibold text-white shadow-lifted transition hover:bg-[#255f48]"
               >
-                View Al Dayaa live demo
+                View Demo Restaurant live demo
               </a>
               <a
                 href="#request-demo"
@@ -185,7 +185,8 @@ export default function BusinessGatewayPage() {
             {[
               ['Current pressure', 'Manual order taking, changing menus, stock surprises, and weak operational visibility.'],
               ['Product answer', 'A modular restaurant automation system that can start small and expand carefully.'],
-              ['Live proof', 'Al Dayaa is the live demo, so owners can inspect the real customer flow before discussing customization.'],
+              ['Live proof', 'Demo Restaurant is the live demo, so owners can inspect the real customer flow before discussing customization.'],
+              ['Architecture', '`/` is the platform/business gateway. `/public` is the demo restaurant website. `/admin` is the demo restaurant admin. `/platform-admin` is the platform owner admin.'],
               ['Next step', 'Capture requirements before adding billing, provisioning, or tenant automation.'],
             ].map(([title, description]) => (
               <article key={title} className="rounded-lg border border-neutral-200 bg-white p-6 shadow-soft">
@@ -253,7 +254,7 @@ export default function BusinessGatewayPage() {
               href="/public"
               className="mt-8 inline-flex rounded-full border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-secondary"
             >
-              View Al Dayaa live demo
+              View Demo Restaurant live demo
             </a>
           </div>
           <GatewayLeadForm />
@@ -285,7 +286,7 @@ export default function BusinessGatewayPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <a href="/public" className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold">
-              Al Dayaa live demo
+              Demo Restaurant live demo
             </a>
             <a href="#request-demo" className="rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white">
               Request customization

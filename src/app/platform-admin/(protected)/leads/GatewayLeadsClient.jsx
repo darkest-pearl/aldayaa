@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AdminCard from '../../components/AdminCard.jsx';
-import AdminPageHeader from '../../components/AdminPageHeader.jsx';
+import AdminCard from '../../../admin/components/AdminCard.jsx';
+import AdminPageHeader from '../../../admin/components/AdminPageHeader.jsx';
 import {
   GATEWAY_LEAD_FOLLOW_UP_STATES,
   GATEWAY_LEAD_STATUSES,

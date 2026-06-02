@@ -41,7 +41,7 @@ export default function AdminLogin() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-lg space-y-6">
-        <AdminPageHeader title="Admin login" description="Access the Al Dayaa admin dashboard." />
+        <AdminPageHeader title="Admin login" description="Access the Demo Restaurant admin dashboard." />
         <AdminCard>
           <form className="space-y-4" onSubmit={submit}>
             <div className="space-y-2">

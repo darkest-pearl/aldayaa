@@ -5,7 +5,7 @@ import nextDynamic from 'next/dynamic';
 import { prisma } from '../../../lib/prisma';
 
 export const metadata = {
-  title: 'Menu | Al Dayaa Al Shamiah',
+  title: 'Menu | Demo Restaurant',
 };
 
 const MenuClient = nextDynamic(

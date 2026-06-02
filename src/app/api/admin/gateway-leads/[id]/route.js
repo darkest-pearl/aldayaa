@@ -19,7 +19,7 @@ const updateSchema = z.object({
 
 export async function PUT(request, { params }) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN']);
 
     const body = await request.json();
     const parsed = updateSchema.safeParse(body);

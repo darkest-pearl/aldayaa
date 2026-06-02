@@ -26,7 +26,7 @@ function buildSearchFilter(search) {
 
 export async function GET(request) {
   try {
-    await requireAdmin(request, ['ADMIN', 'MANAGER']);
+    await requireAdmin(request, ['ADMIN']);
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status')?.trim();

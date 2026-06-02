@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Section from '../../../components/Section';
 
-export const metadata = { title: 'About | Al Dayaa Al Shamiah' };
+export const metadata = { title: 'About | Demo Restaurant' };
 
 export default function AboutPage() {
   return (
@@ -13,7 +13,7 @@ export default function AboutPage() {
           </div>
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-secondary">Our Story</h1>
           <p className="text-sm md:text-base leading-relaxed text-neutral-700">
-            Al Dayaa Al Shamiah Restaurant was created to share the soul of Levantine street food and the warmth of family dining in Sharjah. From shawarma carved off the spit to sizzling grills and fragrant biryanis, every dish is prepared with time-honored techniques.
+            Demo Restaurant is a neutral restaurant website demo created to show how the public dining experience can feel once menus, reservations, ordering, gallery, and contact flows are configured. From shawarma carved off the spit to sizzling grills and fragrant biryanis, every dish is presented as sample demo content.
           </p>
           <p className="text-sm md:text-base leading-relaxed text-neutral-700">
             We welcome late-night cravings, celebrations, and casual gatherings alike. The menu blends Syrian and Indian influences, celebrating charcoal, spice, and generous hospitality.
