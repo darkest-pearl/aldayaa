@@ -47,6 +47,7 @@ export default function GatewayLeadsClient() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [copiedValue, setCopiedValue] = useState('');
   const [error, setError] = useState(null);
 
   const countByStatus = useMemo(() => {
@@ -91,6 +92,17 @@ export default function GatewayLeadsClient() {
       setError(err.message);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const copyToClipboard = async (value) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedValue(value);
+      setTimeout(() => setCopiedValue(''), 1400);
+    } catch {
+      setError('Unable to copy this value.');
     }
   };
 
@@ -149,7 +161,7 @@ export default function GatewayLeadsClient() {
         <div className="space-y-4">
           {!loading && leads.length === 0 && (
             <div className="rounded-lg border border-dashed border-neutral-200 px-4 py-8 text-center text-sm text-neutral-500">
-              No gateway leads found.
+              No gateway leads match these filters.
             </div>
           )}
 
@@ -162,8 +174,28 @@ export default function GatewayLeadsClient() {
                     <p className="text-sm text-neutral-600">{lead.contactName}</p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-sm text-neutral-700">
-                    <span className="rounded-md bg-neutral-100 px-2 py-1">Phone / WhatsApp: {lead.phone}</span>
-                    {lead.email && <span className="rounded-md bg-neutral-100 px-2 py-1">{lead.email}</span>}
+                    <span className="inline-flex items-center gap-2 rounded-md bg-neutral-100 px-2 py-1">
+                      Phone / WhatsApp: {lead.phone}
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-primary hover:underline"
+                        onClick={() => copyToClipboard(lead.phone)}
+                      >
+                        {copiedValue === lead.phone ? 'Copied' : 'Copy'}
+                      </button>
+                    </span>
+                    {lead.email && (
+                      <span className="inline-flex items-center gap-2 rounded-md bg-neutral-100 px-2 py-1">
+                        {lead.email}
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-primary hover:underline"
+                          onClick={() => copyToClipboard(lead.email)}
+                        >
+                          {copiedValue === lead.email ? 'Copied' : 'Copy'}
+                        </button>
+                      </span>
+                    )}
                     <span className="rounded-md bg-neutral-100 px-2 py-1">{formatDate(lead.createdAt)}</span>
                   </div>
                 </div>
@@ -201,7 +233,9 @@ export default function GatewayLeadsClient() {
                 </div>
                 <div>
                   <div className="text-xs font-semibold uppercase text-neutral-500">Message / customization request</div>
-                  <p className="mt-2 whitespace-pre-line text-sm text-neutral-700">{lead.message || 'No message provided'}</p>
+                  <div className="mt-2 max-h-40 overflow-y-auto rounded-lg bg-neutral-50 p-3">
+                    <p className="whitespace-pre-line text-sm leading-6 text-neutral-700">{lead.message || 'No message provided'}</p>
+                  </div>
                 </div>
               </div>
             </article>

@@ -49,10 +49,13 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model has been added yet.
 - Gateway lead admin management added.
 - ADMIN/MANAGER users can view, search, filter, and update gateway lead status under `/admin/gateway-leads`.
+- Gateway lead form UX polish and anti-spam foundation added.
+- Honeypot only; no captcha or third-party anti-spam service has been added.
 - No CRM automation yet.
 - No email/WhatsApp sending yet.
 - No subscription/payment logic yet.
 - No automatic restaurant provisioning yet.
+- No payments/subscriptions/provisioning yet.
 
 ## Feature Modules Foundation
 
