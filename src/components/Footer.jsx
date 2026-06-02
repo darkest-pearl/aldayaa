@@ -121,14 +121,14 @@ export default async function Footer({ profile: profileProp } = {}) {
               <p className="text-sm text-neutral-700">{hours.saturday}</p>
             )}
             <div className="mt-4 flex items-center gap-2 text-sm text-neutral-700">
-              <span className="font-semibold text-secondary">Linktree:</span>
+              <span className="font-semibold text-secondary">Demo links:</span>
               <Link
                 href={profile.linktreeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary transition hover:text-secondary"
               >
-                @Linktree/aldaya
+                Demo Restaurant links
               </Link>
             </div>
           </div>

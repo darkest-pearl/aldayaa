@@ -136,7 +136,7 @@ function checkBusinessGatewayFoundation() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Provisioning API route should not exist yet');
   assert(!/model\s+Restaurant\s*\{/.test(schema), 'Multi-tenant Restaurant model should not exist yet');
   assertIncludes(readme, 'Business gateway foundation added at `/`.', 'README business gateway note');
-  assertIncludes(readme, '`/public` remains the live Al Dayaa restaurant demo.', 'README public demo note');
+  assertIncludes(readme, '`/public` remains the live demo restaurant website.', 'README public demo note');
   assertIncludes(readme, 'No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model', 'README gateway scope limits');
 }
 
@@ -147,7 +147,7 @@ function checkGatewayLeadFormUxPolish() {
   const rootPage = read('src/app/page.js');
   const leadForm = read('src/components/GatewayLeadForm.jsx');
   const leadApi = read('src/app/api/gateway/leads/route.js');
-  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const adminClient = read('src/app/platform-admin/(protected)/leads/GatewayLeadsClient.jsx');
   const gatewayPolishSource = [rootPage, leadForm, leadApi, adminClient].join('\n');
 
   assertIncludes(leadForm, 'companyWebsite', 'Gateway lead form honeypot field');
@@ -174,7 +174,7 @@ function checkGatewayLeadFormUxPolish() {
   assertIncludes(leadApi, 'leadSchema.safeParse', 'Gateway lead API Zod validation retained');
   assertIncludes(leadApi, 'failure(', 'Gateway lead API consistent failure response');
 
-  assertIncludes(rootPage, 'Al Dayaa is the live demo', 'Gateway page live demo clarity');
+  assertIncludes(rootPage, 'Demo Restaurant is the live demo', 'Gateway page live demo clarity');
   assertIncludes(rootPage, 'example packages', 'Gateway page example package clarity');
   assertIncludes(rootPage, 'not final pricing', 'Gateway page placeholder pricing clarity');
   assertIncludes(rootPage, 'Tell us what to customize', 'Gateway page customization request clarity');
@@ -212,20 +212,24 @@ function checkGatewayLeadAdminManagement() {
   const readme = read('README.md');
   const helperPath = path.join(root, 'src/lib/gateway-leads.js');
   const adminPagePath = path.join(root, 'src/app/admin/(protected)/gateway-leads/page.jsx');
-  const adminClientPath = path.join(root, 'src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const platformPagePath = path.join(root, 'src/app/platform-admin/(protected)/leads/page.jsx');
+  const adminClientPath = path.join(root, 'src/app/platform-admin/(protected)/leads/GatewayLeadsClient.jsx');
   const collectionRoutePath = path.join(root, 'src/app/api/admin/gateway-leads/route.js');
   const itemRoutePath = path.join(root, 'src/app/api/admin/gateway-leads/[id]/route.js');
 
   assert(fs.existsSync(helperPath), 'Gateway lead helper is missing');
   assert(fs.existsSync(adminPagePath), 'Gateway lead admin page is missing');
-  assert(fs.existsSync(adminClientPath), 'Gateway lead admin client is missing');
+  assert(fs.existsSync(platformPagePath), 'Gateway lead platform admin page is missing');
+  assert(fs.existsSync(adminClientPath), 'Gateway lead platform admin client is missing');
   assert(fs.existsSync(collectionRoutePath), 'Gateway lead admin collection API route is missing');
   assert(fs.existsSync(itemRoutePath), 'Gateway lead admin item API route is missing');
 
   const helper = read('src/lib/gateway-leads.js');
   const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const platformShell = read('src/app/platform-admin/components/PlatformAdminShell.jsx');
   const adminPage = read('src/app/admin/(protected)/gateway-leads/page.jsx');
-  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const platformPage = read('src/app/platform-admin/(protected)/leads/page.jsx');
+  const adminClient = read('src/app/platform-admin/(protected)/leads/GatewayLeadsClient.jsx');
   const collectionRoute = read('src/app/api/admin/gateway-leads/route.js');
   const itemRoute = read('src/app/api/admin/gateway-leads/[id]/route.js');
   const gatewayAdminSource = [helper, adminPage, adminClient, collectionRoute, itemRoute].join('\n');
@@ -241,13 +245,14 @@ function checkGatewayLeadAdminManagement() {
   assertIncludes(helper, 'isValidGatewayLeadStatus', 'Gateway lead status validator');
   assertIncludes(helper, 'JSON.parse', 'Gateway lead interested modules parsing');
 
-  assertIncludes(adminShell, "href: '/admin/gateway-leads'", 'Gateway Leads admin navigation href');
-  assertIncludes(adminShell, "label: 'Gateway Leads'", 'Gateway Leads admin navigation label');
-  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Gateway Leads admin navigation roles');
-  assertIncludes(adminPage, "admin.role !== 'ADMIN' && admin.role !== 'MANAGER'", 'Gateway Leads page role redirect');
-  assertIncludes(adminPage, '<GatewayLeadsClient />', 'Gateway Leads page client render');
+  assertNotIncludes(adminShell, "href: '/admin/gateway-leads'", 'Gateway Leads restaurant admin navigation href');
+  assertNotIncludes(adminShell, "label: 'Gateway Leads'", 'Gateway Leads restaurant admin navigation label');
+  assertIncludes(platformShell, "href: '/platform-admin/leads'", 'Gateway Leads platform admin navigation href');
+  assertIncludes(platformShell, "label: 'Gateway Leads'", 'Gateway Leads platform admin navigation label');
+  assertIncludes(adminPage, "redirect('/platform-admin/leads')", 'Gateway Leads old admin route redirect');
+  assertIncludes(platformPage, '<GatewayLeadsClient />', 'Gateway Leads platform page client render');
 
-  assertIncludes(collectionRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Gateway lead collection API role guard');
+  assertIncludes(collectionRoute, "await requireAdmin(request, ['ADMIN'])", 'Gateway lead collection API role guard');
   assertIncludes(collectionRoute, 'prisma.gatewayLead.findMany', 'Gateway lead collection API list query');
   assertIncludes(collectionRoute, "orderBy: { createdAt: 'desc' }", 'Gateway lead collection API newest first');
   assertIncludes(collectionRoute, 'searchParams.get', 'Gateway lead collection API filters');
@@ -257,7 +262,7 @@ function checkGatewayLeadAdminManagement() {
   assertIncludes(collectionRoute, 'email', 'Gateway lead collection API email search');
   assertIncludes(collectionRoute, 'normalizeGatewayLead', 'Gateway lead collection API safe normalization');
 
-  assertIncludes(itemRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Gateway lead item API role guard');
+  assertIncludes(itemRoute, "await requireAdmin(request, ['ADMIN'])", 'Gateway lead item API role guard');
   assertIncludes(itemRoute, 'z.object', 'Gateway lead item API Zod schema');
   assertIncludes(itemRoute, 'status: z.enum(GATEWAY_LEAD_STATUSES)', 'Gateway lead status update validation');
   assertIncludes(itemRoute, 'updateSchema.safeParse', 'Gateway lead update validation usage');
@@ -302,7 +307,7 @@ function checkGatewayLeadWorkflowPolish() {
   const helper = read('src/lib/gateway-leads.js');
   const collectionRoute = read('src/app/api/admin/gateway-leads/route.js');
   const itemRoute = read('src/app/api/admin/gateway-leads/[id]/route.js');
-  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const adminClient = read('src/app/platform-admin/(protected)/leads/GatewayLeadsClient.jsx');
   const readme = read('README.md');
   const migrationPath = path.join(root, 'prisma/migrations/20260602142500_add_gateway_lead_workflow_fields/migration.sql');
   const workflowSource = [helper, collectionRoute, itemRoute, adminClient].join('\n');
@@ -369,6 +374,91 @@ function checkGatewayLeadWorkflowPolish() {
   assertIncludes(readme, 'No reminders/notifications', 'README gateway lead no reminders note');
   assertIncludes(readme, 'No CRM/email/WhatsApp automation', 'README gateway lead no automation note');
   assertIncludes(readme, 'No payments/subscriptions/provisioning', 'README gateway lead no payments note');
+}
+
+function checkAdminSeparationAndDemoBranding() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const rootPage = read('src/app/page.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const adminLayout = read('src/app/admin/layout.js');
+  const platformShellPath = path.join(root, 'src/app/platform-admin/components/PlatformAdminShell.jsx');
+  const platformLayoutPath = path.join(root, 'src/app/platform-admin/(protected)/layout.js');
+  const platformIndexPath = path.join(root, 'src/app/platform-admin/(protected)/page.js');
+  const platformLeadsPath = path.join(root, 'src/app/platform-admin/(protected)/leads/page.jsx');
+  const oldGatewayLeadsPath = path.join(root, 'src/app/admin/(protected)/gateway-leads/page.jsx');
+  const publicPagePath = path.join(root, 'src/app/public/page.js');
+  const adminPagePath = path.join(root, 'src/app/admin/page.js');
+  const restaurantProfile = read('src/lib/restaurant-profile.js');
+  const strings = read('src/lib/strings.js');
+  const collectionRoute = read('src/app/api/admin/gateway-leads/route.js');
+  const itemRoute = read('src/app/api/admin/gateway-leads/[id]/route.js');
+  const platformSource = [
+    fs.existsSync(platformShellPath) ? read('src/app/platform-admin/components/PlatformAdminShell.jsx') : '',
+    fs.existsSync(platformLayoutPath) ? read('src/app/platform-admin/(protected)/layout.js') : '',
+    fs.existsSync(platformIndexPath) ? read('src/app/platform-admin/(protected)/page.js') : '',
+    fs.existsSync(platformLeadsPath) ? read('src/app/platform-admin/(protected)/leads/page.jsx') : '',
+  ].join('\n');
+  const restaurantAdminSource = [adminShell, adminLayout].join('\n');
+  const publicDemoSource = [restaurantProfile, strings, read('src/components/Header.jsx')].join('\n');
+
+  assert(fs.existsSync(platformShellPath), 'Platform admin shell is missing');
+  assert(fs.existsSync(platformLayoutPath), 'Platform admin protected layout is missing');
+  assert(fs.existsSync(platformIndexPath), '/platform-admin page is missing');
+  assert(fs.existsSync(platformLeadsPath), '/platform-admin/leads page is missing');
+  assert(fs.existsSync(publicPagePath), '/public restaurant demo page is missing');
+  assert(fs.existsSync(adminPagePath), '/admin restaurant admin entry page is missing');
+  assert(fs.existsSync(oldGatewayLeadsPath), '/admin/gateway-leads redirect page is missing');
+
+  assertIncludes(platformSource, 'PlatformAdminShell', 'Platform admin shell usage');
+  assertIncludes(platformSource, 'Platform Dashboard', 'Platform dashboard navigation');
+  assertIncludes(platformSource, 'Gateway Leads', 'Platform gateway leads navigation');
+  assertIncludes(platformSource, 'Gateway Website', 'Platform gateway website placeholder navigation');
+  assertIncludes(platformSource, 'Packages', 'Platform packages placeholder navigation');
+  assertIncludes(platformSource, 'Client Restaurants', 'Platform client restaurants placeholder navigation');
+  assertIncludes(platformSource, 'Platform Settings', 'Platform settings placeholder navigation');
+  assertIncludes(platformSource, "admin.role !== 'ADMIN'", 'Platform admin ADMIN-only guard');
+  assertIncludes(platformSource, 'This is the platform owner admin', 'Platform admin purpose copy');
+
+  assertNotIncludes(adminShell, "href: '/admin/gateway-leads'", 'Restaurant admin gateway lead nav');
+  assertNotIncludes(adminShell, "label: 'Gateway Leads'", 'Restaurant admin gateway lead nav label');
+  assertNotIncludes(restaurantAdminSource, 'Al Dayaa Admin', 'Restaurant admin Al Dayaa admin branding');
+  assertIncludes(restaurantAdminSource, 'Demo Restaurant Admin', 'Restaurant admin neutral shell branding');
+  assertIncludes(adminShell, "label: 'Restaurant Settings'", 'Restaurant admin settings label');
+  assertIncludes(adminShell, "label: 'Restaurant Admins'", 'Restaurant admin users label');
+  assertIncludes(read('src/app/admin/(protected)/gateway-leads/page.jsx'), "redirect('/platform-admin/leads')", '/admin/gateway-leads redirect target');
+
+  assertIncludes(publicDemoSource, 'Demo Restaurant', 'Public demo neutral default name');
+  assertNotIncludes(publicDemoSource, 'Al Dayaa Al Shamiah Restaurant', 'Public demo Al Dayaa default name');
+  assertIncludes(rootPage, '`/` is the platform/business gateway', 'Gateway architecture copy root');
+  assertIncludes(rootPage, '`/public` is the demo restaurant website', 'Gateway architecture copy public');
+  assertIncludes(rootPage, '`/admin` is the demo restaurant admin', 'Gateway architecture copy admin');
+  assertIncludes(rootPage, '`/platform-admin` is the platform owner admin', 'Gateway architecture copy platform admin');
+  assertIncludes(rootPage, 'Demo Restaurant is the live demo', 'Gateway neutral live demo copy');
+  assertIncludes(rootPage, 'example packages', 'Gateway package placeholder copy retained');
+  assertIncludes(rootPage, 'not final pricing', 'Gateway pricing placeholder copy retained');
+
+  assertIncludes(collectionRoute, "await requireAdmin(request, ['ADMIN'])", 'Gateway lead collection ADMIN-only platform API');
+  assertIncludes(itemRoute, "await requireAdmin(request, ['ADMIN'])", 'Gateway lead item ADMIN-only platform API');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Admin separation should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Admin separation should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Admin separation should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Admin separation should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Admin separation should not add multi-tenant Restaurant model');
+  assertNotIncludes(packageJson, '"stripe"', 'Admin separation Stripe dependency');
+  assertNotIncludes(platformSource, 'sendMail', 'Platform admin email sending');
+  assertNotIncludes(platformSource, 'nodemailer', 'Platform admin nodemailer usage');
+  assertNotIncludes(platformSource, 'sendWhatsApp', 'Platform admin WhatsApp sending');
+  assertNotIncludes(platformSource, 'provision', 'Platform admin provisioning logic');
+
+  assertIncludes(readme, 'Platform admin and restaurant admin separation added.', 'README admin separation note');
+  assertIncludes(readme, '`/platform-admin` is for gateway/business owner workflows', 'README platform admin note');
+  assertIncludes(readme, '`/admin` is for restaurant/demo operations', 'README restaurant admin note');
+  assertIncludes(readme, '`/public` remains the restaurant demo', 'README public demo note');
+  assertIncludes(readme, 'No full multi-tenancy yet', 'README no full multi-tenancy note');
+  assertIncludes(readme, 'No payments/subscriptions/provisioning yet', 'README no payments/provisioning note');
 }
 
 function checkRestaurantProfileFoundation() {
@@ -1167,6 +1257,7 @@ const checks = [
   checkGatewayLeadFormUxPolish,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
+  checkAdminSeparationAndDemoBranding,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,

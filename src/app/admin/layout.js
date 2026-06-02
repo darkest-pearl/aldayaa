@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Admin | Al Dayaa',
-  description: 'Administration panel for managing Al Dayaa content.',
+  title: 'Demo Restaurant Admin',
+  description: 'Restaurant demo administration panel for operations, menu, orders, and settings.',
 };
 
 export default function AdminRootLayout({ children }) {

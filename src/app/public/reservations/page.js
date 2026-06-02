@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Reservations | Al Dayaa Al Shamiah',
+  title: 'Reservations | Demo Restaurant',
 };
 
 import Section from "../../../components/Section";

@@ -7,7 +7,7 @@ import { getRestaurantProfile, toPublicRestaurantProfile } from '../../../lib/re
 import { normalizeTable } from '../../../lib/tables';
 
 export const metadata = {
-  title: 'Order Online | Al Dayaa Al Shamiah'
+  title: 'Order Online | Demo Restaurant'
 };
 
 async function getMenu() {

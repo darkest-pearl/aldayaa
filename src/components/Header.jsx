@@ -20,7 +20,7 @@ export default function Header({ profile = {} }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const restaurantName = profile.restaurantName || strings.restaurantName;
   const tagline = profile.tagline || strings.tagline;
-  const logoUrl = profile.logoUrl || '/images/logo-al-dayaa.png';
+  const logoUrl = profile.logoUrl || '/images/food-mezze.jpg';
   const visibleNavLinks = navLinks.filter(
     (link) => !link.featureKey || isFeatureEnabled(profile.enabledFeatures, link.featureKey),
   );

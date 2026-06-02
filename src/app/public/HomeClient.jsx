@@ -67,6 +67,7 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
   const [isPaused, setIsPaused] = useState(false);
   const whatsappLink = profile.whatsappLink || strings.whatsappLink;
   const whatsappNumber = profile.whatsappNumber || strings.whatsapp;
+  const restaurantName = profile.restaurantName || strings.restaurantName;
   const contactWhatsappEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.CONTACT_WHATSAPP);
   const onlineOrderingEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.ONLINE_ORDERING);
   const reservationsEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.RESERVATIONS);
@@ -162,7 +163,7 @@ export default function HomeClient({ recommendedDishes = [], profile = {} }) {
             </h1>
 
             <p className="text-sm md:text-base lg:text-lg leading-relaxed text-white/80 max-w-2xl mx-auto md:mx-0">
-              Experience Al Dayaa Al Shamiah—where fire-grilled favorites, mezze, and biryani come together in a refined, warm atmosphere.
+              Experience {restaurantName}, a neutral live demo where fire-grilled favorites, mezze, and biryani come together in a refined, warm atmosphere.
             </p>
 
             {(onlineOrderingEnabled || reservationsEnabled) && (

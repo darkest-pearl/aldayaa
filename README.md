@@ -1,6 +1,6 @@
-# Al Dayaa Al Shamiah Restaurant
+# RestaurantOps Gateway Demo
 
-Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant with Tailwind CSS, Prisma + PostgreSQL, and an admin dashboard.
+Production-ready Next.js (App Router) restaurant automation demo with Tailwind CSS, Prisma + PostgreSQL, a public business gateway, a restaurant demo, and separated admin areas.
 
 ## Getting Started
 
@@ -33,9 +33,9 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 ## Features
 
 - Business gateway foundation at `/` for the restaurant automation product.
-- Public website pages for home, menu, reservations, ordering, gallery, about, and contact.
+- Public demo restaurant pages for home, menu, reservations, ordering, gallery, about, and contact.
 - Menu, orders, reservations, gallery, settings, announcements, and WhatsApp integration.
-- Admin dashboard at `/admin/login` for operational management.
+- Restaurant admin dashboard at `/admin/login` for demo restaurant operational management.
 - Role-based admin access with ADMIN, MANAGER, and SUPPORT roles.
 - Responsive Tailwind UI with Prisma-backed API routes.
 - Non-interactive Next.js linting and a focused production-hardening smoke check.
@@ -44,11 +44,11 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 ## Business Gateway Foundation
 
 - Business gateway foundation added at `/`.
-- `/public` remains the live Al Dayaa restaurant demo.
+- `/public` remains the live demo restaurant website.
 - Gateway leads can be submitted through a small DB-backed request form.
 - No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model has been added yet.
 - Gateway lead admin management added.
-- ADMIN/MANAGER users can view, search, filter, and update gateway lead status under `/admin/gateway-leads`.
+- ADMIN users can view, search, filter, and update gateway lead status under `/platform-admin/leads`.
 - Gateway lead form UX polish and anti-spam foundation added.
 - Honeypot only; no captcha or third-party anti-spam service has been added.
 - Gateway lead workflow polish added.
@@ -61,6 +61,12 @@ Production-ready Next.js (App Router) site for Al Dayaa Al Shamiah Restaurant wi
 - No email/WhatsApp sending yet.
 - No subscription/payment logic yet.
 - No automatic restaurant provisioning yet.
+- No payments/subscriptions/provisioning yet.
+- Platform admin and restaurant admin separation added.
+- `/platform-admin` is for gateway/business owner workflows.
+- `/admin` is for restaurant/demo operations.
+- `/public` remains the restaurant demo.
+- No full multi-tenancy yet.
 - No payments/subscriptions/provisioning yet.
 
 ## Feature Modules Foundation

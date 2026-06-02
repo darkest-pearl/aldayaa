@@ -14,14 +14,13 @@ const navLinks = [
   { href: '/admin/gallery', label: 'Gallery' },
   { href: '/admin/reservations', label: 'Reservations' },
   { href: '/admin/orders', label: 'Orders' },
-  { href: '/admin/gateway-leads', label: 'Gateway Leads', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/kitchen', label: 'Kitchen', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/assisted-order', label: 'Assisted Order', roles: ['ADMIN', 'MANAGER'] },
   { href: '/admin/inventory', label: 'Inventory', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
   { href: '/admin/recipes', label: 'Recipes', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
   { href: '/admin/tables', label: 'Tables', roles: ['ADMIN', 'MANAGER', 'SUPPORT'] },
-  { href: '/admin/settings', label: 'Settings', roles: ['ADMIN'] },
-  { href: '/admin/users', label: 'Admins' },
+  { href: '/admin/settings', label: 'Restaurant Settings', roles: ['ADMIN'] },
+  { href: '/admin/users', label: 'Restaurant Admins' },
 ];
 
 export default function AdminShell({ admin, children }) {
@@ -62,7 +61,7 @@ export default function AdminShell({ admin, children }) {
                 <span className="mt-1 block h-0.5 w-4 bg-neutral-900" />
               </button>
               <Link href="/admin/dashboard" className="text-lg font-semibold">
-                Al Dayaa Admin
+                Demo Restaurant Admin
               </Link>
             </div>
             <div className="hidden items-center gap-6 text-sm sm:flex">

@@ -8,7 +8,7 @@ import { getRestaurantProfile, toPublicRestaurantProfile } from '../../../../lib
 import { normalizeTable } from '../../../../lib/tables';
 
 export const metadata = {
-  title: 'Table Ordering | Al Dayaa Al Shamiah',
+  title: 'Table Ordering | Demo Restaurant',
 };
 
 async function findTable(slug) {
