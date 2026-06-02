@@ -68,6 +68,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - `/public` remains the restaurant demo.
 - No full multi-tenancy yet.
 - No payments/subscriptions/provisioning yet.
+- Demo restaurant profile reset controls added.
+- Platform owner can reset demo profile branding/contact values.
+- Restaurant feature flags are preserved.
+- No multi-tenancy/provisioning/payments yet.
 
 ## Feature Modules Foundation
 

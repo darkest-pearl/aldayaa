@@ -461,6 +461,86 @@ function checkAdminSeparationAndDemoBranding() {
   assertIncludes(readme, 'No payments/subscriptions/provisioning yet', 'README no payments/provisioning note');
 }
 
+function checkDemoRestaurantProfileResetControls() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurant-profile.js');
+  const platformShell = read('src/app/platform-admin/components/PlatformAdminShell.jsx');
+  const pagePath = path.join(root, 'src/app/platform-admin/(protected)/demo-restaurant/page.jsx');
+  const clientPath = path.join(root, 'src/app/platform-admin/(protected)/demo-restaurant/DemoRestaurantProfileClient.jsx');
+  const resetRoutePath = path.join(root, 'src/app/api/platform/demo-profile/reset/route.js');
+  const adminSettingsPath = path.join(root, 'src/app/admin/(protected)/settings/page.jsx');
+  const publicPagePath = path.join(root, 'src/app/public/page.js');
+
+  assert(fs.existsSync(pagePath), '/platform-admin/demo-restaurant page is missing');
+  assert(fs.existsSync(clientPath), 'Demo profile reset client is missing');
+  assert(fs.existsSync(resetRoutePath), 'Demo profile reset API route is missing');
+  assert(fs.existsSync(adminSettingsPath), 'Restaurant admin settings page is missing');
+  assert(fs.existsSync(publicPagePath), '/public restaurant demo page is missing');
+
+  const page = read('src/app/platform-admin/(protected)/demo-restaurant/page.jsx');
+  const client = read('src/app/platform-admin/(protected)/demo-restaurant/DemoRestaurantProfileClient.jsx');
+  const resetRoute = read('src/app/api/platform/demo-profile/reset/route.js');
+  const pageSource = [page, client].join('\n');
+  const resetSource = [helper, page, client, resetRoute].join('\n');
+  const strings = read('src/lib/strings.js');
+
+  assertIncludes(helper, 'getNeutralDemoRestaurantProfile', 'Neutral demo profile helper');
+  assertIncludes(helper, 'restaurantName: strings.restaurantName', 'Neutral demo restaurant name default');
+  assertIncludes(strings, 'A configurable restaurant demo for modern digital operations', 'Neutral demo tagline default');
+  assertIncludes(helper, 'https://example.com/demo-restaurant', 'Neutral demo social/link defaults');
+
+  assertIncludes(platformShell, "href: '/platform-admin/demo-restaurant'", 'Platform demo restaurant nav href');
+  assertIncludes(platformShell, "label: 'Demo Restaurant'", 'Platform demo restaurant nav label');
+
+  assertIncludes(pageSource, 'Reset demo profile to neutral defaults', 'Demo profile reset button');
+  assertIncludes(pageSource, 'reset will replace current demo profile settings with neutral demo defaults', 'Demo profile reset warning');
+  assertIncludes(pageSource, 'enabledFeatures.length', 'Demo profile enabled feature count');
+  assertIncludes(pageSource, 'View demo restaurant', 'Demo profile public link');
+  assertIncludes(pageSource, 'href="/public"', 'Demo profile public href');
+  assertIncludes(pageSource, 'Open restaurant admin settings', 'Demo profile admin settings link');
+  assertIncludes(pageSource, 'href="/admin/settings"', 'Demo profile admin settings href');
+  assertIncludes(pageSource, '/api/platform/demo-profile/reset', 'Demo profile reset API usage');
+  assertIncludes(pageSource, 'confirm(', 'Demo profile reset confirmation');
+
+  assertIncludes(resetRoute, "await requireAdmin(request, ['ADMIN'])", 'Demo profile reset ADMIN-only guard');
+  assertIncludes(resetRoute, 'getNeutralDemoRestaurantProfile', 'Demo profile reset neutral defaults usage');
+  assertIncludes(resetRoute, 'prisma.restaurantProfile.upsert', 'Demo profile reset singleton upsert');
+  assertIncludes(resetRoute, 'enabledFeatures: existingProfile.enabledFeatures', 'Demo profile reset preserves enabledFeatures');
+  assertIncludes(resetRoute, 'setRestaurantProfileCache', 'Demo profile reset cache refresh');
+  assertIncludes(resetRoute, 'return success({ profile:', 'Demo profile reset normalized response');
+
+  for (const unexpected of [
+    'prisma.menu',
+    'prisma.order',
+    'prisma.inventory',
+    'prisma.gatewayLead',
+    'prisma.adminUser',
+    'prisma.reservation',
+    'deleteMany',
+    'delete(',
+  ]) {
+    assertNotIncludes(resetRoute, unexpected, `Demo profile reset unrelated data mutation ${unexpected}`);
+  }
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Demo profile reset should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Demo profile reset should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Demo profile reset should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Demo profile reset should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Demo profile reset should not add multi-tenant Restaurant model');
+  assertNotIncludes(packageJson, '"stripe"', 'Demo profile reset Stripe dependency');
+  assertNotIncludes(resetSource, 'sendMail', 'Demo profile reset email sending');
+  assertNotIncludes(resetSource, 'nodemailer', 'Demo profile reset nodemailer usage');
+  assertNotIncludes(resetSource, 'sendWhatsApp', 'Demo profile reset WhatsApp sending');
+  assertNotIncludes(resetSource, 'provision', 'Demo profile reset provisioning logic');
+
+  assertIncludes(readme, 'Demo restaurant profile reset controls added.', 'README demo profile reset note');
+  assertIncludes(readme, 'Platform owner can reset demo profile branding/contact values', 'README demo profile reset owner note');
+  assertIncludes(readme, 'Restaurant feature flags are preserved', 'README demo profile reset feature flag note');
+  assertIncludes(readme, 'No multi-tenancy/provisioning/payments yet', 'README demo profile reset scope note');
+}
+
 function checkRestaurantProfileFoundation() {
   const schema = read('prisma/schema.prisma');
   const helper = read('src/lib/restaurant-profile.js');
@@ -1258,6 +1338,7 @@ const checks = [
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
+  checkDemoRestaurantProfileResetControls,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,

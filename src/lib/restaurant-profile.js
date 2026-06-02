@@ -2,26 +2,33 @@ import { prisma } from './prisma';
 import { getDefaultEnabledFeatures, normalizeEnabledFeatures } from './features';
 import { strings } from './strings';
 
-export const defaultRestaurantProfile = {
-  id: 1,
-  restaurantName: strings.restaurantName,
-  tagline: strings.tagline,
-  cuisineType: 'Demo cuisine',
-  whatsappNumber: strings.whatsapp,
-  whatsappLink: strings.whatsappLink,
-  address: strings.address,
-  googleMapsUrl: strings.googleMaps,
-  googleMapsEmbedUrl: strings.googleMapsEmbed,
-  instagramUrl: 'https://example.com/demo-restaurant/instagram',
-  facebookUrl: 'https://example.com/demo-restaurant/facebook',
-  tiktokUrl: 'https://example.com/demo-restaurant/tiktok',
-  linktreeUrl: strings.linktree,
-  logoUrl: '/images/food-mezze.jpg',
-  primaryColor: '#d6b15f',
-  secondaryColor: '#183b32',
-  currency: 'AED',
-  enabledFeatures: getDefaultEnabledFeatures(),
-};
+export function getNeutralDemoRestaurantProfile(overrides = {}) {
+  return {
+    id: 1,
+    restaurantName: strings.restaurantName,
+    tagline: strings.tagline,
+    cuisineType: 'Demo cuisine',
+    whatsappNumber: strings.whatsapp,
+    whatsappLink: strings.whatsappLink,
+    address: strings.address,
+    googleMapsUrl: strings.googleMaps,
+    googleMapsEmbedUrl: strings.googleMapsEmbed,
+    instagramUrl: 'https://example.com/demo-restaurant/instagram',
+    facebookUrl: 'https://example.com/demo-restaurant/facebook',
+    tiktokUrl: 'https://example.com/demo-restaurant/tiktok',
+    linktreeUrl: strings.linktree,
+    logoUrl: '/images/food-mezze.jpg',
+    primaryColor: '#d6b15f',
+    secondaryColor: '#183b32',
+    currency: 'AED',
+    enabledFeatures: getDefaultEnabledFeatures(),
+    ...overrides,
+  };
+}
+
+export const defaultRestaurantProfile = getNeutralDemoRestaurantProfile();
+
+export const neutralDemoRestaurantProfile = defaultRestaurantProfile;
 
 const profileStringFields = [
   'restaurantName',
