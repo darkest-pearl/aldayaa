@@ -249,16 +249,20 @@ model Announcement {
 }
 
 model GatewayLead {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   restaurantName    String
   contactName       String
   phone             String
   email             String?
   interestedModules String?
   message           String?
-  status            String   @default("NEW")
-  createdAt         DateTime @default(now())
+  internalNotes     String?
+  status            String    @default("NEW")
+  lastContactedAt   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
 
   @@index([status])
   @@index([createdAt])
+  @@index([lastContactedAt])
 }
