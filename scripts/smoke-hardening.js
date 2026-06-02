@@ -140,6 +140,96 @@ function checkBusinessGatewayFoundation() {
   assertIncludes(readme, 'No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model', 'README gateway scope limits');
 }
 
+function checkGatewayLeadAdminManagement() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const helperPath = path.join(root, 'src/lib/gateway-leads.js');
+  const adminPagePath = path.join(root, 'src/app/admin/(protected)/gateway-leads/page.jsx');
+  const adminClientPath = path.join(root, 'src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const collectionRoutePath = path.join(root, 'src/app/api/admin/gateway-leads/route.js');
+  const itemRoutePath = path.join(root, 'src/app/api/admin/gateway-leads/[id]/route.js');
+
+  assert(fs.existsSync(helperPath), 'Gateway lead helper is missing');
+  assert(fs.existsSync(adminPagePath), 'Gateway lead admin page is missing');
+  assert(fs.existsSync(adminClientPath), 'Gateway lead admin client is missing');
+  assert(fs.existsSync(collectionRoutePath), 'Gateway lead admin collection API route is missing');
+  assert(fs.existsSync(itemRoutePath), 'Gateway lead admin item API route is missing');
+
+  const helper = read('src/lib/gateway-leads.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const adminPage = read('src/app/admin/(protected)/gateway-leads/page.jsx');
+  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const collectionRoute = read('src/app/api/admin/gateway-leads/route.js');
+  const itemRoute = read('src/app/api/admin/gateway-leads/[id]/route.js');
+  const gatewayAdminSource = [helper, adminPage, adminClient, collectionRoute, itemRoute].join('\n');
+
+  for (const status of ['NEW', 'CONTACTED', 'QUALIFIED', 'ARCHIVED']) {
+    assertIncludes(helper, status, `Gateway lead helper status ${status}`);
+    assertIncludes(adminClient, status, `Gateway lead UI status ${status}`);
+  }
+
+  assertIncludes(helper, 'GATEWAY_LEAD_STATUSES', 'Gateway lead status constants');
+  assertIncludes(helper, 'getGatewayLeadStatusLabel', 'Gateway lead status label helper');
+  assertIncludes(helper, 'normalizeGatewayLead', 'Gateway lead normalizer');
+  assertIncludes(helper, 'isValidGatewayLeadStatus', 'Gateway lead status validator');
+  assertIncludes(helper, 'JSON.parse', 'Gateway lead interested modules parsing');
+
+  assertIncludes(adminShell, "href: '/admin/gateway-leads'", 'Gateway Leads admin navigation href');
+  assertIncludes(adminShell, "label: 'Gateway Leads'", 'Gateway Leads admin navigation label');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Gateway Leads admin navigation roles');
+  assertIncludes(adminPage, "admin.role !== 'ADMIN' && admin.role !== 'MANAGER'", 'Gateway Leads page role redirect');
+  assertIncludes(adminPage, '<GatewayLeadsClient />', 'Gateway Leads page client render');
+
+  assertIncludes(collectionRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Gateway lead collection API role guard');
+  assertIncludes(collectionRoute, 'prisma.gatewayLead.findMany', 'Gateway lead collection API list query');
+  assertIncludes(collectionRoute, "orderBy: { createdAt: 'desc' }", 'Gateway lead collection API newest first');
+  assertIncludes(collectionRoute, 'searchParams.get', 'Gateway lead collection API filters');
+  assertIncludes(collectionRoute, 'restaurantName', 'Gateway lead collection API restaurant search');
+  assertIncludes(collectionRoute, 'contactName', 'Gateway lead collection API contact search');
+  assertIncludes(collectionRoute, 'phone', 'Gateway lead collection API phone search');
+  assertIncludes(collectionRoute, 'email', 'Gateway lead collection API email search');
+  assertIncludes(collectionRoute, 'normalizeGatewayLead', 'Gateway lead collection API safe normalization');
+
+  assertIncludes(itemRoute, "await requireAdmin(request, ['ADMIN', 'MANAGER'])", 'Gateway lead item API role guard');
+  assertIncludes(itemRoute, 'z.object', 'Gateway lead item API Zod schema');
+  assertIncludes(itemRoute, 'status: z.enum(GATEWAY_LEAD_STATUSES)', 'Gateway lead status update validation');
+  assertIncludes(itemRoute, 'updateSchema.safeParse', 'Gateway lead update validation usage');
+  assertIncludes(itemRoute, 'prisma.gatewayLead.update', 'Gateway lead status persistence');
+  assertNotIncludes(itemRoute, 'message:', 'Gateway lead item API message editing');
+  assertNotIncludes(itemRoute, 'interestedModules:', 'Gateway lead item API module editing');
+
+  assertIncludes(adminClient, '/api/admin/gateway-leads', 'Gateway lead admin UI API usage');
+  assertIncludes(adminClient, 'Total leads', 'Gateway lead admin total count');
+  assertIncludes(adminClient, 'countByStatus', 'Gateway lead admin status counts');
+  assertIncludes(adminClient, 'restaurantName', 'Gateway lead admin restaurant display');
+  assertIncludes(adminClient, 'contactName', 'Gateway lead admin contact display');
+  assertIncludes(adminClient, 'interestedModules', 'Gateway lead admin interested modules display');
+  assertIncludes(adminClient, 'message', 'Gateway lead admin message display');
+  assertIncludes(adminClient, 'createdAt', 'Gateway lead admin createdAt display');
+
+  assertNotIncludes(packageJson, '"stripe"', 'Gateway lead admin Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Gateway lead admin should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead admin should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead admin should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead admin should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead admin should not add multi-tenant Restaurant model');
+  assertNotIncludes(gatewayAdminSource, 'sendMail', 'Gateway lead admin email sending');
+  assertNotIncludes(gatewayAdminSource, 'nodemailer', 'Gateway lead admin nodemailer usage');
+  assertNotIncludes(gatewayAdminSource, 'sendWhatsApp', 'Gateway lead admin WhatsApp sending');
+  assertNotIncludes(gatewayAdminSource, 'whatsapp', 'Gateway lead admin WhatsApp automation');
+  assertNotIncludes(gatewayAdminSource, 'subscription', 'Gateway lead admin subscription logic');
+  assertNotIncludes(gatewayAdminSource, 'payment', 'Gateway lead admin payment logic');
+  assertNotIncludes(gatewayAdminSource, 'provision', 'Gateway lead admin provisioning logic');
+  assertNotIncludes(gatewayAdminSource, 'crm', 'Gateway lead admin CRM automation');
+
+  assertIncludes(readme, 'Gateway lead admin management added.', 'README gateway lead admin note');
+  assertIncludes(readme, 'No CRM automation yet', 'README gateway lead no CRM note');
+  assertIncludes(readme, 'No email/WhatsApp sending yet', 'README gateway lead no sending note');
+  assertIncludes(readme, 'No subscription/payment logic yet', 'README gateway lead no payments note');
+  assertIncludes(readme, 'No automatic restaurant provisioning yet', 'README gateway lead no provisioning note');
+}
+
 function checkRestaurantProfileFoundation() {
   const schema = read('prisma/schema.prisma');
   const helper = read('src/lib/restaurant-profile.js');
@@ -933,6 +1023,7 @@ const checks = [
   checkAdminUserHardening,
   checkEnvExample,
   checkBusinessGatewayFoundation,
+  checkGatewayLeadAdminManagement,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,
