@@ -64,7 +64,7 @@ const faqs = [
   {
     question: 'Can we see the live restaurant experience?',
     answer:
-      'Yes. The Al Dayaa demo remains available at /public with menu, ordering, reservations, gallery, and contact flows.',
+      'Yes. Al Dayaa is the live demo at /public, with menu, ordering, reservations, gallery, and contact flows available for review.',
   },
   {
     question: 'Does this include subscriptions or payments?',
@@ -109,7 +109,7 @@ function GatewayNav() {
           href="#request-demo"
           className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-secondary shadow-sm transition hover:bg-primary hover:text-white"
         >
-          Request a demo
+          Request customization
         </a>
       </div>
     </header>
@@ -143,13 +143,13 @@ export default function BusinessGatewayPage() {
                 href="/public"
                 className="rounded-full bg-[#2f7d5b] px-6 py-3 text-sm font-semibold text-white shadow-lifted transition hover:bg-[#255f48]"
               >
-                View live restaurant demo
+                View Al Dayaa live demo
               </a>
               <a
                 href="#request-demo"
                 className="rounded-full border border-white/40 bg-white/12 px-6 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white hover:text-secondary"
               >
-                Request a demo
+                Request customization
               </a>
               <a
                 href="#request-demo"
@@ -185,7 +185,7 @@ export default function BusinessGatewayPage() {
             {[
               ['Current pressure', 'Manual order taking, changing menus, stock surprises, and weak operational visibility.'],
               ['Product answer', 'A modular restaurant automation system that can start small and expand carefully.'],
-              ['Live proof', 'The Al Dayaa restaurant demo stays available so owners can inspect the real customer flow.'],
+              ['Live proof', 'Al Dayaa is the live demo, so owners can inspect the real customer flow before discussing customization.'],
               ['Next step', 'Capture requirements before adding billing, provisioning, or tenant automation.'],
             ].map(([title, description]) => (
               <article key={title} className="rounded-lg border border-neutral-200 bg-white p-6 shadow-soft">
@@ -217,8 +217,8 @@ export default function BusinessGatewayPage() {
       <section id="packages" className="py-20">
         <div className="site-container">
           <SectionHeading
-            title="Feature packages placeholder"
-            description="These package labels are planning placeholders for sales conversations. They are not billing plans, subscriptions, or automated provisioning."
+            title="Example packages for planning"
+            description="These example packages are placeholders for sales conversations and not final pricing, billing plans, subscriptions, or automated provisioning."
           />
           <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {packages.map((tier) => (
@@ -243,7 +243,7 @@ export default function BusinessGatewayPage() {
         <div className="site-container grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <h2 className="text-3xl font-semibold leading-tight text-white sm:text-4xl">
-              Request a demo or discuss customization.
+              Tell us what to customize.
             </h2>
             <p className="mt-5 text-base leading-8 text-white/75">
               Share the restaurant profile, the modules you care about, and any custom workflow needs. This form creates
@@ -253,7 +253,7 @@ export default function BusinessGatewayPage() {
               href="/public"
               className="mt-8 inline-flex rounded-full border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white hover:text-secondary"
             >
-              View live restaurant demo
+              View Al Dayaa live demo
             </a>
           </div>
           <GatewayLeadForm />
@@ -285,10 +285,10 @@ export default function BusinessGatewayPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <a href="/public" className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold">
-              Live demo
+              Al Dayaa live demo
             </a>
             <a href="#request-demo" className="rounded-full bg-secondary px-4 py-2 text-sm font-semibold text-white">
-              Contact
+              Request customization
             </a>
           </div>
         </div>

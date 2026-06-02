@@ -140,6 +140,72 @@ function checkBusinessGatewayFoundation() {
   assertIncludes(readme, 'No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model', 'README gateway scope limits');
 }
 
+function checkGatewayLeadFormUxPolish() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const rootPage = read('src/app/page.js');
+  const leadForm = read('src/components/GatewayLeadForm.jsx');
+  const leadApi = read('src/app/api/gateway/leads/route.js');
+  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const gatewayPolishSource = [rootPage, leadForm, leadApi, adminClient].join('\n');
+
+  assertIncludes(leadForm, 'companyWebsite', 'Gateway lead form honeypot field');
+  assertIncludes(leadForm, 'aria-hidden="true"', 'Gateway lead form hidden honeypot');
+  assertIncludes(leadForm, 'tabIndex={-1}', 'Gateway lead form honeypot skipped by keyboard');
+  assertIncludes(leadForm, 'fieldErrors', 'Gateway lead form field-level validation state');
+  assertIncludes(leadForm, 'validateForm', 'Gateway lead form client validation helper');
+  assertIncludes(leadForm, 'if (submitting) return;', 'Gateway lead form duplicate submission guard');
+  assertIncludes(leadForm, 'Request received', 'Gateway lead form success state');
+  assertIncludes(leadForm, 'next step', 'Gateway lead form next-step success copy');
+  assertIncludes(leadForm, 'setForm(initialForm)', 'Gateway lead form clears after success');
+  assertIncludes(leadForm, "setFieldErrors({})", 'Gateway lead form clears validation after success');
+
+  assertIncludes(leadApi, 'companyWebsite', 'Gateway lead API honeypot field');
+  assertIncludes(leadApi, 'isLikelyBotSubmission', 'Gateway lead API honeypot check');
+  assertIncludes(leadApi, 'return success({ lead: null }, { status: 201 })', 'Gateway lead API silent bot response');
+  assertIncludes(leadApi, 'cleanRequiredString', 'Gateway lead API required field trimming');
+  assertIncludes(leadApi, 'cleanOptionalString', 'Gateway lead API optional field trimming');
+  assertIncludes(leadApi, 'normalizePhone', 'Gateway lead API phone normalization');
+  assertIncludes(leadApi, 'normalizeEmail', 'Gateway lead API email normalization');
+  assertIncludes(leadApi, 'normalizeInterestedModules', 'Gateway lead API interested modules normalization');
+  assertIncludes(leadApi, '.max(12)', 'Gateway lead API interested modules count cap');
+  assertIncludes(leadApi, '.max(80)', 'Gateway lead API interested module length cap');
+  assertIncludes(leadApi, 'leadSchema.safeParse', 'Gateway lead API Zod validation retained');
+  assertIncludes(leadApi, 'failure(', 'Gateway lead API consistent failure response');
+
+  assertIncludes(rootPage, 'Al Dayaa is the live demo', 'Gateway page live demo clarity');
+  assertIncludes(rootPage, 'example packages', 'Gateway page example package clarity');
+  assertIncludes(rootPage, 'not final pricing', 'Gateway page placeholder pricing clarity');
+  assertIncludes(rootPage, 'Tell us what to customize', 'Gateway page customization request clarity');
+
+  assertIncludes(adminClient, 'No gateway leads match these filters.', 'Gateway leads admin filter empty state');
+  assertIncludes(adminClient, 'max-h-40 overflow-y-auto', 'Gateway leads admin long message readability');
+  assertIncludes(adminClient, 'copyToClipboard', 'Gateway leads admin copy convenience');
+
+  for (const unexpected of ['captcha', 'recaptcha', 'hcaptcha']) {
+    assert(!packageJson.toLowerCase().includes(unexpected), `Captcha dependency should not be added: ${unexpected}`);
+    assert(!gatewayPolishSource.toLowerCase().includes(unexpected), `Captcha source should not be added: ${unexpected}`);
+  }
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Gateway lead polish should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead polish should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead polish should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead polish should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead polish should not add multi-tenant Restaurant model');
+  assertNotIncludes(gatewayPolishSource, 'sendMail', 'Gateway lead polish email sending');
+  assertNotIncludes(gatewayPolishSource, 'nodemailer', 'Gateway lead polish nodemailer usage');
+  assertNotIncludes(gatewayPolishSource, 'sendWhatsApp', 'Gateway lead polish WhatsApp sending');
+  assertNotIncludes(gatewayPolishSource, 'createRestaurant', 'Gateway lead polish provisioning logic');
+  assertNotIncludes(gatewayPolishSource, 'stripe.checkout', 'Gateway lead polish payment logic');
+
+  assertIncludes(readme, 'Gateway lead form UX polish and anti-spam foundation added.', 'README gateway lead polish note');
+  assertIncludes(readme, 'Honeypot only; no captcha', 'README gateway lead honeypot-only note');
+  assertIncludes(readme, 'No email/WhatsApp sending yet', 'README gateway lead polish no sending note');
+  assertIncludes(readme, 'No CRM automation yet', 'README gateway lead polish no CRM note');
+  assertIncludes(readme, 'No payments/subscriptions/provisioning yet', 'README gateway lead polish no payments note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -1023,6 +1089,7 @@ const checks = [
   checkAdminUserHardening,
   checkEnvExample,
   checkBusinessGatewayFoundation,
+  checkGatewayLeadFormUxPolish,
   checkGatewayLeadAdminManagement,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,

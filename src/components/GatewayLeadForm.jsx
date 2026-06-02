@@ -19,18 +19,65 @@ const initialForm = {
   email: '',
   interestedModules: [],
   message: '',
+  companyWebsite: '',
 };
+
+function getTrimmedForm(form) {
+  return {
+    ...form,
+    restaurantName: form.restaurantName.trim(),
+    contactName: form.contactName.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim(),
+    message: form.message.trim(),
+    companyWebsite: form.companyWebsite.trim(),
+  };
+}
+
+function validateForm(form) {
+  const trimmed = getTrimmedForm(form);
+  const errors = {};
+
+  if (trimmed.restaurantName.length < 2) {
+    errors.restaurantName = 'Enter the restaurant or business name.';
+  }
+
+  if (trimmed.contactName.length < 2) {
+    errors.contactName = 'Enter the main contact name.';
+  }
+
+  if (trimmed.phone.length < 5) {
+    errors.phone = 'Enter a phone or WhatsApp number.';
+  }
+
+  if (trimmed.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed.email)) {
+    errors.email = 'Enter a valid email address or leave this blank.';
+  }
+
+  if (trimmed.message.length > 1200) {
+    errors.message = 'Keep the request under 1200 characters.';
+  }
+
+  return errors;
+}
 
 export default function GatewayLeadForm() {
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState('IDLE');
   const [feedback, setFeedback] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const submitting = status === 'SUBMITTING';
   const selectedModuleCount = useMemo(() => form.interestedModules.length, [form.interestedModules]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
   }
 
   function toggleModule(module) {
@@ -47,14 +94,25 @@ export default function GatewayLeadForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (submitting) return;
+
+    const validationErrors = validateForm(form);
+    if (Object.keys(validationErrors).length) {
+      setFieldErrors(validationErrors);
+      setStatus('ERROR');
+      setFeedback('Please check the highlighted fields and try again.');
+      return;
+    }
+
     setStatus('SUBMITTING');
     setFeedback('');
+    setFieldErrors({});
 
     try {
       const response = await fetch('/api/gateway/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(getTrimmedForm(form)),
       });
       const payload = await response.json();
 
@@ -63,8 +121,9 @@ export default function GatewayLeadForm() {
       }
 
       setStatus('SUCCESS');
-      setFeedback('Request received. We will follow up on the restaurant workflow details.');
+      setFeedback('Request received. The next step is a short review of your restaurant workflow and the modules you want to customize.');
       setForm(initialForm);
+      setFieldErrors({});
     } catch (error) {
       setStatus('ERROR');
       setFeedback(error.message || 'Unable to send request. Please try again.');
@@ -72,7 +131,19 @@ export default function GatewayLeadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 text-secondary shadow-lifted sm:p-8">
+    <form onSubmit={handleSubmit} className="rounded-lg bg-white p-6 text-secondary shadow-lifted sm:p-8" noValidate>
+      <div className="hidden" aria-hidden="true">
+        <label>
+          Company website
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            value={form.companyWebsite}
+            onChange={(event) => updateField('companyWebsite', event.target.value)}
+          />
+        </label>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">
           Restaurant / business name
@@ -83,7 +154,9 @@ export default function GatewayLeadForm() {
             required
             minLength={2}
             maxLength={160}
+            aria-invalid={fieldErrors.restaurantName ? 'true' : 'false'}
           />
+          {fieldErrors.restaurantName ? <span className="mt-1 block text-xs font-medium text-red-700">{fieldErrors.restaurantName}</span> : null}
         </label>
         <label className="block text-sm font-semibold">
           Contact name
@@ -94,7 +167,9 @@ export default function GatewayLeadForm() {
             required
             minLength={2}
             maxLength={120}
+            aria-invalid={fieldErrors.contactName ? 'true' : 'false'}
           />
+          {fieldErrors.contactName ? <span className="mt-1 block text-xs font-medium text-red-700">{fieldErrors.contactName}</span> : null}
         </label>
         <label className="block text-sm font-semibold">
           Phone / WhatsApp
@@ -105,7 +180,9 @@ export default function GatewayLeadForm() {
             required
             minLength={5}
             maxLength={60}
+            aria-invalid={fieldErrors.phone ? 'true' : 'false'}
           />
+          {fieldErrors.phone ? <span className="mt-1 block text-xs font-medium text-red-700">{fieldErrors.phone}</span> : null}
         </label>
         <label className="block text-sm font-semibold">
           Email optional
@@ -115,7 +192,9 @@ export default function GatewayLeadForm() {
             value={form.email}
             onChange={(event) => updateField('email', event.target.value)}
             maxLength={160}
+            aria-invalid={fieldErrors.email ? 'true' : 'false'}
           />
+          {fieldErrors.email ? <span className="mt-1 block text-xs font-medium text-red-700">{fieldErrors.email}</span> : null}
         </label>
       </div>
 
@@ -147,28 +226,33 @@ export default function GatewayLeadForm() {
           className="mt-2 min-h-[132px]"
           value={form.message}
           onChange={(event) => updateField('message', event.target.value)}
-          placeholder="Tell us what the restaurant needs to automate first."
+          placeholder="Tell us what to customize first: table ordering, staff order entry, kitchen workflow, inventory, or another operational need."
           maxLength={1200}
+          aria-invalid={fieldErrors.message ? 'true' : 'false'}
         />
+        {fieldErrors.message ? <span className="mt-1 block text-xs font-medium text-red-700">{fieldErrors.message}</span> : null}
       </label>
 
       <button
         type="submit"
         disabled={submitting}
-        className="mt-6 w-full rounded-full bg-[#143a31] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2f7d5b] disabled:hover:bg-[#143a31]"
+        className="mt-6 w-full rounded-full bg-[#143a31] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2f7d5b] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:bg-[#143a31]"
       >
         {submitting ? 'Sending request...' : 'Send customization request'}
       </button>
 
       {feedback ? (
-        <p
-          className={`mt-4 rounded-lg px-4 py-3 text-sm ${
-            status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'
+        <div
+          className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+            status === 'SUCCESS'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+              : 'border-red-200 bg-red-50 text-red-800'
           }`}
           aria-live="polite"
         >
-          {feedback}
-        </p>
+          <p className="font-semibold">{status === 'SUCCESS' ? 'Request received' : 'Request not sent yet'}</p>
+          <p className="mt-1 leading-6">{feedback}</p>
+        </div>
       ) : null}
     </form>
   );
