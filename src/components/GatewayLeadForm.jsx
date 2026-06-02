@@ -3,23 +3,68 @@
 import { useMemo, useState } from 'react';
 
 const moduleOptions = [
-  'Digital menu / ordering',
+  'Public website / menu',
+  'Reservation / contact flows',
+  'Online ordering',
   'QR table ordering',
   'Waiter-assisted ordering',
   'Kitchen queue',
   'Inventory management',
   'Recipe / stock deduction foundation',
   'Restaurant profile / configuration',
+  'Custom workflows',
 ];
 
-const initialForm = {
-  restaurantName: '',
-  contactName: '',
-  phone: '',
-  email: '',
-  interestedModules: [],
-  message: '',
-  companyWebsite: '',
+const PACKAGE_INTEREST_OPTIONS = [
+  {
+    value: 'STARTER',
+    label: 'Starter',
+    modules: ['Public website / menu', 'Reservation / contact flows', 'Restaurant profile / configuration'],
+  },
+  {
+    value: 'OPERATIONS',
+    label: 'Operations',
+    modules: ['Online ordering', 'QR table ordering', 'Waiter-assisted ordering', 'Kitchen queue'],
+  },
+  {
+    value: 'ADVANCED_CUSTOM',
+    label: 'Advanced / Custom',
+    modules: ['Inventory management', 'Recipe / stock deduction foundation', 'Custom workflows'],
+  },
+];
+
+const PACKAGE_INTEREST_LABELS = PACKAGE_INTEREST_OPTIONS.reduce((labels, option) => {
+  labels[option.value] = option.label;
+  return labels;
+}, {});
+
+function getPackageModuleDefaults(packageInterest) {
+  return PACKAGE_INTEREST_OPTIONS.find((option) => option.value === packageInterest)?.modules || [];
+}
+
+function normalizePackageInterest(packageInterest) {
+  return PACKAGE_INTEREST_LABELS[packageInterest] ? packageInterest : '';
+}
+
+function createInitialForm(initialPackageInterest = '') {
+  const packageInterest = normalizePackageInterest(initialPackageInterest);
+
+  return {
+    restaurantName: '',
+    contactName: '',
+    phone: '',
+    email: '',
+    packageInterest,
+    interestedModules: getPackageModuleDefaults(packageInterest),
+    message: '',
+    companyWebsite: '',
+  };
+}
+
+const initialForm = createInitialForm('');
+
+function mergeUniqueModules(currentModules, nextModules) {
+  return Array.from(new Set([...currentModules, ...nextModules]));
 };
 
 function getTrimmedForm(form) {
@@ -29,6 +74,7 @@ function getTrimmedForm(form) {
     contactName: form.contactName.trim(),
     phone: form.phone.trim(),
     email: form.email.trim(),
+    packageInterest: normalizePackageInterest(form.packageInterest),
     message: form.message.trim(),
     companyWebsite: form.companyWebsite.trim(),
   };
@@ -61,14 +107,15 @@ function validateForm(form) {
   return errors;
 }
 
-export default function GatewayLeadForm() {
-  const [form, setForm] = useState(initialForm);
+export default function GatewayLeadForm({ initialPackageInterest = '' }) {
+  const [form, setForm] = useState(() => createInitialForm(initialPackageInterest));
   const [status, setStatus] = useState('IDLE');
   const [feedback, setFeedback] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
   const submitting = status === 'SUBMITTING';
   const selectedModuleCount = useMemo(() => form.interestedModules.length, [form.interestedModules]);
+  const selectedPackageLabel = form.packageInterest ? PACKAGE_INTEREST_LABELS[form.packageInterest] : 'No package selected';
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -90,6 +137,19 @@ export default function GatewayLeadForm() {
           : [...current.interestedModules, module],
       };
     });
+  }
+
+  function updatePackageInterest(packageInterest) {
+    const normalizedPackage = normalizePackageInterest(packageInterest);
+    const packageModules = getPackageModuleDefaults(normalizedPackage);
+
+    setForm((current) => ({
+      ...current,
+      packageInterest: normalizedPackage,
+      interestedModules: normalizedPackage
+        ? mergeUniqueModules(current.interestedModules, packageModules)
+        : current.interestedModules,
+    }));
   }
 
   async function handleSubmit(event) {
@@ -144,7 +204,26 @@ export default function GatewayLeadForm() {
         </label>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <label className="block text-sm font-semibold">
+        Request the package or module mix
+        <select
+          className="mt-2"
+          value={form.packageInterest}
+          onChange={(event) => updatePackageInterest(event.target.value)}
+        >
+          <option value="">I am not sure yet</option>
+          {PACKAGE_INTEREST_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <span className="mt-2 block text-xs font-medium text-neutral-500">
+          Selected package: {selectedPackageLabel}. You can still mix modules before sending the request.
+        </span>
+      </label>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">
           Restaurant / business name
           <input

@@ -75,6 +75,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform dashboard polish added.
 - Dashboard summarizes gateway leads and demo profile.
 - No billing/provisioning/CRM automation yet.
+- Gateway package/pricing presentation polish added.
+- Packages are presentation/lead-capture only.
+- No payment/subscription/billing logic yet.
+- No automatic provisioning yet.
 
 ## Feature Modules Foundation
 
