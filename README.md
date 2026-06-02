@@ -72,6 +72,9 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform owner can reset demo profile branding/contact values.
 - Restaurant feature flags are preserved.
 - No multi-tenancy/provisioning/payments yet.
+- Platform dashboard polish added.
+- Dashboard summarizes gateway leads and demo profile.
+- No billing/provisioning/CRM automation yet.
 
 ## Feature Modules Foundation
 

@@ -541,6 +541,71 @@ function checkDemoRestaurantProfileResetControls() {
   assertIncludes(readme, 'No multi-tenancy/provisioning/payments yet', 'README demo profile reset scope note');
 }
 
+function checkPlatformDashboardPolish() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const pagePath = path.join(root, 'src/app/platform-admin/(protected)/page.js');
+  const layout = read('src/app/platform-admin/(protected)/layout.js');
+
+  assert(fs.existsSync(pagePath), '/platform-admin dashboard page is missing');
+  const dashboard = read('src/app/platform-admin/(protected)/page.js');
+
+  assertIncludes(dashboard, 'prisma.gatewayLead.groupBy', 'Platform dashboard GatewayLead count read');
+  assertIncludes(dashboard, 'prisma.gatewayLead.findMany', 'Platform dashboard recent GatewayLead read');
+  assertIncludes(dashboard, 'take: 5', 'Platform dashboard recent lead limit');
+  assertIncludes(dashboard, "orderBy: { createdAt: 'desc' }", 'Platform dashboard recent lead ordering');
+  assertIncludes(dashboard, 'getRestaurantProfile', 'Platform dashboard demo profile read');
+  assertIncludes(dashboard, 'normalizeGatewayLead', 'Platform dashboard safe recent lead normalization');
+
+  for (const label of [
+    'Total gateway leads',
+    'New leads',
+    'Contacted leads',
+    'Qualified leads',
+    'Archived leads',
+    'Demo profile status',
+    'Enabled demo modules',
+    'Recent gateway leads',
+    'No gateway leads yet',
+    'submit a lead from the gateway form',
+  ]) {
+    assertIncludes(dashboard, label, `Platform dashboard copy ${label}`);
+  }
+
+  assertIncludes(dashboard, 'enabledFeatures.length', 'Platform dashboard enabled module count');
+  assertIncludes(dashboard, 'href="/platform-admin/leads"', 'Platform dashboard Gateway Leads link');
+  assertIncludes(dashboard, "href: '/platform-admin/demo-restaurant'", 'Platform dashboard demo profile link');
+  assertIncludes(dashboard, "href: '/public'", 'Platform dashboard demo restaurant link');
+  assertIncludes(dashboard, "href: '/admin'", 'Platform dashboard restaurant admin link');
+  assertIncludes(dashboard, "href: '/'", 'Platform dashboard public gateway link');
+  assertIncludes(dashboard, 'View gateway leads', 'Platform dashboard view leads action');
+  assertIncludes(dashboard, 'Open demo restaurant', 'Platform dashboard demo restaurant action');
+  assertIncludes(dashboard, 'Reset demo profile', 'Platform dashboard reset demo action');
+  assertIncludes(dashboard, 'Open restaurant admin', 'Platform dashboard restaurant admin action');
+  assertIncludes(dashboard, 'View public gateway', 'Platform dashboard public gateway action');
+  assertIncludes(layout, "admin.role !== 'ADMIN'", 'Platform admin remains ADMIN-only');
+
+  const dashboardSource = [dashboard, layout].join('\n');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Platform dashboard should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Platform dashboard should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Platform dashboard should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Platform dashboard should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Platform dashboard should not add multi-tenant Restaurant model');
+  assertNotIncludes(packageJson, '"stripe"', 'Platform dashboard Stripe dependency');
+  assertNotIncludes(dashboardSource, 'sendMail', 'Platform dashboard email sending');
+  assertNotIncludes(dashboardSource, 'nodemailer', 'Platform dashboard nodemailer usage');
+  assertNotIncludes(dashboardSource, 'sendWhatsApp', 'Platform dashboard WhatsApp sending');
+  assertNotIncludes(dashboardSource, 'subscription', 'Platform dashboard subscription logic');
+  assertNotIncludes(dashboardSource, 'payment', 'Platform dashboard payment logic');
+  assertNotIncludes(dashboardSource, 'provision', 'Platform dashboard provisioning logic');
+  assertNotIncludes(dashboardSource, 'crm', 'Platform dashboard CRM automation');
+
+  assertIncludes(readme, 'Platform dashboard polish added.', 'README platform dashboard polish note');
+  assertIncludes(readme, 'Dashboard summarizes gateway leads and demo profile', 'README platform dashboard summary note');
+  assertIncludes(readme, 'No billing/provisioning/CRM automation yet', 'README platform dashboard scope note');
+}
+
 function checkRestaurantProfileFoundation() {
   const schema = read('prisma/schema.prisma');
   const helper = read('src/lib/restaurant-profile.js');
@@ -1339,6 +1404,7 @@ const checks = [
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
   checkDemoRestaurantProfileResetControls,
+  checkPlatformDashboardPolish,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,
