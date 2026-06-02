@@ -296,6 +296,81 @@ function checkGatewayLeadAdminManagement() {
   assertIncludes(readme, 'No automatic restaurant provisioning yet', 'README gateway lead no provisioning note');
 }
 
+function checkGatewayLeadWorkflowPolish() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const helper = read('src/lib/gateway-leads.js');
+  const collectionRoute = read('src/app/api/admin/gateway-leads/route.js');
+  const itemRoute = read('src/app/api/admin/gateway-leads/[id]/route.js');
+  const adminClient = read('src/app/admin/(protected)/gateway-leads/GatewayLeadsClient.jsx');
+  const readme = read('README.md');
+  const migrationPath = path.join(root, 'prisma/migrations/20260602142500_add_gateway_lead_workflow_fields/migration.sql');
+  const workflowSource = [helper, collectionRoute, itemRoute, adminClient].join('\n');
+
+  assert(fs.existsSync(migrationPath), 'Gateway lead workflow migration is missing');
+  assertIncludes(schema, 'internalNotes', 'GatewayLead internalNotes field');
+  assertIncludes(schema, 'lastContactedAt', 'GatewayLead lastContactedAt field');
+  assertIncludes(schema, '@updatedAt', 'GatewayLead updatedAt field');
+  assertIncludes(schema, '@@index([lastContactedAt])', 'GatewayLead lastContactedAt index');
+
+  assertIncludes(helper, 'internalNotes', 'Gateway lead helper internalNotes normalization');
+  assertIncludes(helper, 'lastContactedAt', 'Gateway lead helper lastContactedAt normalization');
+  assertIncludes(helper, 'updatedAt', 'Gateway lead helper updatedAt normalization');
+  assertIncludes(helper, 'getGatewayLeadFollowUpState', 'Gateway lead follow-up state helper');
+  assertIncludes(helper, 'normalizeGatewayLeadInternalNotes', 'Gateway lead internal notes input helper');
+
+  assertIncludes(collectionRoute, 'followUpState', 'Gateway lead collection follow-up filter');
+  assertIncludes(collectionRoute, 'getGatewayLeadFollowUpState', 'Gateway lead collection follow-up helper');
+  assertIncludes(collectionRoute, 'normalizeGatewayLead', 'Gateway lead collection returns normalized fields');
+
+  assertIncludes(itemRoute, 'status: z.enum(GATEWAY_LEAD_STATUSES).optional()', 'Gateway lead update status optional validation');
+  assertIncludes(itemRoute, 'internalNotes: z.string()', 'Gateway lead update internalNotes validation');
+  assertIncludes(itemRoute, 'lastContactedAt', 'Gateway lead update lastContactedAt validation');
+  assertIncludes(itemRoute, 'markContactedNow', 'Gateway lead update mark contacted now validation');
+  assertIncludes(itemRoute, 'normalizeGatewayLeadInternalNotes', 'Gateway lead update notes trimming');
+  assertIncludes(itemRoute, 'data.internalNotes =', 'Gateway lead update notes persistence');
+  assertIncludes(itemRoute, 'data.lastContactedAt = new Date()', 'Gateway lead update mark contacted now persistence');
+  assertNotIncludes(itemRoute, 'restaurantName:', 'Gateway lead update submitted restaurant editing');
+  assertNotIncludes(itemRoute, 'contactName:', 'Gateway lead update submitted contact editing');
+  assertNotIncludes(itemRoute, 'phone:', 'Gateway lead update submitted phone editing');
+  assertNotIncludes(itemRoute, 'email:', 'Gateway lead update submitted email editing');
+  assertNotIncludes(itemRoute, 'message:', 'Gateway lead update submitted message editing');
+  assertNotIncludes(itemRoute, 'interestedModules:', 'Gateway lead update submitted modules editing');
+
+  assertIncludes(adminClient, 'selectedLeadId', 'Gateway lead admin selected detail state');
+  assertIncludes(adminClient, 'Lead details', 'Gateway lead admin detail card');
+  assertIncludes(adminClient, 'Private internal notes', 'Gateway lead admin private notes copy');
+  assertIncludes(adminClient, 'markContactedNow', 'Gateway lead admin mark contacted action payload');
+  assertIncludes(adminClient, 'Mark contacted now', 'Gateway lead admin mark contacted button');
+  assertIncludes(adminClient, 'Needs follow-up', 'Gateway lead admin follow-up indicator');
+  assertIncludes(adminClient, 'New lead', 'Gateway lead admin new indicator');
+  assertIncludes(adminClient, 'Contacted', 'Gateway lead admin contacted indicator');
+  assertIncludes(adminClient, 'Archived', 'Gateway lead admin archived indicator');
+
+  assertNotIncludes(packageJson, '"stripe"', 'Gateway lead workflow Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Gateway lead workflow should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead workflow should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead workflow should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead workflow should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead workflow should not add multi-tenant Restaurant model');
+  assertNotIncludes(workflowSource, 'sendMail', 'Gateway lead workflow email sending');
+  assertNotIncludes(workflowSource, 'nodemailer', 'Gateway lead workflow nodemailer usage');
+  assertNotIncludes(workflowSource, 'sendWhatsApp', 'Gateway lead workflow WhatsApp sending');
+  assertNotIncludes(workflowSource, 'reminder', 'Gateway lead workflow reminders');
+  assertNotIncludes(workflowSource, 'notification', 'Gateway lead workflow notifications');
+  assertNotIncludes(workflowSource, 'subscription', 'Gateway lead workflow subscription logic');
+  assertNotIncludes(workflowSource, 'payment', 'Gateway lead workflow payment logic');
+  assertNotIncludes(workflowSource, 'provision', 'Gateway lead workflow provisioning logic');
+  assertNotIncludes(workflowSource, 'crm', 'Gateway lead workflow CRM automation');
+
+  assertIncludes(readme, 'Gateway lead workflow polish added.', 'README gateway lead workflow note');
+  assertIncludes(readme, 'Private internal notes only', 'README gateway lead private notes note');
+  assertIncludes(readme, 'Manual follow-up tracking only', 'README gateway lead manual follow-up note');
+  assertIncludes(readme, 'No reminders/notifications', 'README gateway lead no reminders note');
+  assertIncludes(readme, 'No CRM/email/WhatsApp automation', 'README gateway lead no automation note');
+  assertIncludes(readme, 'No payments/subscriptions/provisioning', 'README gateway lead no payments note');
+}
+
 function checkRestaurantProfileFoundation() {
   const schema = read('prisma/schema.prisma');
   const helper = read('src/lib/restaurant-profile.js');
@@ -1091,6 +1166,7 @@ const checks = [
   checkBusinessGatewayFoundation,
   checkGatewayLeadFormUxPolish,
   checkGatewayLeadAdminManagement,
+  checkGatewayLeadWorkflowPolish,
   checkRestaurantProfileFoundation,
   checkRestaurantProfileUiWiring,
   checkFeatureModulesFoundation,
