@@ -8,6 +8,7 @@ import ConfirmDialog from '../../admin/components/ConfirmDialog.jsx';
 const platformNavLinks = [
   { href: '/platform-admin', label: 'Platform Dashboard' },
   { href: '/platform-admin/leads', label: 'Gateway Leads' },
+  { href: '/platform-admin/demo-restaurant', label: 'Demo Restaurant' },
   { href: '/platform-admin/gateway-website', label: 'Gateway Website' },
   { href: '/platform-admin/packages', label: 'Packages' },
   { href: '/platform-admin/client-restaurants', label: 'Client Restaurants' },
