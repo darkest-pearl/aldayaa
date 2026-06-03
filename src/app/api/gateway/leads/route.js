@@ -5,12 +5,19 @@ import { failure, handleApiError, success } from '../../../../lib/api-response';
 import { prisma } from '../../../../lib/prisma';
 
 const moduleSchema = z.string().trim().min(2).max(80);
+const packageInterestSchema = z.enum(['STARTER', 'OPERATIONS', 'ADVANCED_CUSTOM']);
+const PACKAGE_INTEREST_LABELS = {
+  STARTER: 'Package: Starter',
+  OPERATIONS: 'Package: Operations',
+  ADVANCED_CUSTOM: 'Package: Advanced / Custom',
+};
 
 const leadSchema = z.object({
   restaurantName: z.string().trim().min(2).max(160),
   contactName: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(5).max(60),
   email: z.union([z.literal(''), z.string().trim().email().max(160)]).optional(),
+  packageInterest: z.union([z.literal(''), packageInterestSchema]).optional(),
   interestedModules: z.array(moduleSchema).max(12).optional(),
   message: z.string().trim().max(1200).optional(),
   companyWebsite: z.string().trim().max(200).optional(),
@@ -33,9 +40,19 @@ function normalizeEmail(value) {
   return cleaned ? cleaned.toLowerCase() : null;
 }
 
-function normalizeInterestedModules(modules = []) {
+function getPackageInterestModuleLabel(packageInterest) {
+  return PACKAGE_INTEREST_LABELS[packageInterest] || null;
+}
+
+function normalizeInterestedModules(modules = [], packageInterest = '') {
   const seen = new Set();
   const normalized = [];
+  const packageModuleLabel = getPackageInterestModuleLabel(packageInterest);
+
+  if (packageModuleLabel) {
+    seen.add(packageModuleLabel);
+    normalized.push(packageModuleLabel);
+  }
 
   for (const moduleName of modules) {
     const cleaned = cleanOptionalString(moduleName);
@@ -69,7 +86,7 @@ export async function POST(request) {
       return success({ lead: null }, { status: 201 });
     }
 
-    const interestedModules = normalizeInterestedModules(data.interestedModules);
+    const interestedModules = normalizeInterestedModules(data.interestedModules, data.packageInterest);
     const lead = await prisma.gatewayLead.create({
       data: {
         restaurantName: cleanRequiredString(data.restaurantName),

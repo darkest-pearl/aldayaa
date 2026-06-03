@@ -206,6 +206,87 @@ function checkGatewayLeadFormUxPolish() {
   assertIncludes(readme, 'No payments/subscriptions/provisioning yet', 'README gateway lead polish no payments note');
 }
 
+function checkGatewayPackagePricingPolish() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const rootPage = read('src/app/page.js');
+  const leadForm = read('src/components/GatewayLeadForm.jsx');
+  const leadApi = read('src/app/api/gateway/leads/route.js');
+  const packagePricingSource = [rootPage, leadForm, leadApi].join('\n');
+
+  for (const label of [
+    'Starter',
+    'Operations',
+    'Advanced / Custom',
+    'Target restaurant type',
+    'Included modules',
+    'Best for',
+    'Implementation style',
+    'Custom quote',
+    'Request Starter',
+    'Request Operations',
+    'Request Advanced / Custom',
+  ]) {
+    assertIncludes(rootPage, label, `Gateway package pricing copy ${label}`);
+  }
+
+  for (const moduleName of [
+    'Public website/menu',
+    'Reservation/contact flows',
+    'Online ordering',
+    'QR table ordering',
+    'Waiter-assisted ordering',
+    'Kitchen queue',
+    'Inventory management',
+    'Recipe/stock deduction foundation',
+    'Custom workflows',
+  ]) {
+    assertIncludes(rootPage, moduleName, `Gateway package comparison module ${moduleName}`);
+  }
+
+  assertIncludes(rootPage, 'Package comparison', 'Gateway package comparison section');
+  assertIncludes(rootPage, 'overflow-x-auto', 'Gateway package comparison mobile readability');
+  assertIncludes(rootPage, 'packages are examples for discussion', 'Gateway package presentation scope copy');
+  assertIncludes(rootPage, 'final scope and price are confirmed after a demo', 'Gateway package final pricing clarity');
+  assertIncludes(rootPage, 'restaurants can mix modules', 'Gateway package module mix clarity');
+  assertIncludes(rootPage, 'not self-serve billing', 'Gateway package no self-serve billing copy');
+  assertIncludes(rootPage, '?package=STARTER#request-demo', 'Gateway Starter CTA package preselection');
+  assertIncludes(rootPage, '?package=OPERATIONS#request-demo', 'Gateway Operations CTA package preselection');
+  assertIncludes(rootPage, '?package=ADVANCED_CUSTOM#request-demo', 'Gateway Advanced CTA package preselection');
+  assertIncludes(rootPage, 'initialPackageInterest', 'Gateway page passes package interest to lead form');
+
+  assertIncludes(leadForm, 'packageInterest', 'Gateway lead form package interest field');
+  assertIncludes(leadForm, 'PACKAGE_INTEREST_OPTIONS', 'Gateway lead form package interest options');
+  assertIncludes(leadForm, 'getPackageModuleDefaults', 'Gateway lead form package module preselection');
+  assertIncludes(leadForm, 'createInitialForm(initialPackageInterest)', 'Gateway lead form initial package selection');
+  assertIncludes(leadForm, 'selectedPackageLabel', 'Gateway lead form selected package label');
+  assertIncludes(leadForm, 'Request the package or module mix', 'Gateway lead form package field copy');
+
+  assertIncludes(leadApi, 'packageInterest', 'Gateway lead API package interest field');
+  assertIncludes(leadApi, 'PACKAGE_INTEREST_LABELS', 'Gateway lead API package labels');
+  assertIncludes(leadApi, 'getPackageInterestModuleLabel', 'Gateway lead API package module label helper');
+  assertIncludes(leadApi, 'Package: Starter', 'Gateway lead API Starter package storage label');
+  assertIncludes(leadApi, 'normalizeInterestedModules(data.interestedModules, data.packageInterest)', 'Gateway lead API stores package interest in modules');
+
+  assertNotIncludes(packageJson, '"stripe"', 'Gateway package pricing Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Gateway package pricing should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway package pricing should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Gateway package pricing should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway package pricing should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway package pricing should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway package pricing should not add multi-tenant Restaurant model');
+  assertNotIncludes(packagePricingSource, 'stripe.checkout', 'Gateway package pricing checkout logic');
+  assertNotIncludes(packagePricingSource, 'createRestaurant', 'Gateway package pricing provisioning logic');
+  assertNotIncludes(packagePricingSource, 'sendMail', 'Gateway package pricing email sending');
+  assertNotIncludes(packagePricingSource, 'sendWhatsApp', 'Gateway package pricing WhatsApp sending');
+
+  assertIncludes(readme, 'Gateway package/pricing presentation polish added.', 'README gateway package pricing polish note');
+  assertIncludes(readme, 'Packages are presentation/lead-capture only', 'README package presentation-only note');
+  assertIncludes(readme, 'No payment/subscription/billing logic yet', 'README package no billing note');
+  assertIncludes(readme, 'No automatic provisioning yet', 'README package no provisioning note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -1400,6 +1481,7 @@ const checks = [
   checkEnvExample,
   checkBusinessGatewayFoundation,
   checkGatewayLeadFormUxPolish,
+  checkGatewayPackagePricingPolish,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
