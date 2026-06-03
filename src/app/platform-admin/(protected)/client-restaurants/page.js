@@ -1,14 +1,26 @@
+import PlatformRoadmapPlaceholder from '../../components/PlatformRoadmapPlaceholder.jsx';
+
 export const metadata = { title: 'Client Restaurants | Platform Admin' };
 
 export default function ClientRestaurantsPlaceholderPage() {
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Coming later</p>
-      <h1 className="mt-2 text-2xl font-semibold text-neutral-950">Client Restaurants</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-        Future client restaurant management will live here after the product is ready for a true platform model. The
-        current app still has one configurable demo restaurant profile.
-      </p>
-    </section>
+    <PlatformRoadmapPlaceholder
+      title="Client Restaurants"
+      description="This will eventually manage client restaurant accounts for the platform owner."
+      currentState="The current app still has one demo restaurant, not multi-tenant clients. Demo restaurant operations remain under the restaurant admin area."
+      actions={[
+        { label: 'View demo restaurant', href: '/public' },
+        { label: 'Open restaurant admin', href: '/admin' },
+        { label: 'Reset demo profile', href: '/platform-admin/demo-restaurant' },
+      ]}
+      futureScope={[
+        'create client restaurant records',
+        'assign domains/subdomains',
+        'assign package/modules',
+        'create first restaurant admin',
+        'provision demo/live restaurant instance',
+      ]}
+      notImplemented="No multi-tenancy/provisioning exists yet. This page does not create clients, domains, admins, or restaurant instances."
+    />
   );
 }
