@@ -1,14 +1,24 @@
+import PlatformRoadmapPlaceholder from '../../components/PlatformRoadmapPlaceholder.jsx';
+
 export const metadata = { title: 'Platform Settings | Platform Admin' };
 
 export default function PlatformSettingsPlaceholderPage() {
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Coming later</p>
-      <h1 className="mt-2 text-2xl font-semibold text-neutral-950">Platform Settings</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-        Platform-level configuration will live here later. Restaurant operations settings remain under the demo
-        restaurant admin at /admin/settings.
-      </p>
-    </section>
+    <PlatformRoadmapPlaceholder
+      title="Platform Settings"
+      description="This will eventually control platform-wide settings for the RestaurantOps Gateway business."
+      currentState="Current settings remain code-managed or restaurant-specific. Demo restaurant profile settings are still managed from the demo controls and restaurant admin settings."
+      actions={[
+        { label: 'Open demo profile reset', href: '/platform-admin/demo-restaurant' },
+        { label: 'Open restaurant admin settings', href: '/admin/settings' },
+      ]}
+      futureScope={[
+        'platform brand name',
+        'gateway contact email/phone',
+        'package display defaults',
+        'notification preferences later',
+      ]}
+      notImplemented="No email/WhatsApp sending or notification automation exists yet. This page is a placeholder for future platform preferences."
+    />
   );
 }

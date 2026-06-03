@@ -422,6 +422,121 @@ function checkProductionRouteQaVerification() {
   assertIncludes(readme, 'No billing/provisioning/multi-tenancy', 'README production route QA scope note');
 }
 
+function checkPlatformPlaceholderPagePolish() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const componentPath = path.join(root, 'src/app/platform-admin/components/PlatformRoadmapPlaceholder.jsx');
+  const gatewayWebsitePath = path.join(root, 'src/app/platform-admin/(protected)/gateway-website/page.js');
+  const packagesPath = path.join(root, 'src/app/platform-admin/(protected)/packages/page.js');
+  const clientRestaurantsPath = path.join(root, 'src/app/platform-admin/(protected)/client-restaurants/page.js');
+  const settingsPath = path.join(root, 'src/app/platform-admin/(protected)/settings/page.js');
+
+  assert(fs.existsSync(componentPath), 'Platform roadmap placeholder component is missing');
+  assert(fs.existsSync(gatewayWebsitePath), 'Platform gateway website placeholder page is missing');
+  assert(fs.existsSync(packagesPath), 'Platform packages placeholder page is missing');
+  assert(fs.existsSync(clientRestaurantsPath), 'Platform client restaurants placeholder page is missing');
+  assert(fs.existsSync(settingsPath), 'Platform settings placeholder page is missing');
+
+  const component = read('src/app/platform-admin/components/PlatformRoadmapPlaceholder.jsx');
+  const gatewayWebsite = read('src/app/platform-admin/(protected)/gateway-website/page.js');
+  const packages = read('src/app/platform-admin/(protected)/packages/page.js');
+  const clientRestaurants = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+  const settings = read('src/app/platform-admin/(protected)/settings/page.js');
+  const placeholderSource = [component, gatewayWebsite, packages, clientRestaurants, settings].join('\n');
+
+  assertIncludes(component, 'Current actions', 'Platform placeholder current actions section');
+  assertIncludes(component, 'Future scope', 'Platform placeholder future scope section');
+  assertIncludes(component, 'Not implemented yet', 'Platform placeholder scope boundary section');
+
+  for (const expected of [
+    'manage public gateway content',
+    'Current public gateway is code-managed',
+    'View public gateway',
+    'View demo restaurant',
+    'View gateway leads',
+    "href: '/'",
+    "href: '/public'",
+    "href: '/platform-admin/leads'",
+    'edit hero copy',
+    'edit package copy',
+    'manage FAQ',
+    'manage public CTA text',
+    'No CMS/editor has been added yet',
+  ]) {
+    assertIncludes(gatewayWebsite, expected, `Gateway Website placeholder copy ${expected}`);
+  }
+
+  for (const expected of [
+    'manage package definitions and module bundles',
+    'Current package content is code-managed on the public gateway',
+    'View public gateway packages',
+    'View leads',
+    "href: '/#packages'",
+    "href: '/platform-admin/leads'",
+    'create/edit packages',
+    'define module bundles',
+    'set pricing display copy',
+    'connect to subscription/billing later',
+    'No payments/subscriptions/billing logic exists yet',
+  ]) {
+    assertIncludes(packages, expected, `Packages placeholder copy ${expected}`);
+  }
+
+  for (const expected of [
+    'manage client restaurant accounts',
+    'one demo restaurant, not multi-tenant clients',
+    'View demo restaurant',
+    'Open restaurant admin',
+    'Reset demo profile',
+    "href: '/public'",
+    "href: '/admin'",
+    "href: '/platform-admin/demo-restaurant'",
+    'create client restaurant records',
+    'assign domains/subdomains',
+    'assign package/modules',
+    'create first restaurant admin',
+    'provision demo/live restaurant instance',
+    'No multi-tenancy/provisioning exists yet',
+  ]) {
+    assertIncludes(clientRestaurants, expected, `Client Restaurants placeholder copy ${expected}`);
+  }
+
+  for (const expected of [
+    'control platform-wide settings',
+    'Current settings remain code-managed or restaurant-specific',
+    'Open demo profile reset',
+    'Open restaurant admin settings',
+    "href: '/platform-admin/demo-restaurant'",
+    "href: '/admin/settings'",
+    'platform brand name',
+    'gateway contact email/phone',
+    'package display defaults',
+    'notification preferences later',
+    'No email/WhatsApp sending or notification automation exists yet',
+  ]) {
+    assertIncludes(settings, expected, `Platform Settings placeholder copy ${expected}`);
+  }
+
+  assertNotIncludes(packageJson, '"stripe"', 'Platform placeholder polish Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Platform placeholder polish should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Platform placeholder polish should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Platform placeholder polish should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Platform placeholder polish should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Platform placeholder polish should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Platform placeholder polish should not add multi-tenant Restaurant model');
+  assertNotIncludes(placeholderSource, 'prisma.', 'Platform placeholder polish database usage');
+  assertNotIncludes(placeholderSource, 'sendMail', 'Platform placeholder polish email sending');
+  assertNotIncludes(placeholderSource, 'nodemailer', 'Platform placeholder polish nodemailer usage');
+  assertNotIncludes(placeholderSource, 'sendWhatsApp', 'Platform placeholder polish WhatsApp sending');
+  assertNotIncludes(placeholderSource, 'stripe.checkout', 'Platform placeholder polish payment logic');
+  assertNotIncludes(placeholderSource, 'createRestaurant', 'Platform placeholder polish provisioning logic');
+
+  assertIncludes(readme, 'Platform placeholder pages polished.', 'README platform placeholder polish note');
+  assertIncludes(readme, 'Roadmap placeholders only.', 'README platform placeholder roadmap-only note');
+  assertIncludes(readme, 'No DB models/billing/provisioning/multi-tenancy added.', 'README platform placeholder scope note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -1618,6 +1733,7 @@ const checks = [
   checkGatewayLeadFormUxPolish,
   checkGatewayPackagePricingPolish,
   checkProductionRouteQaVerification,
+  checkPlatformPlaceholderPagePolish,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
