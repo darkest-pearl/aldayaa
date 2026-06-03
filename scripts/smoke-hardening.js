@@ -287,6 +287,141 @@ function checkGatewayPackagePricingPolish() {
   assertIncludes(readme, 'No automatic provisioning yet', 'README package no provisioning note');
 }
 
+function checkProductionRouteQaVerification() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+
+  const routePaths = [
+    ['src/app/page.js', '/ gateway page'],
+    ['src/app/public/page.js', '/public demo restaurant page'],
+    ['src/app/admin/page.js', '/admin restaurant admin entry'],
+    ['src/app/admin/(protected)/layout.js', '/admin protected restaurant admin layout'],
+    ['src/app/admin/(auth)/login/page.js', '/admin/login page'],
+    ['src/app/platform-admin/(protected)/page.js', '/platform-admin dashboard page'],
+    ['src/app/platform-admin/(protected)/leads/page.jsx', '/platform-admin/leads page'],
+    ['src/app/platform-admin/(protected)/demo-restaurant/page.jsx', '/platform-admin/demo-restaurant page'],
+    ['src/app/api/gateway/leads/route.js', '/api/gateway/leads route'],
+    ['src/app/api/admin/gateway-leads/route.js', '/api/admin/gateway-leads route'],
+    ['src/app/api/platform/demo-profile/reset/route.js', '/api/platform/demo-profile/reset route'],
+    ['src/app/admin/(protected)/gateway-leads/page.jsx', '/admin/gateway-leads redirect page'],
+  ];
+
+  for (const [routePath, label] of routePaths) {
+    assert(fs.existsSync(path.join(root, routePath)), `${label} is missing`);
+  }
+
+  const rootPage = read('src/app/page.js');
+  const publicPage = read('src/app/public/page.js');
+  const adminLayout = read('src/app/admin/(protected)/layout.js');
+  const platformLayout = read('src/app/platform-admin/(protected)/layout.js');
+  const adminShell = read('src/app/admin/components/AdminShell.jsx');
+  const platformShell = read('src/app/platform-admin/components/PlatformAdminShell.jsx');
+  const adminGatewayRedirect = read('src/app/admin/(protected)/gateway-leads/page.jsx');
+  const publicLeadApi = read('src/app/api/gateway/leads/route.js');
+  const adminLeadApi = read('src/app/api/admin/gateway-leads/route.js');
+  const demoResetApi = read('src/app/api/platform/demo-profile/reset/route.js');
+  const publicHomeClient = read('src/app/public/HomeClient.jsx');
+
+  assertIncludes(platformLayout, 'getAdminFromRequest(cookies())', 'Platform admin logged-in check');
+  assertIncludes(platformLayout, "redirect('/admin/login')", 'Platform admin unauthenticated redirect');
+  assertIncludes(platformLayout, "admin.role !== 'ADMIN'", 'Platform admin ADMIN-only role check');
+  assertIncludes(platformLayout, "redirect('/admin/dashboard')", 'Platform admin non-ADMIN redirect');
+
+  assertIncludes(adminLayout, 'getAdminFromRequest(cookies())', 'Restaurant admin logged-in check');
+  assertIncludes(adminLayout, "redirect('/admin/login')", 'Restaurant admin unauthenticated redirect');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER']", 'Restaurant admin manager role navigation support');
+  assertIncludes(adminShell, "roles: ['ADMIN', 'MANAGER', 'SUPPORT']", 'Restaurant admin support role navigation support');
+  assertIncludes(adminShell, "admin.role === 'SUPPORT'", 'Restaurant admin support filtering logic');
+  assertIncludes(adminShell, "admin.role === 'MANAGER'", 'Restaurant admin manager filtering logic');
+
+  assertNotIncludes(adminShell, "href: '/admin/gateway-leads'", 'Restaurant admin Gateway Leads nav route');
+  assertNotIncludes(adminShell, "label: 'Gateway Leads'", 'Restaurant admin Gateway Leads nav label');
+  assertIncludes(platformShell, "href: '/platform-admin/leads'", 'Platform admin Gateway Leads nav route');
+  assertIncludes(platformShell, "label: 'Gateway Leads'", 'Platform admin Gateway Leads nav label');
+  assertIncludes(adminGatewayRedirect, "redirect('/platform-admin/leads')", '/admin/gateway-leads redirect target');
+
+  assertIncludes(demoResetApi, "await requireAdmin(request, ['ADMIN'])", 'Platform demo reset API ADMIN-only guard');
+  assertNotIncludes(demoResetApi, "'MANAGER'", 'Platform demo reset API manager access');
+  assertNotIncludes(demoResetApi, "'SUPPORT'", 'Platform demo reset API support access');
+  assertIncludes(adminLeadApi, "await requireAdmin(request, ['ADMIN'])", 'Gateway lead admin API ADMIN-only guard');
+
+  assertNotIncludes(publicLeadApi, 'requireAdmin', 'Public gateway lead API admin guard');
+  assertIncludes(publicLeadApi, 'leadSchema.safeParse', 'Public gateway lead API validation');
+  assertIncludes(publicLeadApi, 'companyWebsite', 'Public gateway lead API honeypot field');
+  assertIncludes(publicLeadApi, 'isLikelyBotSubmission', 'Public gateway lead API honeypot guard');
+  assertIncludes(publicLeadApi, 'packageInterest', 'Public gateway lead API package interest support');
+
+  for (const forbidden of [
+    "href: '/platform-admin/packages'",
+    "href: '/platform-admin/client-restaurants'",
+    "href: '/platform-admin/settings'",
+    "label: 'Packages'",
+    "label: 'Client Restaurants'",
+    "label: 'Platform Settings'",
+  ]) {
+    assertNotIncludes(adminShell, forbidden, `Restaurant admin shell platform contamination ${forbidden}`);
+  }
+
+  for (const forbidden of [
+    "label: 'Menu'",
+    "label: 'Orders'",
+    "label: 'Kitchen'",
+    "label: 'Inventory'",
+    "label: 'Recipes'",
+    "label: 'Tables'",
+    "href: '/admin/menu'",
+    "href: '/admin/orders'",
+    "href: '/admin/kitchen'",
+    "href: '/admin/inventory'",
+    "href: '/admin/recipes'",
+    "href: '/admin/tables'",
+  ]) {
+    assertNotIncludes(platformShell, forbidden, `Platform admin shell restaurant operations contamination ${forbidden}`);
+  }
+
+  assertIncludes(rootPage, 'href="/public"', 'Public gateway demo restaurant link');
+  assertIncludes(rootPage, '?package=STARTER#request-demo', 'Public gateway Starter package CTA route');
+  assertIncludes(rootPage, '?package=OPERATIONS#request-demo', 'Public gateway Operations package CTA route');
+  assertIncludes(rootPage, '?package=ADVANCED_CUSTOM#request-demo', 'Public gateway Advanced package CTA route');
+  assertIncludes(rootPage, '<GatewayLeadForm initialPackageInterest={initialPackageInterest} />', 'Public gateway package interest handoff to form');
+
+  assertIncludes(publicPage, 'getRestaurantProfile()', '/public profile-driven profile read');
+  assertIncludes(publicPage, 'toPublicRestaurantProfile(profileRecord)', '/public public profile normalization');
+  assertIncludes(publicPage, '<HomeClient recommendedDishes={recommendedDishes} profile={profile} />', '/public profile handoff to client');
+  assertIncludes(publicHomeClient, 'profile.restaurantName', '/public client profile restaurant name usage');
+
+  const routeQaSource = [
+    rootPage,
+    publicPage,
+    adminLayout,
+    platformLayout,
+    adminShell,
+    platformShell,
+    adminGatewayRedirect,
+    publicLeadApi,
+    adminLeadApi,
+    demoResetApi,
+  ].join('\n');
+
+  assertNotIncludes(packageJson, '"stripe"', 'Production route QA Stripe dependency');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Production route QA should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Production route QA should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Production route QA should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Production route QA should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Production route QA should not add CRM API route');
+  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Production route QA should not add multi-tenant Restaurant model');
+  assertNotIncludes(routeQaSource, 'stripe.checkout', 'Production route QA checkout logic');
+  assertNotIncludes(routeQaSource, 'createRestaurant', 'Production route QA provisioning logic');
+  assertNotIncludes(routeQaSource, 'sendMail', 'Production route QA email sending');
+  assertNotIncludes(routeQaSource, 'sendWhatsApp', 'Production route QA WhatsApp sending');
+
+  assertIncludes(readme, 'Production route QA smoke coverage added.', 'README production route QA note');
+  assertIncludes(readme, 'Source/runtime verification hardening only', 'README production route QA verification-only note');
+  assertIncludes(readme, 'No new product feature', 'README production route QA no feature note');
+  assertIncludes(readme, 'No billing/provisioning/multi-tenancy', 'README production route QA scope note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -1482,6 +1617,7 @@ const checks = [
   checkBusinessGatewayFoundation,
   checkGatewayLeadFormUxPolish,
   checkGatewayPackagePricingPolish,
+  checkProductionRouteQaVerification,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
