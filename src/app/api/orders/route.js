@@ -109,7 +109,7 @@ export async function POST(request) {
       }
 
       tableContext = await prisma.restaurantTable.findFirst({
-        where: { slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true },
+        where: withDemoRestaurantWhere({ slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true }),
         select: { id: true, label: true, slug: true },
       });
 
@@ -128,7 +128,7 @@ export async function POST(request) {
 
     const itemIds = [...new Set(parsed.data.items.map((item) => item.id))];
     const menuItems = await prisma.menuItem.findMany({
-      where: { id: { in: itemIds } },
+      where: withDemoRestaurantWhere({ id: { in: itemIds } }),
       select: { id: true, name: true, price: true, isAvailable: true },
     });
     const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
@@ -163,7 +163,7 @@ export async function POST(request) {
 
     // create order
     const order = await prisma.order.create({
-      data: {
+      data: withDemoRestaurantData({
         reference, // important!
         name: parsed.data.name,
         phone: parsed.data.phone,
@@ -183,9 +183,9 @@ export async function POST(request) {
         orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD,
         orderSource: ORDER_SOURCES.CUSTOMER,
         items: {
-          create: orderItems,
+          create: orderItems.map((item) => withDemoRestaurantData(item)),
         },
-      },
+      }),
       include: { items: true },
     });
 
