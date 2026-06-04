@@ -24,6 +24,13 @@ model Restaurant {
   photos            Photo[]
   announcements     Announcement[]
   tables            RestaurantTable[]
+  reservations       Reservation[]
+  orders             Order[]
+  orderItems         OrderItem[]
+  inventoryItems     InventoryItem[]
+  inventoryMovements InventoryMovement[]
+  menuItemIngredients MenuItemIngredient[]
+  orderRecipeConsumptions OrderRecipeConsumption[]
 }
 
 model MenuCategory {
@@ -90,17 +97,21 @@ model Photo {
 }
 
 model Reservation {
-  id              String   @id @default(cuid())
+  id              String      @id @default(cuid())
   name            String
   phone           String
   email           String?
   date            DateTime
   time            String
-  guests          Int      @default(1)
+  guests          Int         @default(1)
   specialRequests String?
-  status          String   @default("PENDING")
-  reference       String   @unique
-  createdAt       DateTime @default(now())
+  status          String      @default("PENDING")
+  reference       String      @unique
+  createdAt       DateTime    @default(now())
+  restaurantId    String?
+  restaurant      Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
 }
 
 model Order {
@@ -123,10 +134,13 @@ model Order {
   createdByAdminId    String?
   createdByAdminEmail String?
   orderSource         String                   @default("CUSTOMER")
+  restaurantId        String?
+  restaurant          Restaurant?              @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   table               RestaurantTable?         @relation(fields: [tableId], references: [id], onDelete: SetNull)
   items               OrderItem[]
   recipeConsumptions  OrderRecipeConsumption[]
 
+  @@index([restaurantId])
   @@index([tableId])
   @@index([orderContext])
   @@index([createdByAdminId])
@@ -142,22 +156,29 @@ model OrderRecipeConsumption {
   status              String   @default("APPLIED")
   notes               String?
   createdAt           DateTime @default(now())
+  restaurantId        String?
+  restaurant          Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
 
   @@unique([orderId, status])
+  @@index([restaurantId])
   @@index([orderId])
   @@index([createdAt])
 }
 
 model OrderItem {
-  id         String    @id @default(cuid())
-  orderId    String
-  itemId     String?
-  name       String
-  price      Float
-  quantity   Int
-  menuItemId String?
-  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
-  order      Order     @relation(fields: [orderId], references: [id])
+  id           String      @id @default(cuid())
+  orderId      String
+  itemId       String?
+  name         String
+  price        Float
+  quantity     Int
+  menuItemId   String?
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  MenuItem     MenuItem?   @relation(fields: [menuItemId], references: [id])
+  order        Order       @relation(fields: [orderId], references: [id])
+
+  @@index([restaurantId])
 }
 
 model AdminUser {
@@ -243,9 +264,12 @@ model InventoryItem {
   notes             String?
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
+  restaurantId      String?
+  restaurant        Restaurant?          @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   movements         InventoryMovement[]
   recipeIngredients MenuItemIngredient[]
 
+  @@index([restaurantId])
   @@index([name])
   @@index([category])
   @@index([isActive])
@@ -262,8 +286,11 @@ model MenuItemIngredient {
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  restaurantId    String?
+  restaurant      Restaurant?   @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
 
   @@unique([menuItemId, inventoryItemId])
+  @@index([restaurantId])
   @@index([menuItemId])
   @@index([inventoryItemId])
 }
@@ -279,8 +306,11 @@ model InventoryMovement {
   createdByAdminId    String?
   createdByAdminEmail String?
   createdAt           DateTime      @default(now())
+  restaurantId        String?
+  restaurant          Restaurant?   @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
 
   @@index([itemId])
+  @@index([restaurantId])
   @@index([type])
   @@index([createdAt])
 }

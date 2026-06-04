@@ -36,15 +36,18 @@ const RESTAURANT_CONTENT_CONFIG_MODELS = [
   'RestaurantTable',
 ];
 
-const RESTAURANT_UNSCOPED_OPERATIONAL_MODELS = [
+const RESTAURANT_OPERATIONAL_SCOPE_MODELS = [
   'Reservation',
   'Order',
-  'OrderRecipeConsumption',
   'OrderItem',
-  'AdminUser',
   'InventoryItem',
-  'MenuItemIngredient',
   'InventoryMovement',
+  'MenuItemIngredient',
+  'OrderRecipeConsumption',
+];
+
+const RESTAURANT_UNSCOPED_OPERATIONAL_MODELS = [
+  'AdminUser',
   'GatewayLead',
 ];
 
@@ -808,6 +811,77 @@ function checkRestaurantIdContentConfigBackfill() {
   assertIncludes(readme, 'Runtime queries are not tenant-scoped yet.', 'README restaurantId runtime scope note');
   assertIncludes(readme, 'Operational transaction tables are not scoped yet.', 'README restaurantId operational scope note');
   assertIncludes(readme, 'restaurantId is not required yet.', 'README restaurantId nullable note');
+}
+
+function checkRestaurantIdOperationalBackfill() {
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const migrationPath = path.join(root, 'prisma/migrations/20260604110000_add_restaurant_id_to_operational_tables/migration.sql');
+  const restaurantBlock = getModelBlock(schema, 'Restaurant');
+  const relationArrays = {
+    Reservation: 'reservations',
+    Order: 'orders',
+    OrderItem: 'orderItems',
+    InventoryItem: 'inventoryItems',
+    InventoryMovement: 'inventoryMovements',
+    MenuItemIngredient: 'menuItemIngredients',
+    OrderRecipeConsumption: 'orderRecipeConsumptions',
+  };
+
+  for (const modelName of RESTAURANT_OPERATIONAL_SCOPE_MODELS) {
+    const modelBlock = getModelBlock(schema, modelName);
+    assertIncludes(modelBlock, 'restaurantId', `${modelName} nullable restaurantId field`);
+    assertIncludes(modelBlock, 'String?', `${modelName} nullable restaurantId type`);
+    assertIncludes(modelBlock, 'Restaurant?', `${modelName} optional Restaurant relation`);
+    assertIncludes(modelBlock, '@relation(fields: [restaurantId], references: [id], onDelete: SetNull)', `${modelName} Restaurant relation target`);
+    assertIncludes(modelBlock, '@@index([restaurantId])', `${modelName} restaurantId index`);
+    assertIncludes(restaurantBlock, relationArrays[modelName], `Restaurant operational relation array field for ${modelName}`);
+    assertIncludes(restaurantBlock, `${modelName}[]`, `Restaurant operational relation array type for ${modelName}`);
+  }
+
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'RestaurantId operational backfill excluded scope');
+
+  assert(fs.existsSync(migrationPath), 'RestaurantId operational migration is missing');
+  const migration = read('prisma/migrations/20260604110000_add_restaurant_id_to_operational_tables/migration.sql');
+  for (const tableName of RESTAURANT_OPERATIONAL_SCOPE_MODELS) {
+    assertIncludes(migration, `ALTER TABLE "${tableName}" ADD COLUMN "restaurantId" TEXT`, `${tableName} migration nullable restaurantId column`);
+    assertIncludes(migration, `CREATE INDEX "${tableName}_restaurantId_idx"`, `${tableName} migration restaurantId index`);
+    assertIncludes(migration, `ALTER TABLE "${tableName}" ADD CONSTRAINT "${tableName}_restaurantId_fkey"`, `${tableName} migration restaurantId foreign key`);
+    assertIncludes(migration, `UPDATE "${tableName}"`, `${tableName} migration demo backfill`);
+    assertIncludes(migration, `WHERE "restaurantId" IS NULL`, `${tableName} migration null-only backfill`);
+  }
+  assertIncludes(migration, "WHERE \"id\" = 'demo-restaurant'", 'Operational migration Demo Restaurant existence guard');
+  assertIncludes(migration, 'ON DELETE SET NULL ON UPDATE CASCADE', 'Operational migration SetNull foreign key behavior');
+  for (const excluded of RESTAURANT_UNSCOPED_OPERATIONAL_MODELS) {
+    assertNotIncludes(migration, `ALTER TABLE "${excluded}" ADD COLUMN "restaurantId"`, `Excluded ${excluded} operational migration restaurantId column`);
+    assertNotIncludes(migration, `UPDATE "${excluded}"`, `Excluded ${excluded} operational migration backfill`);
+  }
+
+  const appSource = [
+    read('src/app/api/orders/route.js'),
+    read('src/app/api/reservations/route.js'),
+    read('src/app/api/admin/inventory/items/route.js'),
+    read('src/app/api/admin/inventory/movements/route.js'),
+    read('src/app/api/admin/recipes/ingredients/route.js'),
+    read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js'),
+    read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js'),
+  ].join('\n');
+  assertNotIncludes(appSource, 'restaurantId', 'Runtime operational route/query tenant scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after operational backfill');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after operational backfill');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'RestaurantId operational should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'RestaurantId operational should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'RestaurantId operational should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'RestaurantId operational should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'RestaurantId operational should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'RestaurantId operational Stripe dependency');
+
+  assertIncludes(readme, 'Nullable restaurantId added to operational tables.', 'README restaurantId operational note');
+  assertIncludes(readme, 'Existing operational rows are backfilled to Demo Restaurant.', 'README restaurantId operational demo backfill note');
+  assertIncludes(readme, 'Runtime queries are still not tenant-scoped.', 'README restaurantId operational runtime scope note');
+  assertIncludes(readme, 'AdminUser and GatewayLead are not scoped yet.', 'README restaurantId operational excluded scope note');
+  assertIncludes(readme, 'Operational restaurantId is not required yet.', 'README restaurantId operational nullable note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2012,6 +2086,7 @@ const checks = [
   checkMultitenantArchitecturePlan,
   checkRestaurantTenantAnchorModel,
   checkRestaurantIdContentConfigBackfill,
+  checkRestaurantIdOperationalBackfill,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
