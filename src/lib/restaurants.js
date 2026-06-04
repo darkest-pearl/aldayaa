@@ -74,6 +74,28 @@ export function getRestaurantWhereBySlug(slug) {
   return { slug: cleanString(slug, DEMO_RESTAURANT_SLUG) };
 }
 
+export function getDemoRestaurantFilter() {
+  return {
+    OR: [
+      { restaurantId: DEMO_RESTAURANT_ID },
+      { restaurantId: null },
+    ],
+  };
+}
+
+export function getDemoRestaurantOrGlobalWhere(extraWhere = {}) {
+  return {
+    AND: [
+      extraWhere,
+      getDemoRestaurantFilter(),
+    ],
+  };
+}
+
+export function withDemoRestaurantWhere(extraWhere = {}) {
+  return getDemoRestaurantOrGlobalWhere(extraWhere);
+}
+
 export async function ensureDemoRestaurant() {
   if (!process.env.DATABASE_URL) {
     return getDemoRestaurantIdentity();

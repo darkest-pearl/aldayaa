@@ -2,11 +2,20 @@ export const dynamic = "force-dynamic";
 import Section from '../../../components/Section';
 import GalleryClient from '../../../components/GalleryClient';
 import { prisma } from '../../../lib/prisma';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../lib/restaurants';
 
 export const metadata = { title: 'Gallery | Demo Restaurant' };
 
 async function getGallery() {
-  return prisma.galleryCategory.findMany({ include: { photos: true }, orderBy: { name: 'asc' } });
+  return prisma.galleryCategory.findMany({
+    where: withDemoRestaurantWhere(),
+    include: {
+      photos: {
+        where: getDemoRestaurantFilter(),
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
 }
 
 export default async function GalleryPage() {

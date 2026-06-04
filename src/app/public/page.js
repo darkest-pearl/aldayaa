@@ -3,10 +3,11 @@ export const dynamic = "force-dynamic";
 import HomeClient from './HomeClient';
 import { prisma } from '../../lib/prisma';
 import { getRestaurantProfile, toPublicRestaurantProfile } from '../../lib/restaurant-profile';
+import { withDemoRestaurantWhere } from '../../lib/restaurants';
 
 async function getRecommendedDishes() {
   const dishes = await prisma.menuItem.findMany({
-    where: { recommended: true },
+    where: withDemoRestaurantWhere({ recommended: true }),
     select: {
       id: true,
       name: true,

@@ -3,13 +3,22 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const schema = z.object({ name: z.string().min(2) });
 
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const categories = await prisma.galleryCategory.findMany({ include: { photos: true }, orderBy: { createdAt: 'asc' } });
+    const categories = await prisma.galleryCategory.findMany({
+      where: withDemoRestaurantWhere(),
+      include: {
+        photos: {
+          where: getDemoRestaurantFilter(),
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
     return success({ categories });
   } catch (error) {
     return handleApiError(error);

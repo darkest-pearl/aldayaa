@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Section from '../../../components/Section';
 import nextDynamic from 'next/dynamic';
 import { prisma } from '../../../lib/prisma';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../lib/restaurants';
 
 export const metadata = {
   title: 'Menu | Demo Restaurant',
@@ -15,9 +16,13 @@ const MenuClient = nextDynamic(
 
 async function getMenu() {
   return prisma.menuCategory.findMany({
+    where: withDemoRestaurantWhere(),
     orderBy: { sortOrder: 'asc' },
     include: {
-      items: { orderBy: { name: 'asc' } },
+      items: {
+        where: getDemoRestaurantFilter(),
+        orderBy: { name: 'asc' },
+      },
     },
   });
 }

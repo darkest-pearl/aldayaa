@@ -781,12 +781,8 @@ function checkRestaurantIdContentConfigBackfill() {
   }
 
   const appSource = [
-    read('src/app/public/page.js'),
     read('src/app/admin/(protected)/layout.js'),
     read('src/app/platform-admin/(protected)/layout.js'),
-    read('src/app/api/menu/items/route.js'),
-    read('src/app/api/menu/categories/route.js'),
-    read('src/app/api/gallery/photos/route.js'),
     read('src/app/api/admin/settings/route.js'),
     read('src/app/api/admin/announcement/route.js'),
     read('src/app/api/admin/tables/route.js'),
@@ -922,9 +918,6 @@ function checkRestaurantContextHelper() {
   assertIncludes(demoRestaurantPage, 'initialRestaurant', 'Demo restaurant platform page passes demo tenant identity');
 
   const publicAdminRuntimeSource = [
-    read('src/app/public/page.js'),
-    read('src/app/api/menu/items/route.js'),
-    read('src/app/api/menu/categories/route.js'),
     read('src/app/api/orders/route.js'),
     read('src/app/api/reservations/route.js'),
     read('src/app/api/admin/inventory/items/route.js'),
@@ -952,6 +945,92 @@ function checkRestaurantContextHelper() {
   assertIncludes(readme, 'Helper resolves Demo Restaurant tenant identity.', 'README restaurant context helper identity note');
   assertIncludes(readme, 'Runtime route behavior is not broadly tenant-scoped yet.', 'README restaurant context helper runtime scope note');
   assertIncludes(readme, 'No new tenant routes/provisioning yet.', 'README restaurant context helper no routes note');
+}
+
+function checkPublicDemoReadTenantScoping() {
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+  const publicHome = read('src/app/public/page.js');
+  const publicMenu = read('src/app/public/menu/page.js');
+  const publicOrder = read('src/app/public/order/page.js');
+  const publicGallery = read('src/app/public/gallery/page.js');
+  const publicTable = read('src/app/public/table/[slug]/page.js');
+  const menuCategoriesApi = read('src/app/api/menu/categories/route.js');
+  const menuItemsApi = read('src/app/api/menu/items/route.js');
+  const galleryCategoriesApi = read('src/app/api/gallery/categories/route.js');
+  const galleryPhotosApi = read('src/app/api/gallery/photos/route.js');
+  const announcementHelper = read('src/lib/announcement.js');
+  const profileHelper = read('src/lib/restaurant-profile.js');
+
+  for (const expected of [
+    'getDemoRestaurantFilter',
+    'getDemoRestaurantOrGlobalWhere',
+    'withDemoRestaurantWhere',
+    'restaurantId: DEMO_RESTAURANT_ID',
+    'restaurantId: null',
+  ]) {
+    assertIncludes(helper, expected, `Restaurant read scope helper ${expected}`);
+  }
+
+  assertIncludes(publicHome, 'withDemoRestaurantWhere({ recommended: true })', 'Public home recommended menu tenant filter');
+  assertIncludes(publicMenu, 'withDemoRestaurantWhere()', 'Public menu category tenant filter');
+  assertIncludes(publicMenu, 'where: getDemoRestaurantFilter()', 'Public menu item tenant filter');
+  assertIncludes(publicOrder, 'withDemoRestaurantWhere()', 'Public order menu category tenant filter');
+  assertIncludes(publicOrder, 'where: getDemoRestaurantFilter()', 'Public order menu item tenant filter');
+  assertIncludes(publicOrder, 'withDemoRestaurantWhere({ slug, qrToken: tableToken, isActive: true })', 'Public order table lookup tenant filter');
+  assertIncludes(publicGallery, 'withDemoRestaurantWhere()', 'Public gallery category tenant filter');
+  assertIncludes(publicGallery, 'where: getDemoRestaurantFilter()', 'Public gallery photo tenant filter');
+  assertIncludes(publicTable, 'withDemoRestaurantWhere({ slug })', 'Public table lookup tenant filter');
+  assertIncludes(publicTable, 'restaurantTable.findFirst', 'Public table lookup no longer uses unique slug only');
+  assertIncludes(announcementHelper, 'withDemoRestaurantWhere({ isActive: true })', 'Public active announcement tenant filter');
+  assertIncludes(profileHelper, 'getDemoRestaurantOrGlobalWhere({ id: defaultRestaurantProfile.id })', 'Restaurant profile tenant filter');
+
+  assertIncludes(menuCategoriesApi, 'withDemoRestaurantWhere()', 'Menu categories API GET tenant filter');
+  assertIncludes(menuCategoriesApi, 'where: getDemoRestaurantFilter()', 'Menu categories API included items tenant filter');
+  assertIncludes(menuItemsApi, 'withDemoRestaurantWhere()', 'Menu items API GET tenant filter');
+  assertIncludes(galleryCategoriesApi, 'withDemoRestaurantWhere()', 'Gallery categories API GET tenant filter');
+  assertIncludes(galleryCategoriesApi, 'where: getDemoRestaurantFilter()', 'Gallery categories API included photos tenant filter');
+  assertIncludes(galleryPhotosApi, 'withDemoRestaurantWhere()', 'Gallery photos API GET tenant filter');
+
+  assertIncludes(helper, '{ restaurantId: null }', 'Transitional null fallback usage');
+
+  const orderRoute = read('src/app/api/orders/route.js');
+  const reservationRoute = read('src/app/api/reservations/route.js');
+  assertNotIncludes(orderRoute, 'withDemoRestaurantWhere', 'Order creation route tenant scoping');
+  assertNotIncludes(orderRoute, 'restaurantId:', 'Order creation route restaurantId write/filter');
+  assertNotIncludes(reservationRoute, 'withDemoRestaurantWhere', 'Reservation creation route tenant scoping');
+  assertNotIncludes(reservationRoute, 'restaurantId:', 'Reservation creation route restaurantId write/filter');
+
+  const adminOperationalSource = [
+    read('src/app/api/admin/inventory/items/route.js'),
+    read('src/app/api/admin/inventory/movements/route.js'),
+    read('src/app/api/admin/recipes/ingredients/route.js'),
+    read('src/app/api/admin/recipes/menu-items/route.js'),
+    read('src/app/api/admin/kitchen/orders/route.js'),
+    read('src/app/api/admin/orders/assisted/route.js'),
+    read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js'),
+    read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js'),
+  ].join('\n');
+  assertNotIncludes(adminOperationalSource, 'withDemoRestaurantWhere', 'Admin operational route tenant scoping');
+  assertNotIncludes(adminOperationalSource, 'restaurantId:', 'Admin operational route restaurantId write/filter');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo read scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo read scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Public demo read scoping should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Public demo read scoping should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Public demo read scoping should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Public demo read scoping should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Public demo read scoping should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Public demo read scoping Stripe dependency');
+  assertNotIncludes([publicHome, publicMenu, publicOrder, publicGallery, publicTable].join('\n'), 'sendMail', 'Public demo read scoping email sending');
+  assertNotIncludes([publicHome, publicMenu, publicOrder, publicGallery, publicTable].join('\n'), 'sendWhatsApp', 'Public demo read scoping WhatsApp sending');
+
+  assertIncludes(readme, 'Public demo reads are tenant-scoped to Demo Restaurant.', 'README public demo read scoping note');
+  assertIncludes(readme, 'Read-only public/demo scoping only.', 'README public demo read-only scope note');
+  assertIncludes(readme, 'Writes/admin operations are not tenant-scoped yet.', 'README public demo writes/admin scope note');
+  assertIncludes(readme, 'Current routes are unchanged.', 'README public demo route stability note');
+  assertIncludes(readme, 'Null restaurantId fallback is transitional.', 'README public demo null fallback note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2158,6 +2237,7 @@ const checks = [
   checkRestaurantIdContentConfigBackfill,
   checkRestaurantIdOperationalBackfill,
   checkRestaurantContextHelper,
+  checkPublicDemoReadTenantScoping,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

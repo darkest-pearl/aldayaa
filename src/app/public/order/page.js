@@ -4,6 +4,7 @@ import OrderClient from '../../../components/OrderClient';
 import { FEATURE_KEYS, isFeatureEnabled } from '../../../lib/features';
 import { prisma } from '../../../lib/prisma';
 import { getRestaurantProfile, toPublicRestaurantProfile } from '../../../lib/restaurant-profile';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../lib/restaurants';
 import { normalizeTable } from '../../../lib/tables';
 
 export const metadata = {
@@ -12,8 +13,13 @@ export const metadata = {
 
 async function getMenu() {
   return prisma.menuCategory.findMany({
+    where: withDemoRestaurantWhere(),
     orderBy: { sortOrder: 'asc' },
-    include: { items: true },
+    include: {
+      items: {
+        where: getDemoRestaurantFilter(),
+      },
+    },
   });
 }
 
@@ -22,7 +28,7 @@ async function getActiveTable(slug, tableToken) {
 
   try {
     return prisma.restaurantTable.findFirst({
-      where: { slug, qrToken: tableToken, isActive: true },
+      where: withDemoRestaurantWhere({ slug, qrToken: tableToken, isActive: true }),
     });
   } catch (error) {
     console.error('Failed to load restaurant table for order page', error);
