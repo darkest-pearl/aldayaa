@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const categorySchema = z.object({
   name: z.string().min(2),
@@ -12,7 +13,15 @@ const categorySchema = z.object({
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const categories = await prisma.menuCategory.findMany({ orderBy: { sortOrder: 'asc' }, include: { items: true } });
+    const categories = await prisma.menuCategory.findMany({
+      where: withDemoRestaurantWhere(),
+      orderBy: { sortOrder: 'asc' },
+      include: {
+        items: {
+          where: getDemoRestaurantFilter(),
+        },
+      },
+    });
     return success({ categories });
   } catch (error) {
     return handleApiError(error);

@@ -108,6 +108,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Helper resolves Demo Restaurant tenant identity.
 - Runtime route behavior is not broadly tenant-scoped yet.
 - No new tenant routes/provisioning yet.
+- Public demo reads are tenant-scoped to Demo Restaurant.
+- Read-only public/demo scoping only.
+- Writes/admin operations are not tenant-scoped yet.
+- Current routes are unchanged.
+- Null restaurantId fallback is transitional.
 
 ## Feature Modules Foundation
 

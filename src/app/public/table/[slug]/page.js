@@ -5,6 +5,7 @@ import Section from '../../../../components/Section';
 import { FEATURE_KEYS, isFeatureEnabled } from '../../../../lib/features';
 import { prisma } from '../../../../lib/prisma';
 import { getRestaurantProfile, toPublicRestaurantProfile } from '../../../../lib/restaurant-profile';
+import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
 import { normalizeTable } from '../../../../lib/tables';
 
 export const metadata = {
@@ -15,7 +16,9 @@ async function findTable(slug) {
   if (!process.env.DATABASE_URL || !slug) return null;
 
   try {
-    return prisma.restaurantTable.findUnique({ where: { slug } });
+    return prisma.restaurantTable.findFirst({
+      where: withDemoRestaurantWhere({ slug }),
+    });
   } catch (error) {
     console.error('Failed to load restaurant table', error);
     return null;

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { prisma } from "./prisma";
+import { withDemoRestaurantWhere } from "./restaurants";
 
 /**
  * Retrieve the currently active announcement.
@@ -7,8 +8,11 @@ import { prisma } from "./prisma";
  */
 export async function getActiveAnnouncement() {
   return prisma.announcement.findFirst({
-    where: { isActive: true },
-    orderBy: { updatedAt: "desc" },
+    where: withDemoRestaurantWhere({ isActive: true }),
+    orderBy: [
+      { restaurantId: "asc" },
+      { updatedAt: "desc" },
+    ],
   });
 }
 

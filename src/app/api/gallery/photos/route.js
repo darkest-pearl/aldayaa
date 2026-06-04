@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
+import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const schema = z.object({
   title: z.string().min(2),
@@ -14,7 +15,10 @@ const schema = z.object({
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const photos = await prisma.photo.findMany({ include: { category: true } });
+    const photos = await prisma.photo.findMany({
+      where: withDemoRestaurantWhere(),
+      include: { category: true },
+    });
     return success({ photos });
   } catch (error) {
     return handleApiError(error);

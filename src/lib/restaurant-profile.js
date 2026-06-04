@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { getDefaultEnabledFeatures, normalizeEnabledFeatures } from './features';
+import { getDemoRestaurantOrGlobalWhere } from './restaurants';
 import { strings } from './strings';
 
 export function getNeutralDemoRestaurantProfile(overrides = {}) {
@@ -154,8 +155,9 @@ export async function ensureRestaurantProfile() {
 }
 
 async function loadRestaurantProfileFromDatabase({ ensureExists }) {
-  const profile = await prisma.restaurantProfile.findUnique({
-    where: { id: defaultRestaurantProfile.id },
+  const profile = await prisma.restaurantProfile.findFirst({
+    where: getDemoRestaurantOrGlobalWhere({ id: defaultRestaurantProfile.id }),
+    orderBy: { restaurantId: 'asc' },
   });
 
   if (profile) {
