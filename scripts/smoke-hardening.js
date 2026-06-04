@@ -716,7 +716,6 @@ function checkRestaurantTenantAnchorModel() {
   assertNotIncludes(helper, 'sendMail', 'Restaurant helper email sending');
   assertNotIncludes(helper, 'nodemailer', 'Restaurant helper nodemailer usage');
   assertNotIncludes(helper, 'sendWhatsApp', 'Restaurant helper WhatsApp sending');
-  assertNotIncludes(helper, 'prisma.', 'Restaurant helper runtime database usage');
 
   assertIncludes(readme, 'Restaurant tenant anchor model added.', 'README restaurant tenant anchor note');
   assertIncludes(readme, 'Demo Restaurant seed exists.', 'README demo restaurant seed note');
@@ -804,7 +803,6 @@ function checkRestaurantIdContentConfigBackfill() {
   assertNotIncludes(helper, 'sendMail', 'Restaurant helper email sending');
   assertNotIncludes(helper, 'nodemailer', 'Restaurant helper nodemailer usage');
   assertNotIncludes(helper, 'sendWhatsApp', 'Restaurant helper WhatsApp sending');
-  assertNotIncludes(helper, 'prisma.', 'Restaurant helper runtime database usage');
 
   assertIncludes(readme, 'Nullable restaurantId added to content/config tables.', 'README restaurantId content/config note');
   assertIncludes(readme, 'Existing rows are backfilled to Demo Restaurant.', 'README restaurantId demo backfill note');
@@ -882,6 +880,78 @@ function checkRestaurantIdOperationalBackfill() {
   assertIncludes(readme, 'Runtime queries are still not tenant-scoped.', 'README restaurantId operational runtime scope note');
   assertIncludes(readme, 'AdminUser and GatewayLead are not scoped yet.', 'README restaurantId operational excluded scope note');
   assertIncludes(readme, 'Operational restaurantId is not required yet.', 'README restaurantId operational nullable note');
+}
+
+function checkRestaurantContextHelper() {
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+  const platformDashboard = read('src/app/platform-admin/(protected)/page.js');
+  const clientRestaurantsPage = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+  const demoRestaurantPage = read('src/app/platform-admin/(protected)/demo-restaurant/page.jsx');
+
+  for (const expected of [
+    'DEMO_RESTAURANT_ID',
+    'DEMO_RESTAURANT_SLUG',
+    "'demo-restaurant'",
+    'getDemoRestaurantIdentity',
+    'getDemoRestaurantWhere',
+    'getRestaurantWhereBySlug',
+    'getCurrentDemoRestaurant',
+    'ensureDemoRestaurant',
+    'normalizeRestaurant',
+  ]) {
+    assertIncludes(helper, expected, `Restaurant context helper ${expected}`);
+  }
+
+  assertIncludes(helper, 'if (!process.env.DATABASE_URL)', 'Restaurant context helper DATABASE_URL fallback branch');
+  assertIncludes(helper, 'return getDemoRestaurantIdentity()', 'Restaurant context helper demo identity fallback');
+  assertIncludes(helper, 'prisma.restaurant.findFirst', 'Restaurant context helper demo restaurant lookup');
+  assertIncludes(helper, 'prisma.restaurant.upsert', 'Restaurant context helper demo restaurant upsert');
+  assertIncludes(helper, 'where: getDemoRestaurantWhere()', 'Restaurant context helper ensure where clause');
+  assertIncludes(helper, 'slug: DEMO_RESTAURANT_SLUG', 'Restaurant context helper demo slug return');
+  assertIncludes(helper, 'id: DEMO_RESTAURANT_ID', 'Restaurant context helper demo id return');
+
+  assertIncludes(platformDashboard, 'getCurrentDemoRestaurant', 'Platform dashboard demo tenant identity lookup');
+  assertIncludes(platformDashboard, 'demoRestaurant.name', 'Platform dashboard demo tenant name display');
+  assertIncludes(platformDashboard, 'demoRestaurant.slug', 'Platform dashboard demo tenant slug display');
+  assertIncludes(clientRestaurantsPage, 'getCurrentDemoRestaurant', 'Client restaurants placeholder demo tenant identity lookup');
+  assertIncludes(clientRestaurantsPage, 'demoRestaurant.slug', 'Client restaurants placeholder demo tenant slug display');
+  assertIncludes(demoRestaurantPage, 'getCurrentDemoRestaurant', 'Demo restaurant platform page demo tenant identity lookup');
+  assertIncludes(demoRestaurantPage, 'initialRestaurant', 'Demo restaurant platform page passes demo tenant identity');
+
+  const publicAdminRuntimeSource = [
+    read('src/app/public/page.js'),
+    read('src/app/api/menu/items/route.js'),
+    read('src/app/api/menu/categories/route.js'),
+    read('src/app/api/orders/route.js'),
+    read('src/app/api/reservations/route.js'),
+    read('src/app/api/admin/inventory/items/route.js'),
+    read('src/app/api/admin/inventory/movements/route.js'),
+    read('src/app/api/admin/recipes/ingredients/route.js'),
+    read('src/app/api/admin/kitchen/orders/route.js'),
+  ].join('\n');
+  assertNotIncludes(publicAdminRuntimeSource, 'getCurrentDemoRestaurant', 'Restaurant context helper public/admin broad query usage');
+  assertNotIncludes(publicAdminRuntimeSource, 'getRestaurantWhereBySlug', 'Restaurant context helper public/admin slug query usage');
+  assertNotIncludes(publicAdminRuntimeSource, 'restaurantId:', 'Restaurant context helper public/admin broad tenant scoping');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Restaurant context helper excluded scope');
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after restaurant context helper');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after restaurant context helper');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Restaurant context helper should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Restaurant context helper should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Restaurant context helper should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Restaurant context helper should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Restaurant context helper should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Restaurant context helper Stripe dependency');
+  assertNotIncludes(helper, 'sendMail', 'Restaurant context helper email sending');
+  assertNotIncludes(helper, 'nodemailer', 'Restaurant context helper nodemailer usage');
+  assertNotIncludes(helper, 'sendWhatsApp', 'Restaurant context helper WhatsApp sending');
+
+  assertIncludes(readme, 'Restaurant context helper added.', 'README restaurant context helper note');
+  assertIncludes(readme, 'Helper resolves Demo Restaurant tenant identity.', 'README restaurant context helper identity note');
+  assertIncludes(readme, 'Runtime route behavior is not broadly tenant-scoped yet.', 'README restaurant context helper runtime scope note');
+  assertIncludes(readme, 'No new tenant routes/provisioning yet.', 'README restaurant context helper no routes note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2087,6 +2157,7 @@ const checks = [
   checkRestaurantTenantAnchorModel,
   checkRestaurantIdContentConfigBackfill,
   checkRestaurantIdOperationalBackfill,
+  checkRestaurantContextHelper,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

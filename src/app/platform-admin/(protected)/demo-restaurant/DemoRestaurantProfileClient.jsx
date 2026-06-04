@@ -14,7 +14,7 @@ function ProfileField({ label, value }) {
   );
 }
 
-export default function DemoRestaurantProfileClient({ initialProfile }) {
+export default function DemoRestaurantProfileClient({ initialProfile, initialRestaurant }) {
   const [profile, setProfile] = useState(initialProfile);
   const [status, setStatus] = useState(null);
   const [error, setError] = useState(null);
@@ -78,6 +78,8 @@ export default function DemoRestaurantProfileClient({ initialProfile }) {
           description="These values come from the singleton RestaurantProfile record used by the demo restaurant website."
         >
           <div className="grid gap-3 md:grid-cols-2">
+            <ProfileField label="Tenant anchor" value={initialRestaurant?.name} />
+            <ProfileField label="Tenant slug" value={initialRestaurant?.slug} />
             <ProfileField label="Restaurant name" value={profile?.restaurantName} />
             <ProfileField label="Tagline" value={profile?.tagline} />
             <ProfileField label="Cuisine" value={profile?.cuisineType} />
