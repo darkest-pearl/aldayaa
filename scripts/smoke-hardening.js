@@ -25,6 +25,38 @@ function assertNotIncludes(content, unexpected, label) {
   assert(!content.includes(unexpected), `${label} should not include: ${unexpected}`);
 }
 
+const RESTAURANT_OPERATIONAL_MODELS = [
+  'MenuCategory',
+  'MenuItem',
+  'GalleryCategory',
+  'Photo',
+  'Reservation',
+  'Order',
+  'OrderRecipeConsumption',
+  'OrderItem',
+  'AdminUser',
+  'RestaurantSettings',
+  'RestaurantProfile',
+  'RestaurantTable',
+  'InventoryItem',
+  'MenuItemIngredient',
+  'InventoryMovement',
+  'Announcement',
+];
+
+function getModelBlock(schema, modelName) {
+  const match = schema.match(new RegExp(`model ${modelName} \\{[\\s\\S]*?\\n\\}`));
+  assert(match, `${modelName} model block is missing`);
+  return match[0];
+}
+
+function assertOperationalTablesAreNotRestaurantScoped(schema, label) {
+  for (const modelName of RESTAURANT_OPERATIONAL_MODELS) {
+    const modelBlock = getModelBlock(schema, modelName);
+    assertNotIncludes(modelBlock, 'restaurantId', `${label} ${modelName}`);
+  }
+}
+
 function checkOrderHardening() {
   const orderRoute = read('src/app/api/orders/route.js');
   const itemSchemaMatch = orderRoute.match(/const itemSchema = z\.object\(\{[\s\S]*?\n\}\);/);
@@ -134,7 +166,7 @@ function checkBusinessGatewayFoundation() {
   assertNotIncludes(packageJson, '"stripe"', 'Stripe dependency');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Billing API route should not exist yet');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Provisioning API route should not exist yet');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Multi-tenant Restaurant model should not exist yet');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Business gateway foundation operational tenant scope');
   assertIncludes(readme, 'Business gateway foundation added at `/`.', 'README business gateway note');
   assertIncludes(readme, '`/public` remains the live demo restaurant website.', 'README public demo note');
   assertIncludes(readme, 'No payments, subscriptions, automatic restaurant provisioning, or multi-tenant database model', 'README gateway scope limits');
@@ -192,7 +224,7 @@ function checkGatewayLeadFormUxPolish() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead polish should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead polish should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead polish should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead polish should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Gateway lead polish operational tenant scope');
   assertNotIncludes(gatewayPolishSource, 'sendMail', 'Gateway lead polish email sending');
   assertNotIncludes(gatewayPolishSource, 'nodemailer', 'Gateway lead polish nodemailer usage');
   assertNotIncludes(gatewayPolishSource, 'sendWhatsApp', 'Gateway lead polish WhatsApp sending');
@@ -275,7 +307,7 @@ function checkGatewayPackagePricingPolish() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Gateway package pricing should not add subscriptions API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway package pricing should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway package pricing should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway package pricing should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Gateway package pricing operational tenant scope');
   assertNotIncludes(packagePricingSource, 'stripe.checkout', 'Gateway package pricing checkout logic');
   assertNotIncludes(packagePricingSource, 'createRestaurant', 'Gateway package pricing provisioning logic');
   assertNotIncludes(packagePricingSource, 'sendMail', 'Gateway package pricing email sending');
@@ -410,7 +442,7 @@ function checkProductionRouteQaVerification() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Production route QA should not add subscriptions API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Production route QA should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Production route QA should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Production route QA should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Production route QA operational tenant scope');
   assertNotIncludes(routeQaSource, 'stripe.checkout', 'Production route QA checkout logic');
   assertNotIncludes(routeQaSource, 'createRestaurant', 'Production route QA provisioning logic');
   assertNotIncludes(routeQaSource, 'sendMail', 'Production route QA email sending');
@@ -524,7 +556,7 @@ function checkPlatformPlaceholderPagePolish() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Platform placeholder polish should not add subscriptions API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Platform placeholder polish should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Platform placeholder polish should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Platform placeholder polish should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Platform placeholder polish operational tenant scope');
   assertNotIncludes(placeholderSource, 'prisma.', 'Platform placeholder polish database usage');
   assertNotIncludes(placeholderSource, 'sendMail', 'Platform placeholder polish email sending');
   assertNotIncludes(placeholderSource, 'nodemailer', 'Platform placeholder polish nodemailer usage');
@@ -583,13 +615,12 @@ function checkMultitenantArchitecturePlan() {
   }
 
   assertIncludes(readme, 'Multi-tenant architecture planning document added.', 'README multi-tenant plan note');
-  assertIncludes(readme, 'Planning only.', 'README planning-only note');
-  assertIncludes(readme, 'No schema/runtime changes yet.', 'README no schema/runtime note');
-  assertIncludes(readme, 'No multi-tenancy implemented yet.', 'README no multi-tenancy implementation note');
+  assertIncludes(readme, 'Batch 32 was planning only.', 'README planning-only note');
+  assertIncludes(readme, 'At that step, no schema/runtime changes were made.', 'README no schema/runtime note');
+  assertIncludes(readme, 'Multi-tenancy was not implemented in Batch 32.', 'README no multi-tenancy implementation note');
 
   assertIncludes(schema, 'model RestaurantProfile', 'Existing RestaurantProfile model');
   assertIncludes(schema, 'id                 Int      @id @default(1)', 'Existing singleton RestaurantProfile id');
-  assertNotIncludes(schema, 'model Restaurant {', 'Multi-tenant Restaurant model');
   assertNotIncludes(schema, 'restaurantId', 'Restaurant-scoped schema fields');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Multi-tenant plan should not add billing API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Multi-tenant plan should not add payments API route');
@@ -597,6 +628,90 @@ function checkMultitenantArchitecturePlan() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Multi-tenant plan should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Multi-tenant plan should not add CRM API route');
   assertNotIncludes(packageJson, '"stripe"', 'Multi-tenant plan Stripe dependency');
+}
+
+function checkRestaurantTenantAnchorModel() {
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const helperPath = path.join(root, 'src/lib/restaurants.js');
+  const migrationPath = path.join(root, 'prisma/migrations/20260604100000_add_restaurant_model/migration.sql');
+  const clientRestaurantsPagePath = path.join(root, 'src/app/platform-admin/(protected)/client-restaurants/page.js');
+
+  assertIncludes(schema, 'model Restaurant', 'Restaurant Prisma model');
+  const restaurantBlock = getModelBlock(schema, 'Restaurant');
+  for (const expected of [
+    'id        String',
+    '@id @default(cuid())',
+    'name      String',
+    'slug      String',
+    '@unique',
+    'status    String   @default("DEMO")',
+    'createdAt DateTime @default(now())',
+    'updatedAt DateTime @updatedAt',
+  ]) {
+    assertIncludes(restaurantBlock, expected, `Restaurant model field ${expected}`);
+  }
+
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Restaurant tenant anchor operational tenant scope');
+
+  assert(fs.existsSync(migrationPath), 'Restaurant model migration is missing');
+  const migration = read('prisma/migrations/20260604100000_add_restaurant_model/migration.sql');
+  for (const expected of [
+    'CREATE TABLE "Restaurant"',
+    '"id" TEXT NOT NULL',
+    '"name" TEXT NOT NULL',
+    '"slug" TEXT NOT NULL',
+    '"status" TEXT NOT NULL DEFAULT \'DEMO\'',
+    '"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP',
+    '"updatedAt" TIMESTAMP(3) NOT NULL',
+    'CREATE UNIQUE INDEX "Restaurant_slug_key"',
+    'INSERT INTO "Restaurant"',
+    'Demo Restaurant',
+    'demo-restaurant',
+    'ON CONFLICT ("slug") DO UPDATE',
+  ]) {
+    assertIncludes(migration, expected, `Restaurant model migration ${expected}`);
+  }
+
+  assert(fs.existsSync(helperPath), 'Restaurant helper is missing');
+  const helper = read('src/lib/restaurants.js');
+  for (const expected of [
+    'DEMO_RESTAURANT_SLUG',
+    "'demo-restaurant'",
+    'RESTAURANT_STATUSES',
+    'getDemoRestaurantIdentity',
+    'normalizeRestaurant',
+    'DEMO',
+    'ACTIVE',
+    'PAUSED',
+    'ARCHIVED',
+  ]) {
+    assertIncludes(helper, expected, `Restaurant helper ${expected}`);
+  }
+
+  const clientRestaurantsPage = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+  assertIncludes(clientRestaurantsPage, 'Demo Restaurant tenant anchor', 'Platform client restaurants tenant anchor copy');
+  assertIncludes(clientRestaurantsPage, 'real client provisioning is not implemented yet', 'Platform client restaurants no provisioning copy');
+  assertNotIncludes(clientRestaurantsPage, 'prisma.', 'Platform client restaurants placeholder database query');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Restaurant tenant anchor should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Restaurant tenant anchor should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Restaurant tenant anchor should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Restaurant tenant anchor should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Restaurant tenant anchor should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Restaurant tenant anchor Stripe dependency');
+  assertNotIncludes(helper, 'sendMail', 'Restaurant helper email sending');
+  assertNotIncludes(helper, 'nodemailer', 'Restaurant helper nodemailer usage');
+  assertNotIncludes(helper, 'sendWhatsApp', 'Restaurant helper WhatsApp sending');
+  assertNotIncludes(helper, 'prisma.', 'Restaurant helper runtime database usage');
+
+  assertIncludes(readme, 'Restaurant tenant anchor model added.', 'README restaurant tenant anchor note');
+  assertIncludes(readme, 'Demo Restaurant seed exists.', 'README demo restaurant seed note');
+  assertIncludes(readme, 'Existing restaurant operations are not tenant-scoped yet.', 'README no tenant-scoped operations note');
+  assertIncludes(readme, 'No provisioning or multi-tenant routing yet.', 'README no provisioning routing note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -677,7 +792,7 @@ function checkGatewayLeadAdminManagement() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead admin should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead admin should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead admin should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead admin should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Gateway lead admin operational tenant scope');
   assertNotIncludes(gatewayAdminSource, 'sendMail', 'Gateway lead admin email sending');
   assertNotIncludes(gatewayAdminSource, 'nodemailer', 'Gateway lead admin nodemailer usage');
   assertNotIncludes(gatewayAdminSource, 'sendWhatsApp', 'Gateway lead admin WhatsApp sending');
@@ -750,7 +865,7 @@ function checkGatewayLeadWorkflowPolish() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Gateway lead workflow should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Gateway lead workflow should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Gateway lead workflow should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Gateway lead workflow should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Gateway lead workflow operational tenant scope');
   assertNotIncludes(workflowSource, 'sendMail', 'Gateway lead workflow email sending');
   assertNotIncludes(workflowSource, 'nodemailer', 'Gateway lead workflow nodemailer usage');
   assertNotIncludes(workflowSource, 'sendWhatsApp', 'Gateway lead workflow WhatsApp sending');
@@ -839,7 +954,7 @@ function checkAdminSeparationAndDemoBranding() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Admin separation should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Admin separation should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Admin separation should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Admin separation should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Admin separation operational tenant scope');
   assertNotIncludes(packageJson, '"stripe"', 'Admin separation Stripe dependency');
   assertNotIncludes(platformSource, 'sendMail', 'Platform admin email sending');
   assertNotIncludes(platformSource, 'nodemailer', 'Platform admin nodemailer usage');
@@ -921,7 +1036,7 @@ function checkDemoRestaurantProfileResetControls() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Demo profile reset should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Demo profile reset should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Demo profile reset should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Demo profile reset should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Demo profile reset operational tenant scope');
   assertNotIncludes(packageJson, '"stripe"', 'Demo profile reset Stripe dependency');
   assertNotIncludes(resetSource, 'sendMail', 'Demo profile reset email sending');
   assertNotIncludes(resetSource, 'nodemailer', 'Demo profile reset nodemailer usage');
@@ -984,7 +1099,7 @@ function checkPlatformDashboardPolish() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Platform dashboard should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Platform dashboard should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Platform dashboard should not add CRM API route');
-  assert(!/model\s+Restaurant\s*\{/.test(schema), 'Platform dashboard should not add multi-tenant Restaurant model');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Platform dashboard operational tenant scope');
   assertNotIncludes(packageJson, '"stripe"', 'Platform dashboard Stripe dependency');
   assertNotIncludes(dashboardSource, 'sendMail', 'Platform dashboard email sending');
   assertNotIncludes(dashboardSource, 'nodemailer', 'Platform dashboard nodemailer usage');
@@ -1797,6 +1912,7 @@ const checks = [
   checkProductionRouteQaVerification,
   checkPlatformPlaceholderPagePolish,
   checkMultitenantArchitecturePlan,
+  checkRestaurantTenantAnchorModel,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
