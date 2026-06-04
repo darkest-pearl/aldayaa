@@ -7,7 +7,7 @@ export default function ClientRestaurantsPlaceholderPage() {
     <PlatformRoadmapPlaceholder
       title="Client Restaurants"
       description="This will eventually manage client restaurant accounts for the platform owner."
-      currentState="The current app still has one demo restaurant, not multi-tenant clients. Demo restaurant operations remain under the restaurant admin area."
+      currentState="The current app still has one demo restaurant, not multi-tenant clients. A Demo Restaurant tenant anchor now exists for future scoping, but real client provisioning is not implemented yet. Demo restaurant operations remain under the restaurant admin area."
       actions={[
         { label: 'View demo restaurant', href: '/public' },
         { label: 'Open restaurant admin', href: '/admin' },
