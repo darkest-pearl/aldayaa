@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { getDefaultEnabledFeatures, normalizeEnabledFeatures } from './features';
-import { getDemoRestaurantOrGlobalWhere } from './restaurants';
+import { getDemoRestaurantOrGlobalWhere, withDemoRestaurantData } from './restaurants';
 import { strings } from './strings';
 
 export function getNeutralDemoRestaurantProfile(overrides = {}) {
@@ -117,7 +117,7 @@ export function clearRestaurantProfileCache() {
 async function createDefaultRestaurantProfile() {
   try {
     const profile = await prisma.restaurantProfile.create({
-      data: toPrismaRestaurantProfileData(defaultRestaurantProfile),
+      data: withDemoRestaurantData(toPrismaRestaurantProfileData(defaultRestaurantProfile)),
     });
 
     return setRestaurantProfileCache(profile);

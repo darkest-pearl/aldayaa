@@ -7,6 +7,7 @@ import { normalizeInventoryItem, normalizeInventoryUnit } from '../../../../../.
 import { requireFeatureEnabled } from '../../../../../../lib/module-access';
 import { prisma } from '../../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../../lib/restaurant-profile';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../../../lib/restaurants';
 
 const updateSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
@@ -40,12 +41,12 @@ export async function PUT(request, { params }) {
       return failure('Invalid inventory item payload', 400, { details: parsed.error.flatten() });
     }
 
-    const existing = await prisma.inventoryItem.findUnique({ where: { id: params.id } });
+    const existing = await prisma.inventoryItem.findFirst({ where: withDemoRestaurantWhere({ id: params.id }) });
     if (!existing) return failure('Inventory item not found', 404);
 
     const item = await prisma.inventoryItem.update({
       where: { id: params.id },
-      data: {
+      data: withDemoRestaurantData({
         ...(parsed.data.name !== undefined ? { name: parsed.data.name.trim() } : {}),
         ...(parsed.data.sku !== undefined ? { sku: cleanOptionalString(parsed.data.sku) } : {}),
         ...(parsed.data.category !== undefined ? { category: cleanOptionalString(parsed.data.category) } : {}),
@@ -55,7 +56,7 @@ export async function PUT(request, { params }) {
         ...(parsed.data.costPerUnit !== undefined ? { costPerUnit: parsed.data.costPerUnit ?? null } : {}),
         ...(parsed.data.isActive !== undefined ? { isActive: parsed.data.isActive } : {}),
         ...(parsed.data.notes !== undefined ? { notes: cleanOptionalString(parsed.data.notes) } : {}),
-      },
+      }),
     });
 
     return success({ item: normalizeInventoryItem(item) });
@@ -67,12 +68,12 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await requireInventoryFeature(request);
-    const existing = await prisma.inventoryItem.findUnique({ where: { id: params.id } });
+    const existing = await prisma.inventoryItem.findFirst({ where: withDemoRestaurantWhere({ id: params.id }) });
     if (!existing) return failure('Inventory item not found', 404);
 
     const item = await prisma.inventoryItem.update({
       where: { id: params.id },
-      data: { isActive: false },
+      data: withDemoRestaurantData({ isActive: false }),
     });
 
     return success({ item: normalizeInventoryItem(item) });

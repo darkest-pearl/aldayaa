@@ -7,6 +7,7 @@ import { normalizeInventoryItem, normalizeInventoryUnit } from '../../../../../l
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../../lib/restaurants';
 
 const itemSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -34,6 +35,7 @@ export async function GET(request) {
   try {
     await requireInventoryFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const items = await prisma.inventoryItem.findMany({
+      where: withDemoRestaurantWhere(),
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     });
 
@@ -54,7 +56,7 @@ export async function POST(request) {
     }
 
     const item = await prisma.inventoryItem.create({
-      data: {
+      data: withDemoRestaurantData({
         name: parsed.data.name.trim(),
         sku: cleanOptionalString(parsed.data.sku),
         category: cleanOptionalString(parsed.data.category),
@@ -64,7 +66,7 @@ export async function POST(request) {
         costPerUnit: parsed.data.costPerUnit ?? null,
         isActive: parsed.data.isActive ?? true,
         notes: cleanOptionalString(parsed.data.notes),
-      },
+      }),
     });
 
     return success({ item: normalizeInventoryItem(item) });

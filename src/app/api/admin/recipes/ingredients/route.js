@@ -6,6 +6,7 @@ import { FEATURE_KEYS } from '../../../../../lib/features';
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../../lib/restaurants';
 import {
   normalizeMenuItemIngredient,
   normalizeRecipeIngredientUnit,
@@ -40,7 +41,7 @@ export async function GET(request) {
     }
 
     const ingredients = await prisma.menuItemIngredient.findMany({
-      where: { menuItemId },
+      where: withDemoRestaurantWhere({ menuItemId }),
       include: { inventoryItem: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -66,15 +67,15 @@ export async function POST(request) {
     }
 
     const [menuItem, inventoryItem, existing] = await Promise.all([
-      prisma.menuItem.findUnique({ where: { id: parsed.data.menuItemId } }),
-      prisma.inventoryItem.findFirst({ where: { id: parsed.data.inventoryItemId, isActive: true } }),
-      prisma.menuItemIngredient.findUnique({
-        where: {
-          menuItemId_inventoryItemId: {
-            menuItemId: parsed.data.menuItemId,
-            inventoryItemId: parsed.data.inventoryItemId,
-          },
-        },
+      prisma.menuItem.findFirst({ where: withDemoRestaurantWhere({ id: parsed.data.menuItemId }) }),
+      prisma.inventoryItem.findFirst({
+        where: withDemoRestaurantWhere({ id: parsed.data.inventoryItemId, isActive: true }),
+      }),
+      prisma.menuItemIngredient.findFirst({
+        where: withDemoRestaurantWhere({
+          menuItemId: parsed.data.menuItemId,
+          inventoryItemId: parsed.data.inventoryItemId,
+        }),
       }),
     ]);
 
@@ -83,13 +84,13 @@ export async function POST(request) {
     if (existing) return failure('This inventory item is already mapped to the selected menu item', 409);
 
     const ingredient = await prisma.menuItemIngredient.create({
-      data: {
+      data: withDemoRestaurantData({
         menuItemId: parsed.data.menuItemId,
         inventoryItemId: parsed.data.inventoryItemId,
         quantity: parsed.data.quantity,
         unit: normalizeRecipeIngredientUnit(parsed.data.unit),
         notes: cleanOptionalString(parsed.data.notes),
-      },
+      }),
       include: { inventoryItem: true },
     });
 

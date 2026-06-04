@@ -6,6 +6,7 @@ import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { ORDER_STATUSES } from '../../../../../lib/order-status';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
+import { withDemoRestaurantWhere } from '../../../../../lib/restaurants';
 
 export async function GET(request) {
   try {
@@ -14,12 +15,12 @@ export async function GET(request) {
     requireFeatureEnabled(profile, FEATURE_KEYS.KITCHEN_QUEUE);
 
     const orders = await prisma.order.findMany({
-      where: {
+      where: withDemoRestaurantWhere({
         status: {
           in: [ORDER_STATUSES.NEW, ORDER_STATUSES.IN_PROGRESS],
           notIn: [ORDER_STATUSES.COMPLETED, ORDER_STATUSES.CANCELLED],
         },
-      },
+      }),
       orderBy: [
         { status: 'asc' },
         { createdAt: 'asc' },

@@ -12,6 +12,11 @@ import {
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
+import {
+  DEMO_RESTAURANT_ID,
+  withDemoRestaurantData,
+  withDemoRestaurantWhere,
+} from '../../../../../lib/restaurants';
 
 const movementSchema = z.object({
   itemId: z.string().trim().min(1),
@@ -44,7 +49,7 @@ export async function GET(request) {
     await requireInventoryFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const itemId = request.nextUrl?.searchParams?.get('itemId')?.trim();
     const movements = await prisma.inventoryMovement.findMany({
-      where: itemId ? { itemId } : {},
+      where: withDemoRestaurantWhere(itemId ? { itemId } : {}),
       orderBy: { createdAt: 'desc' },
       take: 30,
       include: { item: true },
@@ -71,7 +76,9 @@ export async function POST(request) {
     }
 
     const { updatedItem, movement } = await prisma.$transaction(async (tx) => {
-      const item = await tx.inventoryItem.findUnique({ where: { id: parsed.data.itemId } });
+      const item = await tx.inventoryItem.findFirst({
+        where: withDemoRestaurantWhere({ id: parsed.data.itemId, isActive: true }),
+      });
       if (!item || item.isActive === false) {
         throw new InventoryMovementError('Inventory item is not available', 404);
       }
@@ -83,11 +90,11 @@ export async function POST(request) {
 
       const updatedItem = await tx.inventoryItem.update({
         where: { id: item.id },
-        data: { currentStock: resultingStock },
+        data: withDemoRestaurantData({ currentStock: resultingStock }),
       });
 
       const movement = await tx.inventoryMovement.create({
-        data: {
+        data: withDemoRestaurantData({
           itemId: item.id,
           type: parsed.data.type,
           quantity: parsed.data.quantity,
@@ -95,7 +102,8 @@ export async function POST(request) {
           source: cleanOptionalString(parsed.data.source),
           createdByAdminId: admin.id,
           createdByAdminEmail: admin.email,
-        },
+          restaurantId: DEMO_RESTAURANT_ID,
+        }),
         include: { item: true },
       });
 

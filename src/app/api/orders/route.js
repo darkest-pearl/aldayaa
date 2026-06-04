@@ -7,6 +7,7 @@ import { FEATURE_KEYS, isFeatureEnabled } from '../../../lib/features';
 import { generateReference } from "../../../lib/reference";
 import { getRestaurantProfile } from '../../../lib/restaurant-profile';
 import { sendWhatsAppMessage } from "../../../lib/whatsapp";
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
 import {
   ORDER_CONTEXTS,
   ORDER_SOURCES,
@@ -55,6 +56,7 @@ export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const orders = await prisma.order.findMany({
+      where: withDemoRestaurantWhere(),
       orderBy: { createdAt: 'desc' },
       include: { items: true, table: true },
     });
@@ -209,8 +211,8 @@ export async function PUT(request) {
         details: parsed.error.flatten(),
       });
 
-    const existingOrder = await prisma.order.findUnique({
-      where: { id: parsed.data.id },
+    const existingOrder = await prisma.order.findFirst({
+      where: withDemoRestaurantWhere({ id: parsed.data.id }),
       select: { id: true, status: true },
     });
 
@@ -227,7 +229,7 @@ export async function PUT(request) {
 
     const order = await prisma.order.update({
       where: { id: parsed.data.id },
-      data: { status: parsed.data.status },
+      data: withDemoRestaurantData({ status: parsed.data.status }),
     });
 
     if (
@@ -267,8 +269,14 @@ export async function DELETE(request) {
     if (!parsed.success) return failure('Invalid order id', 400);
     
 
-    await prisma.orderItem.deleteMany({ where: { orderId: parsed.data.id } });
-    await prisma.order.delete({ where: { id: parsed.data.id } });
+    const existingOrder = await prisma.order.findFirst({
+      where: withDemoRestaurantWhere({ id: parsed.data.id }),
+      select: { id: true },
+    });
+    if (!existingOrder) return failure('Order not found', 404);
+
+    await prisma.orderItem.deleteMany({ where: withDemoRestaurantWhere({ orderId: parsed.data.id }) });
+    await prisma.order.deleteMany({ where: withDemoRestaurantWhere({ id: parsed.data.id }) });
 
     return success({});
   } catch (error) {

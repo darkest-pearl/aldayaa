@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
-import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const schema = z.object({
   title: z.string().min(2),
@@ -31,7 +31,13 @@ export async function POST(request) {
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) return failure('Invalid photo payload', 400, { details: parsed.error.flatten() });
-    const photo = await prisma.photo.create({ data: parsed.data });
+    const category = await prisma.galleryCategory.findFirst({
+      where: withDemoRestaurantWhere({ id: parsed.data.categoryId }),
+      select: { id: true },
+    });
+    if (!category) return failure('Gallery category not found', 404);
+
+    const photo = await prisma.photo.create({ data: withDemoRestaurantData(parsed.data) });
     return success({ photo });
   } catch (error) {
     return handleApiError(error);

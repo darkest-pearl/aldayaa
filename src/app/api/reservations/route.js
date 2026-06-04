@@ -5,6 +5,7 @@ import { requireAdmin } from '../../../lib/auth';
 import { generateReservationReference } from "../../../lib/reference";
 import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -72,7 +73,10 @@ function serializeReservation(reservation) {
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
-    const reservations = await prisma.reservation.findMany({ orderBy: { createdAt: 'desc' } });
+    const reservations = await prisma.reservation.findMany({
+      where: withDemoRestaurantWhere(),
+      orderBy: { createdAt: 'desc' },
+    });
     return success({ reservations: reservations.map(serializeReservation) });
   } catch (error) {
     console.error('Reservations GET error:', error);
@@ -163,9 +167,15 @@ export async function PUT(request) {
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) return failure('Invalid reservation update', 400, { details: parsed.error.flatten() });
 
+    const existing = await prisma.reservation.findFirst({
+      where: withDemoRestaurantWhere({ id: parsed.data.id }),
+      select: { id: true },
+    });
+    if (!existing) return failure('Reservation not found', 404);
+
     const reservation = await prisma.reservation.update({
       where: { id: parsed.data.id },
-      data: { status: parsed.data.status },
+      data: withDemoRestaurantData({ status: parsed.data.status }),
     });
     return success({ reservation: serializeReservation(reservation) });
   } catch (error) {
@@ -179,7 +189,10 @@ export async function DELETE(request) {
     const body = await request.json();
     const parsed = deleteSchema.safeParse(body);
     if (!parsed.success) return failure('Invalid reservation id', 400);
-    await prisma.reservation.delete({ where: { id: parsed.data.id } });
+    const deleted = await prisma.reservation.deleteMany({
+      where: withDemoRestaurantWhere({ id: parsed.data.id }),
+    });
+    if (deleted.count !== 1) return failure('Reservation not found', 404);
     return success({});
   } catch (error) {
     return handleApiError(error);

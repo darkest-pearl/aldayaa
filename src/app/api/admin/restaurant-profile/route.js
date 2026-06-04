@@ -10,6 +10,7 @@ import {
   setRestaurantProfileCache,
   toPrismaRestaurantProfileData,
 } from '../../../../lib/restaurant-profile';
+import { withDemoRestaurantData } from '../../../../lib/restaurants';
 
 const optionalUrlSchema = z
   .string()
@@ -84,10 +85,10 @@ export async function PUT(request) {
     const profile = await prisma.restaurantProfile.upsert({
       where: { id: 1 },
       create: {
-        ...toPrismaRestaurantProfileData(defaultRestaurantProfile),
-        ...updates,
+        ...withDemoRestaurantData(toPrismaRestaurantProfileData(defaultRestaurantProfile)),
+        ...withDemoRestaurantData(updates),
       },
-      update: updates,
+      update: withDemoRestaurantData(updates),
     });
 
     return success({ profile: setRestaurantProfileCache(profile) });

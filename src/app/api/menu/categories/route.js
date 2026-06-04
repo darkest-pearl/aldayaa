@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
-import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../../lib/restaurants';
+import { getDemoRestaurantFilter, withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const categorySchema = z.object({
   name: z.string().min(2),
@@ -37,11 +37,11 @@ export async function POST(request) {
       return failure('Invalid category payload', 400, { details: parsed.error.flatten() });
     }
     const category = await prisma.menuCategory.create({
-      data: {
+      data: withDemoRestaurantData({
         name: parsed.data.name,
         description: parsed.data.description || '',
         sortOrder: parsed.data.sortOrder || 0,
-      },
+      }),
     });
     return success({ category });
   } catch (error) {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "../../../../lib/auth";
 import { handleApiError, failure, success } from "../../../../lib/api-response";
 import { prisma } from "../../../../lib/prisma";
+import { withDemoRestaurantData, withDemoRestaurantWhere } from "../../../../lib/restaurants";
 
 const announcementSchema = z
   .object({
@@ -23,6 +24,7 @@ export async function GET(request) {
   try {
     await requireAdmin(request, ["ADMIN"]);
     const announcement = await prisma.announcement.findFirst({
+      where: withDemoRestaurantWhere(),
       orderBy: { updatedAt: "desc" },
     });
     return success({ announcement });
@@ -44,21 +46,22 @@ export async function PUT(request) {
     const message = parsed.data.message?.trim() || "";
     const isActive = parsed.data.isActive;
     const existing = await prisma.announcement.findFirst({
+      where: withDemoRestaurantWhere(),
       orderBy: { updatedAt: "desc" },
     });
 
     const announcement = existing
       ? await prisma.announcement.update({
           where: { id: existing.id },
-          data: { message, isActive },
+          data: withDemoRestaurantData({ message, isActive }),
         })
       : await prisma.announcement.create({
-          data: { message, isActive },
+          data: withDemoRestaurantData({ message, isActive }),
         });
 
     if (isActive) {
       await prisma.announcement.updateMany({
-        where: { id: { not: announcement.id }, isActive: true },
+        where: withDemoRestaurantWhere({ id: { not: announcement.id }, isActive: true }),
         data: { isActive: false },
       });
     }

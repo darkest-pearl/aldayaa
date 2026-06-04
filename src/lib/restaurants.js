@@ -96,6 +96,13 @@ export function withDemoRestaurantWhere(extraWhere = {}) {
   return getDemoRestaurantOrGlobalWhere(extraWhere);
 }
 
+export function withDemoRestaurantData(data = {}) {
+  return {
+    ...data,
+    restaurantId: DEMO_RESTAURANT_ID,
+  };
+}
+
 export async function ensureDemoRestaurant() {
   if (!process.env.DATABASE_URL) {
     return getDemoRestaurantIdentity();
