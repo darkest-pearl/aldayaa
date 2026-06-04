@@ -1,3 +1,5 @@
+import { prisma } from './prisma';
+
 export const DEMO_RESTAURANT_SLUG = 'demo-restaurant';
 export const DEMO_RESTAURANT_ID = DEMO_RESTAURANT_SLUG;
 
@@ -19,6 +21,19 @@ const DEFAULT_DEMO_RESTAURANT = Object.freeze({
 
 function cleanString(value, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+}
+
+function getDemoRestaurantCreateData(overrides = {}) {
+  const restaurant = getDemoRestaurantIdentity(overrides);
+
+  return {
+    id: restaurant.id,
+    name: restaurant.name,
+    slug: restaurant.slug,
+    status: restaurant.status,
+    type: restaurant.type,
+    notes: restaurant.notes,
+  };
 }
 
 export function isValidRestaurantStatus(status) {
@@ -53,4 +68,64 @@ export function getDemoRestaurantId() {
 
 export function getDemoRestaurantWhere() {
   return { id: DEMO_RESTAURANT_ID };
+}
+
+export function getRestaurantWhereBySlug(slug) {
+  return { slug: cleanString(slug, DEMO_RESTAURANT_SLUG) };
+}
+
+export async function ensureDemoRestaurant() {
+  if (!process.env.DATABASE_URL) {
+    return getDemoRestaurantIdentity();
+  }
+
+  const demoRestaurant = getDemoRestaurantCreateData();
+
+  const restaurant = await prisma.restaurant.upsert({
+    where: getDemoRestaurantWhere(),
+    update: {
+      name: demoRestaurant.name,
+      slug: demoRestaurant.slug,
+      status: demoRestaurant.status,
+      type: demoRestaurant.type,
+      notes: demoRestaurant.notes,
+    },
+    create: demoRestaurant,
+  });
+
+  return normalizeRestaurant(restaurant);
+}
+
+export async function getCurrentDemoRestaurant({ fallbackOnError = true, ensureExists = false } = {}) {
+  if (!process.env.DATABASE_URL) {
+    return getDemoRestaurantIdentity();
+  }
+
+  try {
+    const restaurant = await prisma.restaurant.findFirst({
+      where: {
+        OR: [
+          getDemoRestaurantWhere(),
+          getRestaurantWhereBySlug(DEMO_RESTAURANT_SLUG),
+        ],
+      },
+    });
+
+    if (restaurant) {
+      return normalizeRestaurant(restaurant);
+    }
+
+    if (ensureExists) {
+      return await ensureDemoRestaurant();
+    }
+
+    return getDemoRestaurantIdentity();
+  } catch (error) {
+    if (!fallbackOnError) {
+      throw error;
+    }
+
+    console.error('Failed to load demo restaurant tenant identity', error);
+    return getDemoRestaurantIdentity();
+  }
 }

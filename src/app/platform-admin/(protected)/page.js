@@ -6,6 +6,7 @@ import {
 } from '../../../lib/gateway-leads';
 import { prisma } from '../../../lib/prisma';
 import { getRestaurantProfile } from '../../../lib/restaurant-profile';
+import { getCurrentDemoRestaurant } from '../../../lib/restaurants';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,9 +87,10 @@ function QuickAction({ title, description, href }) {
 }
 
 export default async function PlatformDashboardPage() {
-  const [leadOverview, profile] = await Promise.all([
+  const [leadOverview, profile, demoRestaurant] = await Promise.all([
     getLeadOverview(),
     getRestaurantProfile(),
+    getCurrentDemoRestaurant(),
   ]);
   const enabledModuleCount = profile.enabledFeatures.length;
 
@@ -122,6 +124,11 @@ export default async function PlatformDashboardPage() {
       label: 'Demo profile status',
       value: profile.restaurantName,
       detail: profile.tagline,
+    },
+    {
+      label: 'Demo tenant anchor',
+      value: demoRestaurant.name,
+      detail: `Tenant slug: ${demoRestaurant.slug}`,
     },
     {
       label: 'Enabled demo modules',

@@ -104,6 +104,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Runtime queries are still not tenant-scoped.
 - AdminUser and GatewayLead are not scoped yet.
 - Operational restaurantId is not required yet.
+- Restaurant context helper added.
+- Helper resolves Demo Restaurant tenant identity.
+- Runtime route behavior is not broadly tenant-scoped yet.
+- No new tenant routes/provisioning yet.
 
 ## Feature Modules Foundation
 
