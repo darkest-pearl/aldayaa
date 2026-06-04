@@ -139,7 +139,7 @@ export async function POST(request) {
     const reference = generateReservationReference();
 
     const reservation = await prisma.reservation.create({
-      data: {
+      data: withDemoRestaurantData({
         name: parsed.data.name,
         phone: parsed.data.phone,
         email: parsed.data.email,
@@ -148,7 +148,7 @@ export async function POST(request) {
         guests: parsed.data.guests,
         specialRequests: parsed.data.specialRequests,
         reference,
-      },
+      }),
     });
 
     const serializedReservation = serializeReservation(reservation);

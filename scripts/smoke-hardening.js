@@ -996,10 +996,8 @@ function checkPublicDemoReadTenantScoping() {
   const reservationRoute = read('src/app/api/reservations/route.js');
   const orderPost = getExportedFunctionSource(orderRoute, 'POST');
   const reservationPost = getExportedFunctionSource(reservationRoute, 'POST');
-  assertNotIncludes(orderPost, 'restaurantId:', 'Order creation route restaurantId write/filter');
-  assertNotIncludes(orderPost, 'withDemoRestaurantData', 'Order creation route tenant data helper');
-  assertNotIncludes(reservationPost, 'restaurantId:', 'Reservation creation route restaurantId write/filter');
-  assertNotIncludes(reservationPost, 'withDemoRestaurantData', 'Reservation creation route tenant data helper');
+  assertNotIncludes(orderPost, 'requireAdmin', 'Public order creation route admin auth');
+  assertNotIncludes(reservationPost, 'requireAdmin', 'Public reservation creation route admin auth');
 
   assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo read scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo read scoping');
@@ -1013,8 +1011,7 @@ function checkPublicDemoReadTenantScoping() {
   assertNotIncludes([publicHome, publicMenu, publicOrder, publicGallery, publicTable].join('\n'), 'sendWhatsApp', 'Public demo read scoping WhatsApp sending');
 
   assertIncludes(readme, 'Public demo reads are tenant-scoped to Demo Restaurant.', 'README public demo read scoping note');
-  assertIncludes(readme, 'Read-only public/demo scoping only.', 'README public demo read-only scope note');
-  assertIncludes(readme, 'Writes/admin operations are not tenant-scoped yet.', 'README public demo writes/admin scope note');
+  assertIncludes(readme, 'Public demo read scoping keeps current routes unchanged.', 'README public demo route stability note');
   assertIncludes(readme, 'Current routes are unchanged.', 'README public demo route stability note');
   assertIncludes(readme, 'Null restaurantId fallback is transitional.', 'README public demo null fallback note');
 }
@@ -1138,10 +1135,8 @@ function checkRestaurantAdminDemoOperationTenantScoping() {
 
   const orderPost = getExportedFunctionSource(ordersRoute, 'POST');
   const reservationPost = getExportedFunctionSource(reservationsRoute, 'POST');
-  assertNotIncludes(orderPost, 'restaurantId:', 'Batch 38 public order creation restaurantId');
-  assertNotIncludes(orderPost, 'withDemoRestaurantData', 'Batch 38 public order creation data helper');
-  assertNotIncludes(reservationPost, 'restaurantId:', 'Batch 38 public reservation creation restaurantId');
-  assertNotIncludes(reservationPost, 'withDemoRestaurantData', 'Batch 38 public reservation creation data helper');
+  assertNotIncludes(orderPost, 'requireAdmin', 'Batch 38 public order creation admin auth');
+  assertNotIncludes(reservationPost, 'requireAdmin', 'Batch 38 public reservation creation admin auth');
 
   const adminUserBlock = getModelBlock(schema, 'AdminUser');
   const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
@@ -1162,6 +1157,60 @@ function checkRestaurantAdminDemoOperationTenantScoping() {
   assertIncludes(readme, 'Transitional null restaurantId fallback remains.', 'README admin demo operation null fallback note');
   assertIncludes(readme, 'New restaurant-owned admin records write restaurantId = demo-restaurant.', 'README admin demo operation write note');
   assertIncludes(readme, 'AdminUser and GatewayLead remain platform/global for now.', 'README admin demo operation global model note');
+}
+
+function checkPublicDemoWriteTenantScoping() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const reservationRoute = read('src/app/api/reservations/route.js');
+  const orderPost = getExportedFunctionSource(orderRoute, 'POST');
+  const reservationPost = getExportedFunctionSource(reservationRoute, 'POST');
+
+  assertIncludes(helper, 'withDemoRestaurantData', 'Public demo write data helper');
+  assertIncludes(helper, 'restaurantId: DEMO_RESTAURANT_ID', 'Public demo write helper writes demo restaurantId');
+
+  assertIncludes(orderPost, 'withDemoRestaurantWhere({ slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true })', 'Public order table lookup tenant filter');
+  assertIncludes(orderPost, 'withDemoRestaurantWhere({ id: { in: itemIds } })', 'Public order menu item lookup tenant filter');
+  assertIncludes(orderPost, 'data: withDemoRestaurantData({', 'Public order create writes demo restaurantId');
+  assertIncludes(orderPost, 'create: orderItems.map((item) => withDemoRestaurantData(item))', 'Public order item create writes demo restaurantId');
+  assertIncludes(orderPost, 'orderSource: ORDER_SOURCES.CUSTOMER', 'Public order source preserved');
+  assertIncludes(orderPost, 'reference = generateReference()', 'Public order reference generation preserved');
+  assertIncludes(orderPost, 'notifyWhenReady', 'Public order notification preference logic preserved');
+  assertIncludes(orderPost, 'qrToken: requestedTableToken', 'Public order table token guard preserved');
+  assertNotIncludes(orderPost, 'requireAdmin', 'Public order creation auth guard');
+
+  assertIncludes(reservationPost, 'data: withDemoRestaurantData({', 'Public reservation create writes demo restaurantId');
+  assertIncludes(reservationPost, 'reference = generateReservationReference()', 'Public reservation reference generation preserved');
+  assertIncludes(reservationPost, 'return success({ reservation: serializedReservation, reference })', 'Public reservation response shape preserved');
+  assertNotIncludes(reservationPost, 'requireAdmin', 'Public reservation creation auth guard');
+
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'Public demo writes AdminUser scoping');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Public demo writes GatewayLead scoping');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo write scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo write scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Public demo write scoping should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Public demo write scoping should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Public demo write scoping should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Public demo write scoping should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Public demo write scoping should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Public demo write scoping should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Public demo write scoping should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Public demo write scoping Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Public demo write scoping nodemailer dependency');
+  assertNotIncludes([orderPost, reservationPost].join('\n'), 'sendMail', 'Public demo write scoping email sending');
+  assertNotIncludes([orderPost, reservationPost].join('\n'), 'sendWhatsApp', 'Public demo write scoping WhatsApp sending');
+
+  assertIncludes(readme, 'Public demo writes are tenant-scoped to Demo Restaurant.', 'README public demo write scoping note');
+  assertIncludes(readme, 'Public orders and reservations now write restaurantId = demo-restaurant.', 'README public demo write restaurantId note');
+  assertIncludes(readme, 'Current URLs are unchanged.', 'README public demo write route stability note');
+  assertIncludes(readme, 'AdminUser and GatewayLead remain global/platform-owned.', 'README public demo write global model note');
+  assertIncludes(readme, 'No tenant routes/provisioning yet.', 'README public demo write no provisioning note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2370,6 +2419,7 @@ const checks = [
   checkRestaurantContextHelper,
   checkPublicDemoReadTenantScoping,
   checkRestaurantAdminDemoOperationTenantScoping,
+  checkPublicDemoWriteTenantScoping,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

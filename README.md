@@ -109,8 +109,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Runtime route behavior is not broadly tenant-scoped yet.
 - No new tenant routes/provisioning yet.
 - Public demo reads are tenant-scoped to Demo Restaurant.
-- Read-only public/demo scoping only.
-- Writes/admin operations are not tenant-scoped yet.
+- Public demo read scoping keeps current routes unchanged.
 - Current routes are unchanged.
 - Null restaurantId fallback is transitional.
 - Restaurant admin demo operations are tenant-scoped to Demo Restaurant.
@@ -118,6 +117,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Transitional null restaurantId fallback remains.
 - New restaurant-owned admin records write restaurantId = demo-restaurant.
 - AdminUser and GatewayLead remain platform/global for now.
+- Public demo writes are tenant-scoped to Demo Restaurant.
+- Public orders and reservations now write restaurantId = demo-restaurant.
+- Current URLs are unchanged.
+- AdminUser and GatewayLead remain global/platform-owned.
+- No tenant routes/provisioning yet.
 
 ## Feature Modules Foundation
 
