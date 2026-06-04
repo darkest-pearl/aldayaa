@@ -25,23 +25,27 @@ function assertNotIncludes(content, unexpected, label) {
   assert(!content.includes(unexpected), `${label} should not include: ${unexpected}`);
 }
 
-const RESTAURANT_OPERATIONAL_MODELS = [
+const RESTAURANT_CONTENT_CONFIG_MODELS = [
+  'RestaurantProfile',
+  'RestaurantSettings',
   'MenuCategory',
   'MenuItem',
   'GalleryCategory',
   'Photo',
+  'Announcement',
+  'RestaurantTable',
+];
+
+const RESTAURANT_UNSCOPED_OPERATIONAL_MODELS = [
   'Reservation',
   'Order',
   'OrderRecipeConsumption',
   'OrderItem',
   'AdminUser',
-  'RestaurantSettings',
-  'RestaurantProfile',
-  'RestaurantTable',
   'InventoryItem',
   'MenuItemIngredient',
   'InventoryMovement',
-  'Announcement',
+  'GatewayLead',
 ];
 
 function getModelBlock(schema, modelName) {
@@ -51,7 +55,7 @@ function getModelBlock(schema, modelName) {
 }
 
 function assertOperationalTablesAreNotRestaurantScoped(schema, label) {
-  for (const modelName of RESTAURANT_OPERATIONAL_MODELS) {
+  for (const modelName of RESTAURANT_UNSCOPED_OPERATIONAL_MODELS) {
     const modelBlock = getModelBlock(schema, modelName);
     assertNotIncludes(modelBlock, 'restaurantId', `${label} ${modelName}`);
   }
@@ -621,7 +625,7 @@ function checkMultitenantArchitecturePlan() {
 
   assertIncludes(schema, 'model RestaurantProfile', 'Existing RestaurantProfile model');
   assertIncludes(schema, 'id                 Int      @id @default(1)', 'Existing singleton RestaurantProfile id');
-  assertNotIncludes(schema, 'restaurantId', 'Restaurant-scoped schema fields');
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'Multi-tenant plan operational tenant scope');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Multi-tenant plan should not add billing API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Multi-tenant plan should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Multi-tenant plan should not add subscriptions API route');
@@ -641,14 +645,17 @@ function checkRestaurantTenantAnchorModel() {
   assertIncludes(schema, 'model Restaurant', 'Restaurant Prisma model');
   const restaurantBlock = getModelBlock(schema, 'Restaurant');
   for (const expected of [
-    'id        String',
+    'id',
     '@id @default(cuid())',
-    'name      String',
-    'slug      String',
+    'name',
+    'slug',
     '@unique',
-    'status    String   @default("DEMO")',
-    'createdAt DateTime @default(now())',
-    'updatedAt DateTime @updatedAt',
+    'status',
+    '@default("DEMO")',
+    'createdAt',
+    '@default(now())',
+    'updatedAt',
+    '@updatedAt',
   ]) {
     assertIncludes(restaurantBlock, expected, `Restaurant model field ${expected}`);
   }
@@ -712,6 +719,95 @@ function checkRestaurantTenantAnchorModel() {
   assertIncludes(readme, 'Demo Restaurant seed exists.', 'README demo restaurant seed note');
   assertIncludes(readme, 'Existing restaurant operations are not tenant-scoped yet.', 'README no tenant-scoped operations note');
   assertIncludes(readme, 'No provisioning or multi-tenant routing yet.', 'README no provisioning routing note');
+}
+
+function checkRestaurantIdContentConfigBackfill() {
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+  const migrationPath = path.join(root, 'prisma/migrations/20260604103000_add_restaurant_id_to_content_config/migration.sql');
+  const restaurantBlock = getModelBlock(schema, 'Restaurant');
+  const relationArrays = {
+    RestaurantProfile: 'profiles',
+    RestaurantSettings: 'settings',
+    MenuCategory: 'menuCategories',
+    MenuItem: 'menuItems',
+    GalleryCategory: 'galleryCategories',
+    Photo: 'photos',
+    Announcement: 'announcements',
+    RestaurantTable: 'tables',
+  };
+
+  for (const modelName of RESTAURANT_CONTENT_CONFIG_MODELS) {
+    const modelBlock = getModelBlock(schema, modelName);
+    assertIncludes(modelBlock, 'restaurantId', `${modelName} nullable restaurantId field`);
+    assertIncludes(modelBlock, 'String?', `${modelName} nullable restaurantId type`);
+    assertIncludes(modelBlock, 'Restaurant?', `${modelName} optional Restaurant relation`);
+    assertIncludes(modelBlock, '@relation(fields: [restaurantId], references: [id], onDelete: SetNull)', `${modelName} Restaurant relation target`);
+    assertIncludes(modelBlock, '@@index([restaurantId])', `${modelName} restaurantId index`);
+    assertIncludes(restaurantBlock, relationArrays[modelName], `Restaurant relation array field for ${modelName}`);
+    assertIncludes(restaurantBlock, `${modelName}[]`, `Restaurant relation array type for ${modelName}`);
+  }
+
+  assertOperationalTablesAreNotRestaurantScoped(schema, 'RestaurantId content/config backfill excluded operational scope');
+
+  assert(fs.existsSync(migrationPath), 'RestaurantId content/config migration is missing');
+  const migration = read('prisma/migrations/20260604103000_add_restaurant_id_to_content_config/migration.sql');
+  for (const tableName of RESTAURANT_CONTENT_CONFIG_MODELS) {
+    assertIncludes(migration, `ALTER TABLE "${tableName}" ADD COLUMN "restaurantId" TEXT`, `${tableName} migration nullable restaurantId column`);
+    assertIncludes(migration, `CREATE INDEX "${tableName}_restaurantId_idx"`, `${tableName} migration restaurantId index`);
+    assertIncludes(migration, `ALTER TABLE "${tableName}" ADD CONSTRAINT "${tableName}_restaurantId_fkey"`, `${tableName} migration restaurantId foreign key`);
+    assertIncludes(migration, `UPDATE "${tableName}"`, `${tableName} migration demo backfill`);
+    assertIncludes(migration, `WHERE "restaurantId" IS NULL`, `${tableName} migration null-only backfill`);
+  }
+  assertIncludes(migration, "WHERE \"id\" = 'demo-restaurant'", 'Migration Demo Restaurant existence guard');
+  assertIncludes(migration, 'ON DELETE SET NULL ON UPDATE CASCADE', 'Migration SetNull foreign key behavior');
+
+  for (const excluded of RESTAURANT_UNSCOPED_OPERATIONAL_MODELS) {
+    assertNotIncludes(migration, `ALTER TABLE "${excluded}" ADD COLUMN "restaurantId"`, `Excluded ${excluded} migration restaurantId column`);
+    assertNotIncludes(migration, `UPDATE "${excluded}"`, `Excluded ${excluded} migration backfill`);
+  }
+
+  for (const expected of [
+    'DEMO_RESTAURANT_ID',
+    'getDemoRestaurantId',
+    'getDemoRestaurantWhere',
+    "id: DEMO_RESTAURANT_ID",
+  ]) {
+    assertIncludes(helper, expected, `Restaurant helper content/config ${expected}`);
+  }
+
+  const appSource = [
+    read('src/app/public/page.js'),
+    read('src/app/admin/(protected)/layout.js'),
+    read('src/app/platform-admin/(protected)/layout.js'),
+    read('src/app/api/menu/items/route.js'),
+    read('src/app/api/menu/categories/route.js'),
+    read('src/app/api/gallery/photos/route.js'),
+    read('src/app/api/admin/settings/route.js'),
+    read('src/app/api/admin/announcement/route.js'),
+    read('src/app/api/admin/tables/route.js'),
+  ].join('\n');
+  assertNotIncludes(appSource, 'restaurantId', 'Runtime route/query tenant scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after content/config backfill');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after content/config backfill');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'RestaurantId content/config should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'RestaurantId content/config should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'RestaurantId content/config should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'RestaurantId content/config should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'RestaurantId content/config should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'RestaurantId content/config Stripe dependency');
+  assertNotIncludes(helper, 'sendMail', 'Restaurant helper email sending');
+  assertNotIncludes(helper, 'nodemailer', 'Restaurant helper nodemailer usage');
+  assertNotIncludes(helper, 'sendWhatsApp', 'Restaurant helper WhatsApp sending');
+  assertNotIncludes(helper, 'prisma.', 'Restaurant helper runtime database usage');
+
+  assertIncludes(readme, 'Nullable restaurantId added to content/config tables.', 'README restaurantId content/config note');
+  assertIncludes(readme, 'Existing rows are backfilled to Demo Restaurant.', 'README restaurantId demo backfill note');
+  assertIncludes(readme, 'Runtime queries are not tenant-scoped yet.', 'README restaurantId runtime scope note');
+  assertIncludes(readme, 'Operational transaction tables are not scoped yet.', 'README restaurantId operational scope note');
+  assertIncludes(readme, 'restaurantId is not required yet.', 'README restaurantId nullable note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -1214,10 +1310,12 @@ function checkQrTableOrderingFoundation() {
   const adminTablesClient = read('src/app/admin/(protected)/tables/TablesClient.jsx');
   const publicTablePage = read('src/app/public/table/[slug]/page.js');
   const orderPage = read('src/app/public/order/page.js');
+  const restaurantTableBlock = getModelBlock(schema, 'RestaurantTable');
 
   assertIncludes(schema, 'model RestaurantTable', 'RestaurantTable Prisma model');
-  assertIncludes(schema, 'slug      String   @unique', 'RestaurantTable unique slug');
-  assertIncludes(schema, 'qrToken   String   @unique', 'RestaurantTable unique QR token');
+  assertIncludes(restaurantTableBlock, 'slug', 'RestaurantTable slug field');
+  assertIncludes(restaurantTableBlock, 'qrToken', 'RestaurantTable QR token field');
+  assertIncludes(restaurantTableBlock, '@unique', 'RestaurantTable unique slug/QR token markers');
   assertIncludes(features, 'TABLE_QR_ORDERING', 'TABLE_QR_ORDERING feature key');
   assert(fs.existsSync(path.join(root, 'src/app/api/admin/tables/route.js')), 'Admin table collection API route is missing');
   assert(fs.existsSync(path.join(root, 'src/app/api/admin/tables/[id]/route.js')), 'Admin table item API route is missing');
@@ -1913,6 +2011,7 @@ const checks = [
   checkPlatformPlaceholderPagePolish,
   checkMultitenantArchitecturePlan,
   checkRestaurantTenantAnchorModel,
+  checkRestaurantIdContentConfigBackfill,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

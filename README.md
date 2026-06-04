@@ -94,6 +94,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Demo Restaurant seed exists.
 - Existing restaurant operations are not tenant-scoped yet.
 - No provisioning or multi-tenant routing yet.
+- Nullable restaurantId added to content/config tables.
+- Existing rows are backfilled to Demo Restaurant.
+- Runtime queries are not tenant-scoped yet.
+- Operational transaction tables are not scoped yet.
+- restaurantId is not required yet.
 
 ## Feature Modules Foundation
 

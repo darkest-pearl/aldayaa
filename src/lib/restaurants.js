@@ -1,4 +1,5 @@
 export const DEMO_RESTAURANT_SLUG = 'demo-restaurant';
+export const DEMO_RESTAURANT_ID = DEMO_RESTAURANT_SLUG;
 
 export const RESTAURANT_STATUSES = Object.freeze([
   'DEMO',
@@ -8,7 +9,7 @@ export const RESTAURANT_STATUSES = Object.freeze([
 ]);
 
 const DEFAULT_DEMO_RESTAURANT = Object.freeze({
-  id: DEMO_RESTAURANT_SLUG,
+  id: DEMO_RESTAURANT_ID,
   name: 'Demo Restaurant',
   slug: DEMO_RESTAURANT_SLUG,
   status: 'DEMO',
@@ -44,4 +45,12 @@ export function getDemoRestaurantIdentity(overrides = {}) {
     ...DEFAULT_DEMO_RESTAURANT,
     ...overrides,
   });
+}
+
+export function getDemoRestaurantId() {
+  return DEMO_RESTAURANT_ID;
+}
+
+export function getDemoRestaurantWhere() {
+  return { id: DEMO_RESTAURANT_ID };
 }

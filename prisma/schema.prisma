@@ -8,24 +8,36 @@ datasource db {
 }
 
 model Restaurant {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  status    String   @default("DEMO")
-  type      String   @default("DEMO")
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String               @id @default(cuid())
+  name              String
+  slug              String               @unique
+  status            String               @default("DEMO")
+  type              String               @default("DEMO")
+  notes             String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  profiles          RestaurantProfile[]
+  settings          RestaurantSettings[]
+  menuCategories    MenuCategory[]
+  menuItems         MenuItem[]
+  galleryCategories GalleryCategory[]
+  photos            Photo[]
+  announcements     Announcement[]
+  tables            RestaurantTable[]
 }
 
 model MenuCategory {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  sortOrder   Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  items       MenuItem[]
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  items        MenuItem[]
+
+  @@index([restaurantId])
 }
 
 model MenuItem {
@@ -39,31 +51,42 @@ model MenuItem {
   isSignature Boolean              @default(false)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt
+  restaurantId String?
+  restaurant   Restaurant?          @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   categoryId  String
   category    MenuCategory         @relation(fields: [categoryId], references: [id])
   orders      OrderItem[]
   ingredients MenuItemIngredient[]
 
+  @@index([restaurantId])
   @@index([isSignature])
 }
 
 model GalleryCategory {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  photos    Photo[]
+  id           String      @id @default(cuid())
+  name         String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  photos       Photo[]
+
+  @@index([restaurantId])
 }
 
 model Photo {
-  id          String          @id @default(cuid())
-  title       String
-  description String?
-  imageUrl    String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  categoryId  String
-  category    GalleryCategory @relation(fields: [categoryId], references: [id])
+  id           String           @id @default(cuid())
+  title        String
+  description  String?
+  imageUrl     String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  restaurantId String?
+  restaurant   Restaurant?      @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  categoryId   String
+  category     GalleryCategory  @relation(fields: [categoryId], references: [id])
+
+  @@index([restaurantId])
 }
 
 model Reservation {
@@ -154,6 +177,10 @@ model RestaurantSettings {
   cancellationFee       Float   @default(0)
   workingHoursByDay     String?
   displayHours          String?
+  restaurantId          String?
+  restaurant            Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
 }
 
 model RestaurantProfile {
@@ -175,23 +202,30 @@ model RestaurantProfile {
   secondaryColor     String   @default("#183b32")
   currency           String   @default("AED")
   enabledFeatures    String   @default("[\"WEBSITE\",\"MENU\",\"GALLERY\",\"RESERVATIONS\",\"ONLINE_ORDERING\",\"ANNOUNCEMENTS\",\"CONTACT_WHATSAPP\"]")
+  restaurantId       String?
+  restaurant         Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@index([restaurantId])
 }
 
 model RestaurantTable {
-  id        String   @id @default(cuid())
-  label     String
-  slug      String   @unique
-  qrToken   String   @unique
-  seats     Int?
-  zone      String?
-  isActive  Boolean  @default(true)
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
+  id           String      @id @default(cuid())
+  label        String
+  slug         String      @unique
+  qrToken      String      @unique
+  seats        Int?
+  zone         String?
+  isActive     Boolean     @default(true)
+  notes        String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  orders       Order[]
 
+  @@index([restaurantId])
   @@index([isActive])
   @@index([zone])
 }
@@ -252,11 +286,15 @@ model InventoryMovement {
 }
 
 model Announcement {
-  id        String   @id @default(cuid())
-  message   String
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(cuid())
+  message      String
+  isActive     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
 }
 
 model GatewayLead {
