@@ -6,6 +6,7 @@ import { requireFeatureEnabled } from '../../../../../../lib/module-access';
 import { prisma } from '../../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../../lib/restaurant-profile';
 import { calculateRecipeConsumptionForOrder } from '../../../../../../lib/recipes';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../../../../lib/restaurants';
 
 export async function GET(request, { params }) {
   try {
@@ -13,11 +14,12 @@ export async function GET(request, { params }) {
     const profile = await getRestaurantProfile({ fallbackOnError: false });
     requireFeatureEnabled(profile, FEATURE_KEYS.RECIPE_CONSUMPTION);
 
-    const order = await prisma.order.findUnique({
-      where: { id: params.id },
+    const order = await prisma.order.findFirst({
+      where: withDemoRestaurantWhere({ id: params.id }),
       include: {
-        items: true,
+        items: { where: getDemoRestaurantFilter() },
         recipeConsumptions: {
+          where: getDemoRestaurantFilter(),
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
@@ -34,7 +36,7 @@ export async function GET(request, { params }) {
 
     const recipeIngredients = menuItemIds.length
       ? await prisma.menuItemIngredient.findMany({
-          where: { menuItemId: { in: menuItemIds } },
+          where: withDemoRestaurantWhere({ menuItemId: { in: menuItemIds } }),
           include: { inventoryItem: true },
           orderBy: { createdAt: 'asc' },
         })

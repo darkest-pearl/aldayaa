@@ -64,6 +64,14 @@ function assertOperationalTablesAreNotRestaurantScoped(schema, label) {
   }
 }
 
+function getExportedFunctionSource(source, functionName) {
+  const marker = `export async function ${functionName}`;
+  const start = source.indexOf(marker);
+  assert(start >= 0, `${functionName} function is missing`);
+  const next = source.indexOf('\nexport async function ', start + marker.length);
+  return next >= 0 ? source.slice(start, next) : source.slice(start);
+}
+
 function checkOrderHardening() {
   const orderRoute = read('src/app/api/orders/route.js');
   const itemSchemaMatch = orderRoute.match(/const itemSchema = z\.object\(\{[\s\S]*?\n\}\);/);
@@ -852,16 +860,6 @@ function checkRestaurantIdOperationalBackfill() {
     assertNotIncludes(migration, `UPDATE "${excluded}"`, `Excluded ${excluded} operational migration backfill`);
   }
 
-  const appSource = [
-    read('src/app/api/orders/route.js'),
-    read('src/app/api/reservations/route.js'),
-    read('src/app/api/admin/inventory/items/route.js'),
-    read('src/app/api/admin/inventory/movements/route.js'),
-    read('src/app/api/admin/recipes/ingredients/route.js'),
-    read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js'),
-    read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js'),
-  ].join('\n');
-  assertNotIncludes(appSource, 'restaurantId', 'Runtime operational route/query tenant scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after operational backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after operational backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'RestaurantId operational should not add provisioning API route');
@@ -927,7 +925,6 @@ function checkRestaurantContextHelper() {
   ].join('\n');
   assertNotIncludes(publicAdminRuntimeSource, 'getCurrentDemoRestaurant', 'Restaurant context helper public/admin broad query usage');
   assertNotIncludes(publicAdminRuntimeSource, 'getRestaurantWhereBySlug', 'Restaurant context helper public/admin slug query usage');
-  assertNotIncludes(publicAdminRuntimeSource, 'restaurantId:', 'Restaurant context helper public/admin broad tenant scoping');
   assertOperationalTablesAreNotRestaurantScoped(schema, 'Restaurant context helper excluded scope');
   assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after restaurant context helper');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after restaurant context helper');
@@ -997,23 +994,12 @@ function checkPublicDemoReadTenantScoping() {
 
   const orderRoute = read('src/app/api/orders/route.js');
   const reservationRoute = read('src/app/api/reservations/route.js');
-  assertNotIncludes(orderRoute, 'withDemoRestaurantWhere', 'Order creation route tenant scoping');
-  assertNotIncludes(orderRoute, 'restaurantId:', 'Order creation route restaurantId write/filter');
-  assertNotIncludes(reservationRoute, 'withDemoRestaurantWhere', 'Reservation creation route tenant scoping');
-  assertNotIncludes(reservationRoute, 'restaurantId:', 'Reservation creation route restaurantId write/filter');
-
-  const adminOperationalSource = [
-    read('src/app/api/admin/inventory/items/route.js'),
-    read('src/app/api/admin/inventory/movements/route.js'),
-    read('src/app/api/admin/recipes/ingredients/route.js'),
-    read('src/app/api/admin/recipes/menu-items/route.js'),
-    read('src/app/api/admin/kitchen/orders/route.js'),
-    read('src/app/api/admin/orders/assisted/route.js'),
-    read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js'),
-    read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js'),
-  ].join('\n');
-  assertNotIncludes(adminOperationalSource, 'withDemoRestaurantWhere', 'Admin operational route tenant scoping');
-  assertNotIncludes(adminOperationalSource, 'restaurantId:', 'Admin operational route restaurantId write/filter');
+  const orderPost = getExportedFunctionSource(orderRoute, 'POST');
+  const reservationPost = getExportedFunctionSource(reservationRoute, 'POST');
+  assertNotIncludes(orderPost, 'restaurantId:', 'Order creation route restaurantId write/filter');
+  assertNotIncludes(orderPost, 'withDemoRestaurantData', 'Order creation route tenant data helper');
+  assertNotIncludes(reservationPost, 'restaurantId:', 'Reservation creation route restaurantId write/filter');
+  assertNotIncludes(reservationPost, 'withDemoRestaurantData', 'Reservation creation route tenant data helper');
 
   assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo read scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo read scoping');
@@ -1031,6 +1017,151 @@ function checkPublicDemoReadTenantScoping() {
   assertIncludes(readme, 'Writes/admin operations are not tenant-scoped yet.', 'README public demo writes/admin scope note');
   assertIncludes(readme, 'Current routes are unchanged.', 'README public demo route stability note');
   assertIncludes(readme, 'Null restaurantId fallback is transitional.', 'README public demo null fallback note');
+}
+
+function checkRestaurantAdminDemoOperationTenantScoping() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+
+  const menuCategories = read('src/app/api/menu/categories/route.js');
+  const menuCategoryItem = read('src/app/api/menu/categories/[id]/route.js');
+  const menuItems = read('src/app/api/menu/items/route.js');
+  const menuItem = read('src/app/api/menu/items/[id]/route.js');
+  const galleryCategories = read('src/app/api/gallery/categories/route.js');
+  const galleryCategory = read('src/app/api/gallery/categories/[id]/route.js');
+  const galleryPhotos = read('src/app/api/gallery/photos/route.js');
+  const galleryPhoto = read('src/app/api/gallery/photos/[id]/route.js');
+  const profileRoute = read('src/app/api/admin/restaurant-profile/route.js');
+  const settingsRoute = read('src/app/api/admin/settings/route.js');
+  const announcementRoute = read('src/app/api/admin/announcement/route.js');
+  const tablesRoute = read('src/app/api/admin/tables/route.js');
+  const tableRoute = read('src/app/api/admin/tables/[id]/route.js');
+  const reservationsRoute = read('src/app/api/reservations/route.js');
+  const ordersRoute = read('src/app/api/orders/route.js');
+  const assistedOrderRoute = read('src/app/api/admin/orders/assisted/route.js');
+  const kitchenRoute = read('src/app/api/admin/kitchen/orders/route.js');
+  const inventoryItemsRoute = read('src/app/api/admin/inventory/items/route.js');
+  const inventoryItemRoute = read('src/app/api/admin/inventory/items/[id]/route.js');
+  const inventoryMovementsRoute = read('src/app/api/admin/inventory/movements/route.js');
+  const recipeMenuItemsRoute = read('src/app/api/admin/recipes/menu-items/route.js');
+  const recipeIngredientsRoute = read('src/app/api/admin/recipes/ingredients/route.js');
+  const recipeIngredientRoute = read('src/app/api/admin/recipes/ingredients/[id]/route.js');
+  const recipePreviewRoute = read('src/app/api/admin/orders/[id]/recipe-consumption-preview/route.js');
+  const recipeApplyRoute = read('src/app/api/admin/orders/[id]/apply-recipe-consumption/route.js');
+
+  assertIncludes(helper, 'withDemoRestaurantData', 'Restaurant admin demo data helper');
+  assertIncludes(helper, 'restaurantId: DEMO_RESTAURANT_ID', 'Restaurant admin demo data helper writes demo id');
+
+  for (const [source, label] of [
+    [menuCategories, 'admin menu categories route'],
+    [menuItems, 'admin menu items route'],
+    [galleryCategories, 'admin gallery categories route'],
+    [galleryPhotos, 'admin gallery photos route'],
+    [tablesRoute, 'admin tables route'],
+    [reservationsRoute, 'reservation admin route'],
+    [ordersRoute, 'order admin route'],
+    [assistedOrderRoute, 'assisted order route'],
+    [kitchenRoute, 'kitchen queue route'],
+    [inventoryItemsRoute, 'inventory items route'],
+    [inventoryMovementsRoute, 'inventory movements route'],
+    [recipeMenuItemsRoute, 'recipe menu items route'],
+    [recipeIngredientsRoute, 'recipe ingredients route'],
+    [recipePreviewRoute, 'recipe preview route'],
+    [recipeApplyRoute, 'recipe apply route'],
+  ]) {
+    assertIncludes(source, 'withDemoRestaurantWhere', `${label} demo read/update filter`);
+  }
+
+  for (const [source, label] of [
+    [menuCategories, 'menu category create'],
+    [menuItems, 'menu item create'],
+    [galleryCategories, 'gallery category create'],
+    [galleryPhotos, 'gallery photo create'],
+    [profileRoute, 'profile upsert'],
+    [settingsRoute, 'settings update'],
+    [announcementRoute, 'announcement upsert'],
+    [tablesRoute, 'table create'],
+    [assistedOrderRoute, 'assisted order create'],
+    [inventoryItemsRoute, 'inventory item create'],
+    [inventoryMovementsRoute, 'inventory movement create'],
+    [recipeIngredientsRoute, 'recipe ingredient create'],
+    [recipeApplyRoute, 'recipe consumption apply'],
+  ]) {
+    assertIncludes(source, 'withDemoRestaurantData', `${label} sets demo restaurantId`);
+  }
+
+  for (const [source, label] of [
+    [menuCategoryItem, 'menu category item route'],
+    [menuItem, 'menu item route'],
+    [galleryCategory, 'gallery category item route'],
+    [galleryPhoto, 'gallery photo route'],
+    [tableRoute, 'table item route'],
+    [inventoryItemRoute, 'inventory item route'],
+    [recipeIngredientRoute, 'recipe ingredient item route'],
+  ]) {
+    assertIncludes(source, 'withDemoRestaurantWhere', `${label} demo guard`);
+  }
+
+  assertIncludes(menuCategoryItem, 'prisma.menuCategory.findFirst', 'Menu category update/delete guarded read');
+  assertIncludes(menuCategoryItem, 'prisma.menuItem.deleteMany', 'Menu category delete scoped child cleanup');
+  assertIncludes(menuCategoryItem, 'prisma.menuCategory.deleteMany', 'Menu category scoped delete');
+  assertIncludes(menuItem, 'prisma.menuItem.findFirst', 'Menu item update/delete guarded read');
+  assertIncludes(menuItem, 'prisma.menuItem.deleteMany', 'Menu item scoped delete');
+  assertIncludes(galleryCategory, 'prisma.galleryCategory.findFirst', 'Gallery category update/delete guarded read');
+  assertIncludes(galleryCategory, 'prisma.photo.deleteMany', 'Gallery category delete scoped child cleanup');
+  assertIncludes(galleryPhoto, 'prisma.photo.findFirst', 'Gallery photo update/delete guarded read');
+  assertIncludes(announcementRoute, 'prisma.announcement.updateMany', 'Announcement sibling deactivation scoped update');
+  assertIncludes(tablesRoute, 'withDemoRestaurantData({', 'Table create demo restaurantId');
+  assertIncludes(tableRoute, 'prisma.restaurantTable.findFirst', 'Table update/delete guarded read');
+  assertIncludes(reservationsRoute, 'withDemoRestaurantWhere()', 'Reservation admin read scoped');
+  assertIncludes(reservationsRoute, 'withDemoRestaurantWhere({ id: parsed.data.id })', 'Reservation admin write guarded');
+  assertIncludes(ordersRoute, 'withDemoRestaurantWhere()', 'Order admin read scoped');
+  assertIncludes(ordersRoute, 'withDemoRestaurantWhere({ id: parsed.data.id })', 'Order admin update guarded');
+  assertIncludes(ordersRoute, 'withDemoRestaurantWhere({ orderId: parsed.data.id })', 'Order item delete scoped');
+  assertIncludes(assistedOrderRoute, 'items: {', 'Assisted order nested item creation');
+  assertIncludes(assistedOrderRoute, 'create: orderItems.map', 'Assisted order items receive demo restaurantId');
+  assertIncludes(kitchenRoute, 'withDemoRestaurantWhere({', 'Kitchen queue scoped status filter');
+  assertIncludes(inventoryMovementsRoute, 'tx.inventoryItem.findFirst', 'Inventory movement item guarded read');
+  assertIncludes(inventoryMovementsRoute, 'restaurantId: DEMO_RESTAURANT_ID', 'Inventory movement writes demo restaurantId');
+  assertIncludes(recipeMenuItemsRoute, 'where: getDemoRestaurantFilter()', 'Recipe menu item ingredient include scoped');
+  assertIncludes(recipeIngredientsRoute, 'prisma.menuItem.findFirst', 'Recipe ingredient menu item guarded read');
+  assertIncludes(recipeIngredientsRoute, 'prisma.inventoryItem.findFirst', 'Recipe ingredient inventory item guarded read');
+  assertIncludes(recipeIngredientRoute, 'prisma.menuItemIngredient.findFirst', 'Recipe ingredient update/delete guarded read');
+  assertIncludes(recipePreviewRoute, 'prisma.order.findFirst', 'Recipe preview order scoped read');
+  assertIncludes(recipePreviewRoute, 'where: getDemoRestaurantFilter()', 'Recipe preview order item include scoped');
+  assertIncludes(recipePreviewRoute, 'withDemoRestaurantWhere({ menuItemId: { in: menuItemIds } })', 'Recipe preview ingredient scoped read');
+  assertIncludes(recipeApplyRoute, 'withDemoRestaurantWhere({ orderId: order.id, status: \'APPLIED\' })', 'Recipe apply duplicate scoped read');
+  assertIncludes(recipeApplyRoute, 'tx.orderRecipeConsumption.create', 'Recipe apply consumption log create');
+  assertIncludes(recipeApplyRoute, 'withDemoRestaurantData({', 'Recipe apply writes demo restaurantId');
+
+  const orderPost = getExportedFunctionSource(ordersRoute, 'POST');
+  const reservationPost = getExportedFunctionSource(reservationsRoute, 'POST');
+  assertNotIncludes(orderPost, 'restaurantId:', 'Batch 38 public order creation restaurantId');
+  assertNotIncludes(orderPost, 'withDemoRestaurantData', 'Batch 38 public order creation data helper');
+  assertNotIncludes(reservationPost, 'restaurantId:', 'Batch 38 public reservation creation restaurantId');
+  assertNotIncludes(reservationPost, 'withDemoRestaurantData', 'Batch 38 public reservation creation data helper');
+
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'AdminUser tenant scoping');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'GatewayLead tenant scoping');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after admin demo operation scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after admin demo operation scoping');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Admin demo operation scoping should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Admin demo operation scoping should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Admin demo operation scoping should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Admin demo operation scoping should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Admin demo operation scoping should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Admin demo operation scoping Stripe dependency');
+
+  assertIncludes(readme, 'Restaurant admin demo operations are tenant-scoped to Demo Restaurant.', 'README admin demo operation scoping note');
+  assertIncludes(readme, 'Current URLs are unchanged.', 'README admin demo operation route stability note');
+  assertIncludes(readme, 'Transitional null restaurantId fallback remains.', 'README admin demo operation null fallback note');
+  assertIncludes(readme, 'New restaurant-owned admin records write restaurantId = demo-restaurant.', 'README admin demo operation write note');
+  assertIncludes(readme, 'AdminUser and GatewayLead remain platform/global for now.', 'README admin demo operation global model note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2055,7 +2186,7 @@ function checkRecipeIngredientMappingFoundation() {
   assertIncludes(ingredientsRoute, 'normalizeRecipeIngredientUnit(parsed.data.unit)', 'Recipe ingredient create unit normalization');
   assertIncludes(ingredientRoute, 'normalizeRecipeIngredientUnit(parsed.data.unit)', 'Recipe ingredient update unit normalization');
   assertIncludes(ingredientsRoute, 'isActive: true', 'Recipe ingredient active inventory guard');
-  assertIncludes(ingredientsRoute, 'prisma.menuItem.findUnique', 'Recipe ingredient menu item existence check');
+  assertIncludes(ingredientsRoute, 'prisma.menuItem.findFirst', 'Recipe ingredient menu item existence check');
   assertIncludes(ingredientsRoute, 'prisma.inventoryItem.findFirst', 'Recipe ingredient inventory item availability check');
 
   assertIncludes(page, 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'Recipes page feature key');
@@ -2145,8 +2276,8 @@ function checkRecipeConsumptionDryRun() {
   assertIncludes(route, 'FEATURE_KEYS.RECIPE_CONSUMPTION', 'Recipe preview API feature key');
   assertIncludes(route, 'getRestaurantProfile', 'Recipe preview API profile loading');
   assertIncludes(route, 'requireFeatureEnabled', 'Recipe preview API feature enforcement');
-  assertIncludes(route, 'prisma.order.findUnique', 'Recipe preview API order lookup');
-  assertIncludes(route, 'items: true', 'Recipe preview API order items include');
+  assertIncludes(route, 'prisma.order.findFirst', 'Recipe preview API order lookup');
+  assertIncludes(route, 'items: { where: getDemoRestaurantFilter() }', 'Recipe preview API order items include');
   assertIncludes(route, 'item.menuItemId || item.itemId', 'Recipe preview API historical itemId fallback');
   assertIncludes(route, 'prisma.menuItemIngredient.findMany', 'Recipe preview API recipe mapping lookup');
   assertIncludes(route, 'include: { inventoryItem: true }', 'Recipe preview API inventory item include');
@@ -2238,6 +2369,7 @@ const checks = [
   checkRestaurantIdOperationalBackfill,
   checkRestaurantContextHelper,
   checkPublicDemoReadTenantScoping,
+  checkRestaurantAdminDemoOperationTenantScoping,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

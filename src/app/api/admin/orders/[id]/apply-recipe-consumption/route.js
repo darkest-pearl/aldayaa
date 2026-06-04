@@ -12,6 +12,12 @@ import { requireFeatureEnabled } from '../../../../../../lib/module-access';
 import { prisma } from '../../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../../lib/restaurant-profile';
 import { calculateRecipeConsumptionForOrder } from '../../../../../../lib/recipes';
+import {
+  DEMO_RESTAURANT_ID,
+  getDemoRestaurantFilter,
+  withDemoRestaurantData,
+  withDemoRestaurantWhere,
+} from '../../../../../../lib/restaurants';
 
 const applySchema = z.object({
   notes: z.string().trim().max(500).optional().nullable(),
@@ -50,9 +56,9 @@ async function requireRecipeConsumptionApplyAccess(request) {
 }
 
 async function loadOrderWithRecipeIngredients(orderId) {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: { items: true },
+  const order = await prisma.order.findFirst({
+    where: withDemoRestaurantWhere({ id: orderId }),
+    include: { items: { where: getDemoRestaurantFilter() } },
   });
 
   if (!order) {
@@ -65,7 +71,7 @@ async function loadOrderWithRecipeIngredients(orderId) {
 
   const recipeIngredients = menuItemIds.length
     ? await prisma.menuItemIngredient.findMany({
-        where: { menuItemId: { in: menuItemIds } },
+        where: withDemoRestaurantWhere({ menuItemId: { in: menuItemIds } }),
         include: { inventoryItem: true },
         orderBy: { createdAt: 'asc' },
       })
@@ -135,7 +141,7 @@ export async function POST(request, { params }) {
 
     const { log, movements, updatedItems } = await prisma.$transaction(async (tx) => {
       const existingApplication = await tx.orderRecipeConsumption.findFirst({
-        where: { orderId: order.id, status: 'APPLIED' },
+        where: withDemoRestaurantWhere({ orderId: order.id, status: 'APPLIED' }),
       });
 
       if (existingApplication) {
@@ -143,7 +149,7 @@ export async function POST(request, { params }) {
       }
 
       const inventoryItems = await tx.inventoryItem.findMany({
-        where: { id: { in: inventoryItemIds } },
+        where: withDemoRestaurantWhere({ id: { in: inventoryItemIds } }),
       });
       const inventoryItemsById = new Map(inventoryItems.map((item) => [item.id, item]));
 
@@ -159,7 +165,7 @@ export async function POST(request, { params }) {
 
       for (const line of consumptionLines) {
         const movement = await tx.inventoryMovement.create({
-          data: {
+          data: withDemoRestaurantData({
             itemId: line.inventoryItemId,
             type: INVENTORY_MOVEMENT_TYPES.STOCK_OUT,
             quantity: toNumber(line.totalRequiredQuantity),
@@ -167,7 +173,8 @@ export async function POST(request, { params }) {
             source: 'ORDER_RECIPE_CONSUMPTION',
             createdByAdminId: admin.id,
             createdByAdminEmail: admin.email,
-          },
+            restaurantId: DEMO_RESTAURANT_ID,
+          }),
           include: { item: true },
         });
         movements.push(movement);
@@ -177,31 +184,31 @@ export async function POST(request, { params }) {
       for (const inventoryItemId of inventoryItemIds) {
         const requiredQuantity = toNumber(requiredByInventoryItemId.get(inventoryItemId));
         const updateResult = await tx.inventoryItem.updateMany({
-          where: {
+          where: withDemoRestaurantWhere({
             id: inventoryItemId,
             isActive: true,
             currentStock: { gte: requiredQuantity },
-          },
-          data: { currentStock: { decrement: requiredQuantity } },
+          }),
+          data: withDemoRestaurantData({ currentStock: { decrement: requiredQuantity } }),
         });
 
         if (updateResult.count !== 1) {
           throw new RecipeConsumptionApplyError('Recipe consumption cannot reduce stock below zero', 400);
         }
 
-        const updatedItem = await tx.inventoryItem.findUnique({
-          where: { id: inventoryItemId },
+        const updatedItem = await tx.inventoryItem.findFirst({
+          where: withDemoRestaurantWhere({ id: inventoryItemId }),
         });
         updatedItems.push(updatedItem);
       }
 
       const log = await tx.orderRecipeConsumption.create({
-        data: {
+        data: withDemoRestaurantData({
           orderId: order.id,
           appliedByAdminId: admin.id,
           appliedByAdminEmail: admin.email,
           notes: cleanOptionalString(parsed.data.notes),
-        },
+        }),
       });
 
       return { log, movements, updatedItems };

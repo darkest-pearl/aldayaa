@@ -6,6 +6,7 @@ import { normalizeInventoryItem } from '../../../../../lib/inventory';
 import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { prisma } from '../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
+import { getDemoRestaurantFilter, withDemoRestaurantWhere } from '../../../../../lib/restaurants';
 import {
   getMenuItemIngredientCount,
   hasRecipeMapping,
@@ -41,17 +42,19 @@ export async function GET(request) {
     await requireRecipeFeature(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const [menuItems, inventoryItems] = await Promise.all([
       prisma.menuItem.findMany({
+        where: withDemoRestaurantWhere(),
         orderBy: { name: 'asc' },
         include: {
           category: true,
           ingredients: {
+            where: getDemoRestaurantFilter(),
             include: { inventoryItem: true },
             orderBy: { createdAt: 'asc' },
           },
         },
       }),
       prisma.inventoryItem.findMany({
-        where: { isActive: true },
+        where: withDemoRestaurantWhere({ isActive: true }),
         orderBy: { name: 'asc' },
       }),
     ]);

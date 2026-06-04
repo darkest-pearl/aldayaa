@@ -8,6 +8,7 @@ import {
   generateTableSlug,
   normalizeTable,
 } from '../../../../lib/tables';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const tableSchema = z.object({
   label: z.string().trim().min(1).max(80),
@@ -55,6 +56,7 @@ export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
     const tables = await prisma.restaurantTable.findMany({
+      where: withDemoRestaurantWhere(),
       orderBy: [{ isActive: 'desc' }, { zone: 'asc' }, { label: 'asc' }],
     });
     const baseUrl = getBaseUrl(request);
@@ -77,7 +79,7 @@ export async function POST(request) {
     const slug = await generateUniqueSlug(parsed.data.label);
     const qrToken = await generateUniqueQrToken();
     const table = await prisma.restaurantTable.create({
-      data: {
+      data: withDemoRestaurantData({
         label: parsed.data.label.trim(),
         slug,
         qrToken,
@@ -85,7 +87,7 @@ export async function POST(request) {
         zone: cleanOptionalString(parsed.data.zone),
         notes: cleanOptionalString(parsed.data.notes),
         isActive: parsed.data.isActive ?? true,
-      },
+      }),
     });
 
     return success({ table: normalizeTable(table, getBaseUrl(request)) });

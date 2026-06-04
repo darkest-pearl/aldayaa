@@ -8,6 +8,11 @@ import { requireFeatureEnabled } from '../../../../../lib/module-access';
 import { getRestaurantProfile } from '../../../../../lib/restaurant-profile';
 import { generateReference } from '../../../../../lib/reference';
 import { ORDER_CONTEXTS, ORDER_SOURCES } from '../../../../../lib/order-status';
+import {
+  DEMO_RESTAURANT_ID,
+  withDemoRestaurantData,
+  withDemoRestaurantWhere,
+} from '../../../../../lib/restaurants';
 
 const itemSchema = z.object({
   id: z.string().trim().min(1),
@@ -46,11 +51,11 @@ export async function POST(request) {
 
     if (requestedTableId || requestedTableSlug) {
       tableContext = await prisma.restaurantTable.findFirst({
-        where: {
+        where: withDemoRestaurantWhere({
           ...(requestedTableId ? { id: requestedTableId } : {}),
           ...(requestedTableSlug ? { slug: requestedTableSlug } : {}),
           isActive: true,
-        },
+        }),
         select: { id: true, label: true, slug: true },
       });
 
@@ -61,7 +66,7 @@ export async function POST(request) {
 
     const itemIds = [...new Set(parsed.data.items.map((item) => item.id))];
     const menuItems = await prisma.menuItem.findMany({
-      where: { id: { in: itemIds } },
+      where: withDemoRestaurantWhere({ id: { in: itemIds } }),
       select: { id: true, name: true, price: true, isAvailable: true },
     });
     const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
@@ -84,6 +89,7 @@ export async function POST(request) {
         price: menuItem.price,
         quantity: item.quantity,
         menuItemId: menuItem.id,
+        restaurantId: DEMO_RESTAURANT_ID,
       };
     });
 
@@ -91,7 +97,7 @@ export async function POST(request) {
     const reference = generateReference();
 
     const order = await prisma.order.create({
-      data: {
+      data: withDemoRestaurantData({
         reference,
         name: parsed.data.name,
         phone: cleanOptionalString(parsed.data.phone) || '',
@@ -109,9 +115,9 @@ export async function POST(request) {
         createdByAdminId: admin.id,
         createdByAdminEmail: admin.email,
         items: {
-          create: orderItems,
+          create: orderItems.map((item) => withDemoRestaurantData(item)),
         },
-      },
+      }),
       include: { items: true, table: true },
     });
 

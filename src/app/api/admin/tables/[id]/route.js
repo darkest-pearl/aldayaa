@@ -4,6 +4,7 @@ import { requireAdmin } from '../../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../../lib/api-response';
 import { prisma } from '../../../../../lib/prisma';
 import { normalizeTable } from '../../../../../lib/tables';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../../lib/restaurants';
 
 const updateSchema = z.object({
   label: z.string().trim().min(1).max(80).optional(),
@@ -31,18 +32,18 @@ export async function PUT(request, { params }) {
       return failure('Invalid table payload', 400, { details: parsed.error.flatten() });
     }
 
-    const existing = await prisma.restaurantTable.findUnique({ where: { id: params.id } });
+    const existing = await prisma.restaurantTable.findFirst({ where: withDemoRestaurantWhere({ id: params.id }) });
     if (!existing) return failure('Table not found', 404);
 
     const table = await prisma.restaurantTable.update({
       where: { id: params.id },
-      data: {
+      data: withDemoRestaurantData({
         ...(parsed.data.label !== undefined ? { label: parsed.data.label.trim() } : {}),
         ...(parsed.data.seats !== undefined ? { seats: parsed.data.seats ?? null } : {}),
         ...(parsed.data.zone !== undefined ? { zone: cleanOptionalString(parsed.data.zone) } : {}),
         ...(parsed.data.notes !== undefined ? { notes: cleanOptionalString(parsed.data.notes) } : {}),
         ...(parsed.data.isActive !== undefined ? { isActive: parsed.data.isActive } : {}),
-      },
+      }),
     });
 
     return success({ table: normalizeTable(table, getBaseUrl(request)) });
@@ -54,12 +55,12 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER']);
-    const existing = await prisma.restaurantTable.findUnique({ where: { id: params.id } });
+    const existing = await prisma.restaurantTable.findFirst({ where: withDemoRestaurantWhere({ id: params.id }) });
     if (!existing) return failure('Table not found', 404);
 
     const table = await prisma.restaurantTable.update({
       where: { id: params.id },
-      data: { isActive: false },
+      data: withDemoRestaurantData({ isActive: false }),
     });
 
     return success({ table: normalizeTable(table, getBaseUrl(request)) });

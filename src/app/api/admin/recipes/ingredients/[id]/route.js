@@ -6,6 +6,7 @@ import { FEATURE_KEYS } from '../../../../../../lib/features';
 import { requireFeatureEnabled } from '../../../../../../lib/module-access';
 import { prisma } from '../../../../../../lib/prisma';
 import { getRestaurantProfile } from '../../../../../../lib/restaurant-profile';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../../../lib/restaurants';
 import {
   normalizeMenuItemIngredient,
   normalizeRecipeIngredientUnit,
@@ -39,7 +40,9 @@ export async function PUT(request, { params }) {
       return failure('Invalid recipe ingredient payload', 400, { details: parsed.error.flatten() });
     }
 
-    const existing = await prisma.menuItemIngredient.findUnique({ where: { id: params.id } });
+    const existing = await prisma.menuItemIngredient.findFirst({
+      where: withDemoRestaurantWhere({ id: params.id }),
+    });
     if (!existing) return failure('Recipe ingredient mapping not found', 404);
 
     if (parsed.data.quantity !== undefined && !validateRecipeIngredientQuantity(parsed.data.quantity)) {
@@ -48,28 +51,28 @@ export async function PUT(request, { params }) {
 
     if (parsed.data.inventoryItemId !== undefined && parsed.data.inventoryItemId !== existing.inventoryItemId) {
       const inventoryItem = await prisma.inventoryItem.findFirst({
-        where: { id: parsed.data.inventoryItemId, isActive: true },
+        where: withDemoRestaurantWhere({ id: parsed.data.inventoryItemId, isActive: true }),
       });
       if (!inventoryItem) return failure('Inventory item is not available', 404);
 
       const duplicate = await prisma.menuItemIngredient.findFirst({
-        where: {
+        where: withDemoRestaurantWhere({
           menuItemId: existing.menuItemId,
           inventoryItemId: parsed.data.inventoryItemId,
           NOT: { id: params.id },
-        },
+        }),
       });
       if (duplicate) return failure('This inventory item is already mapped to the selected menu item', 409);
     }
 
     const ingredient = await prisma.menuItemIngredient.update({
       where: { id: params.id },
-      data: {
+      data: withDemoRestaurantData({
         ...(parsed.data.inventoryItemId !== undefined ? { inventoryItemId: parsed.data.inventoryItemId } : {}),
         ...(parsed.data.quantity !== undefined ? { quantity: parsed.data.quantity } : {}),
         ...(parsed.data.unit !== undefined ? { unit: normalizeRecipeIngredientUnit(parsed.data.unit) } : {}),
         ...(parsed.data.notes !== undefined ? { notes: cleanOptionalString(parsed.data.notes) } : {}),
-      },
+      }),
       include: { inventoryItem: true },
     });
 
@@ -82,15 +85,15 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     await requireRecipeFeature(request, ['ADMIN', 'MANAGER']);
-    const existing = await prisma.menuItemIngredient.findUnique({ where: { id: params.id } });
-    if (!existing) return failure('Recipe ingredient mapping not found', 404);
-
-    const ingredient = await prisma.menuItemIngredient.delete({
-      where: { id: params.id },
+    const existing = await prisma.menuItemIngredient.findFirst({
+      where: withDemoRestaurantWhere({ id: params.id }),
       include: { inventoryItem: true },
     });
+    if (!existing) return failure('Recipe ingredient mapping not found', 404);
 
-    return success({ ingredient: normalizeMenuItemIngredient(ingredient) });
+    await prisma.menuItemIngredient.deleteMany({ where: withDemoRestaurantWhere({ id: params.id }) });
+
+    return success({ ingredient: normalizeMenuItemIngredient(existing) });
   } catch (error) {
     return handleApiError(error);
   }

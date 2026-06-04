@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 import { prisma } from "./prisma";
+import { getDemoRestaurantOrGlobalWhere, withDemoRestaurantData } from "./restaurants";
 
 /** Ordered list of valid week days for working hours. */
 export const DAYS_OF_WEEK = [
@@ -114,17 +115,22 @@ function parseDisplayHours(displayHours, openingTime, closingTime) {
  */
 export async function getRestaurantSettings() {
   try {
-    const settings = await prisma.restaurantSettings.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        ...defaultSettings,
-        workingHoursByDay: JSON.stringify(defaultSettings.workingHoursByDay),
-        displayHours: JSON.stringify(defaultSettings.displayHours),
-      },
+    let settings = await prisma.restaurantSettings.findFirst({
+      where: getDemoRestaurantOrGlobalWhere({ id: 1 }),
+      orderBy: { restaurantId: "asc" },
     });
 
-  const workingHoursByDay = normalizeWorkingHoursByDay(
+    if (!settings) {
+      settings = await prisma.restaurantSettings.create({
+        data: withDemoRestaurantData({
+          ...defaultSettings,
+          workingHoursByDay: JSON.stringify(defaultSettings.workingHoursByDay),
+          displayHours: JSON.stringify(defaultSettings.displayHours),
+        }),
+      });
+    }
+
+    const workingHoursByDay = normalizeWorkingHoursByDay(
       settings.workingHoursByDay,
       settings.openingTime || defaultSettings.openingTime,
       settings.closingTime || defaultSettings.closingTime,
@@ -145,14 +151,14 @@ export async function getRestaurantSettings() {
     if (shouldPersistWorkingHours) {
       await prisma.restaurantSettings.update({
         where: { id: settings.id },
-        data: { workingHoursByDay: serializedWorkingHours },
+        data: withDemoRestaurantData({ workingHoursByDay: serializedWorkingHours }),
       });
     }
 
     if (shouldPersistDisplayHours) {
       await prisma.restaurantSettings.update({
         where: { id: settings.id },
-        data: { displayHours: serializedDisplayHours },
+        data: withDemoRestaurantData({ displayHours: serializedDisplayHours }),
       });
     }
 

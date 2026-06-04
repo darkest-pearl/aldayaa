@@ -9,6 +9,7 @@ import {
   getRestaurantSettings,
   normalizeWorkingHoursByDay,
 } from '../../../../lib/restaurant-settings';
+import { withDemoRestaurantData } from '../../../../lib/restaurants';
 
 const displayHoursSchema = z
   .object({
@@ -92,16 +93,15 @@ export async function PUT(request) {
 
     const settings = await prisma.restaurantSettings.update({
       where: { id: 1 },
-      data: {
+      data: withDemoRestaurantData({
         openingTime: parsed.data.openingTime,
         closingTime: parsed.data.closingTime,
         allowCancelPaid: Boolean(parsed.data.allowCancelPaid),
         allowCancelInProgress: Boolean(parsed.data.allowCancelInProgress),
         cancellationFee: parsed.data.cancellationFee ?? 0,
         workingHoursByDay: JSON.stringify(normalizedWorkingHours),
-        displayHours: nextDisplayHours,
         displayHours: JSON.stringify(nextDisplayHours),
-      },
+      }),
     });
 
     return success({

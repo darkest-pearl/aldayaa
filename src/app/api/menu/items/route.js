@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { requireAdmin } from '../../../../lib/auth';
 import { handleApiError, success, failure } from '../../../../lib/api-response';
-import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
+import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const imagePathSchema = z
   .string()
@@ -42,8 +42,14 @@ export async function POST(request) {
     const parsed = itemSchema.safeParse(body);
     if (!parsed.success) return failure('Invalid item payload', 400, { details: parsed.error.flatten() });
 
+    const category = await prisma.menuCategory.findFirst({
+      where: withDemoRestaurantWhere({ id: parsed.data.categoryId }),
+      select: { id: true },
+    });
+    if (!category) return failure('Category not found', 404);
+
     const item = await prisma.menuItem.create({
-      data: {
+      data: withDemoRestaurantData({
         name: parsed.data.name,
         description: parsed.data.description || '',
         price: parsed.data.price,
@@ -51,7 +57,7 @@ export async function POST(request) {
         isAvailable: parsed.data.isAvailable !== false,
         imageUrl: parsed.data.imageUrl || null,
         recommended: Boolean(parsed.data.recommended),
-      },
+      }),
     });
     return success({ item });
   } catch (error) {
