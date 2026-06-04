@@ -86,6 +86,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform placeholder pages polished.
 - Roadmap placeholders only.
 - No DB models/billing/provisioning/multi-tenancy added.
+- Multi-tenant architecture planning document added.
+- Planning only.
+- No schema/runtime changes yet.
+- No multi-tenancy implemented yet.
 
 ## Feature Modules Foundation
 

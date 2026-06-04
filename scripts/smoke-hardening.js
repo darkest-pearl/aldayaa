@@ -537,6 +537,68 @@ function checkPlatformPlaceholderPagePolish() {
   assertIncludes(readme, 'No DB models/billing/provisioning/multi-tenancy added.', 'README platform placeholder scope note');
 }
 
+function checkMultitenantArchitecturePlan() {
+  const schema = read('prisma/schema.prisma');
+  const packageJson = read('package.json');
+  const readme = read('README.md');
+  const planPath = path.join(root, 'docs/MULTITENANT_ARCHITECTURE_PLAN.md');
+
+  assert(fs.existsSync(planPath), 'Multi-tenant architecture planning document is missing');
+
+  const plan = read('docs/MULTITENANT_ARCHITECTURE_PLAN.md');
+  for (const expected of [
+    'Current state summary',
+    'Target architecture',
+    'Route strategy',
+    'Data ownership mapping',
+    'Platform-owned data',
+    'Migration strategy',
+    'Auth and role strategy',
+    'Risk list',
+    'Recommended first implementation batch',
+    'Batch 33: Add Restaurant model and seed Demo Restaurant without changing runtime behavior',
+    'planning only',
+    'Do not implement in this batch',
+  ]) {
+    assertIncludes(plan, expected, `Multi-tenant architecture plan section ${expected}`);
+  }
+
+  for (const modelName of [
+    'MenuItem',
+    'MenuCategory',
+    'Photo',
+    'Reservation',
+    'Order',
+    'OrderItem',
+    'RestaurantTable',
+    'InventoryItem',
+    'InventoryMovement',
+    'MenuItemIngredient',
+    'RestaurantProfile',
+    'Announcement',
+    'AdminUser',
+    'GatewayLead',
+  ]) {
+    assertIncludes(plan, modelName, `Multi-tenant plan data mapping ${modelName}`);
+  }
+
+  assertIncludes(readme, 'Multi-tenant architecture planning document added.', 'README multi-tenant plan note');
+  assertIncludes(readme, 'Planning only.', 'README planning-only note');
+  assertIncludes(readme, 'No schema/runtime changes yet.', 'README no schema/runtime note');
+  assertIncludes(readme, 'No multi-tenancy implemented yet.', 'README no multi-tenancy implementation note');
+
+  assertIncludes(schema, 'model RestaurantProfile', 'Existing RestaurantProfile model');
+  assertIncludes(schema, 'id                 Int      @id @default(1)', 'Existing singleton RestaurantProfile id');
+  assertNotIncludes(schema, 'model Restaurant {', 'Multi-tenant Restaurant model');
+  assertNotIncludes(schema, 'restaurantId', 'Restaurant-scoped schema fields');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Multi-tenant plan should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Multi-tenant plan should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Multi-tenant plan should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Multi-tenant plan should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Multi-tenant plan should not add CRM API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Multi-tenant plan Stripe dependency');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -1734,6 +1796,7 @@ const checks = [
   checkGatewayPackagePricingPolish,
   checkProductionRouteQaVerification,
   checkPlatformPlaceholderPagePolish,
+  checkMultitenantArchitecturePlan,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
