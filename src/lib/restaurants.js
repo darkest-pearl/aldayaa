@@ -74,6 +74,30 @@ export function getRestaurantWhereBySlug(slug) {
   return { slug: cleanString(slug, DEMO_RESTAURANT_SLUG) };
 }
 
+export async function getRestaurantBySlug(slug, { fallbackOnError = true } = {}) {
+  const restaurantSlug = cleanString(slug).toLowerCase();
+  if (!restaurantSlug) return null;
+
+  if (!process.env.DATABASE_URL) {
+    return restaurantSlug === DEMO_RESTAURANT_SLUG ? getDemoRestaurantIdentity() : null;
+  }
+
+  try {
+    const restaurant = await prisma.restaurant.findFirst({
+      where: getRestaurantWhereBySlug(restaurantSlug),
+    });
+
+    return restaurant ? normalizeRestaurant(restaurant) : null;
+  } catch (error) {
+    if (!fallbackOnError) {
+      throw error;
+    }
+
+    console.error('Failed to load restaurant tenant by slug', error);
+    return restaurantSlug === DEMO_RESTAURANT_SLUG ? getDemoRestaurantIdentity() : null;
+  }
+}
+
 export function getDemoRestaurantFilter() {
   return {
     OR: [
