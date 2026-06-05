@@ -131,7 +131,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Backed by the Restaurant table.
 - Shows the Demo Restaurant tenant anchor.
 - Links to the tenant public route.
-- No create/edit/delete/provisioning yet.
+- No billing/subscriptions/custom domains yet.
+- Platform client restaurant tenant creation added.
+- Creates only Restaurant tenant anchor records.
+- No full provisioning yet.
+- No profile/settings/menu/admin user creation yet.
+- Non-demo public routes are not active yet.
 - No billing/subscriptions/custom domains yet.
 
 ## Feature Modules Foundation
