@@ -138,6 +138,8 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - No profile/settings/menu/admin user creation yet.
 - Non-demo public routes are not active yet.
 - No billing/subscriptions/custom domains yet.
+- Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.
+- Next safe step is a schema migration that makes RestaurantProfile and RestaurantSettings tenant-safe.
 
 ## Feature Modules Foundation
 
