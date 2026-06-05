@@ -713,7 +713,6 @@ function checkRestaurantTenantAnchorModel() {
   assertIncludes(clientRestaurantsPage, 'real client provisioning is not implemented yet', 'Platform client restaurants no provisioning copy');
   assertNotIncludes(clientRestaurantsPage, 'prisma.', 'Platform client restaurants placeholder database query');
 
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Restaurant tenant anchor should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Restaurant tenant anchor should not add billing API route');
@@ -796,7 +795,6 @@ function checkRestaurantIdContentConfigBackfill() {
     read('src/app/api/admin/tables/route.js'),
   ].join('\n');
   assertNotIncludes(appSource, 'restaurantId', 'Runtime route/query tenant scoping');
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after content/config backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after content/config backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'RestaurantId content/config should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'RestaurantId content/config should not add billing API route');
@@ -860,7 +858,6 @@ function checkRestaurantIdOperationalBackfill() {
     assertNotIncludes(migration, `UPDATE "${excluded}"`, `Excluded ${excluded} operational migration backfill`);
   }
 
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after operational backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after operational backfill');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'RestaurantId operational should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'RestaurantId operational should not add billing API route');
@@ -926,7 +923,6 @@ function checkRestaurantContextHelper() {
   assertNotIncludes(publicAdminRuntimeSource, 'getCurrentDemoRestaurant', 'Restaurant context helper public/admin broad query usage');
   assertNotIncludes(publicAdminRuntimeSource, 'getRestaurantWhereBySlug', 'Restaurant context helper public/admin slug query usage');
   assertOperationalTablesAreNotRestaurantScoped(schema, 'Restaurant context helper excluded scope');
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after restaurant context helper');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after restaurant context helper');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Restaurant context helper should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Restaurant context helper should not add billing API route');
@@ -941,7 +937,7 @@ function checkRestaurantContextHelper() {
   assertIncludes(readme, 'Restaurant context helper added.', 'README restaurant context helper note');
   assertIncludes(readme, 'Helper resolves Demo Restaurant tenant identity.', 'README restaurant context helper identity note');
   assertIncludes(readme, 'Runtime route behavior is not broadly tenant-scoped yet.', 'README restaurant context helper runtime scope note');
-  assertIncludes(readme, 'No new tenant routes/provisioning yet.', 'README restaurant context helper no routes note');
+  assertIncludes(readme, 'No client restaurant provisioning yet.', 'README restaurant context helper no provisioning note');
 }
 
 function checkPublicDemoReadTenantScoping() {
@@ -999,7 +995,6 @@ function checkPublicDemoReadTenantScoping() {
   assertNotIncludes(orderPost, 'requireAdmin', 'Public order creation route admin auth');
   assertNotIncludes(reservationPost, 'requireAdmin', 'Public reservation creation route admin auth');
 
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo read scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo read scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Public demo read scoping should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Public demo read scoping should not add billing API route');
@@ -1143,7 +1138,6 @@ function checkRestaurantAdminDemoOperationTenantScoping() {
   assertNotIncludes(adminUserBlock, 'restaurantId', 'AdminUser tenant scoping');
   assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'GatewayLead tenant scoping');
 
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after admin demo operation scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after admin demo operation scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Admin demo operation scoping should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Admin demo operation scoping should not add billing API route');
@@ -1192,7 +1186,6 @@ function checkPublicDemoWriteTenantScoping() {
   assertNotIncludes(adminUserBlock, 'restaurantId', 'Public demo writes AdminUser scoping');
   assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Public demo writes GatewayLead scoping');
 
-  assert(!fs.existsSync(path.join(root, 'src/app/r/[restaurantSlug]')), 'Tenant public slug route should not exist yet after public demo write scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet after public demo write scoping');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Public demo write scoping should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Public demo write scoping should not add billing API route');
@@ -1210,7 +1203,123 @@ function checkPublicDemoWriteTenantScoping() {
   assertIncludes(readme, 'Public orders and reservations now write restaurantId = demo-restaurant.', 'README public demo write restaurantId note');
   assertIncludes(readme, 'Current URLs are unchanged.', 'README public demo write route stability note');
   assertIncludes(readme, 'AdminUser and GatewayLead remain global/platform-owned.', 'README public demo write global model note');
-  assertIncludes(readme, 'No tenant routes/provisioning yet.', 'README public demo write no provisioning note');
+  assertIncludes(readme, 'No client restaurant provisioning yet.', 'README public demo write no provisioning note');
+}
+
+function checkTenantPublicRouteAlias() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const helper = read('src/lib/restaurants.js');
+
+  const tenantLayoutPath = path.join(root, 'src/app/r/[restaurantSlug]/layout.js');
+  const tenantHelperPath = path.join(root, 'src/app/r/[restaurantSlug]/tenant-route.js');
+  const tenantHomePath = path.join(root, 'src/app/r/[restaurantSlug]/page.js');
+  const tenantMenuPath = path.join(root, 'src/app/r/[restaurantSlug]/menu/page.js');
+  const tenantOrderPath = path.join(root, 'src/app/r/[restaurantSlug]/order/page.js');
+  const tenantGalleryPath = path.join(root, 'src/app/r/[restaurantSlug]/gallery/page.js');
+  const tenantTablePath = path.join(root, 'src/app/r/[restaurantSlug]/table/[slug]/page.js');
+
+  for (const [routePath, label] of [
+    [tenantLayoutPath, '/r/[restaurantSlug] layout'],
+    [tenantHelperPath, '/r/[restaurantSlug] tenant helper'],
+    [tenantHomePath, '/r/[restaurantSlug] route'],
+    [tenantMenuPath, '/r/[restaurantSlug]/menu route'],
+    [tenantOrderPath, '/r/[restaurantSlug]/order route'],
+    [tenantGalleryPath, '/r/[restaurantSlug]/gallery route'],
+    [tenantTablePath, '/r/[restaurantSlug]/table/[slug] route'],
+  ]) {
+    assert(fs.existsSync(routePath), `${label} is missing`);
+  }
+
+  const tenantLayout = read('src/app/r/[restaurantSlug]/layout.js');
+  const tenantHelper = read('src/app/r/[restaurantSlug]/tenant-route.js');
+  const tenantHome = read('src/app/r/[restaurantSlug]/page.js');
+  const tenantMenu = read('src/app/r/[restaurantSlug]/menu/page.js');
+  const tenantOrder = read('src/app/r/[restaurantSlug]/order/page.js');
+  const tenantGallery = read('src/app/r/[restaurantSlug]/gallery/page.js');
+  const tenantTable = read('src/app/r/[restaurantSlug]/table/[slug]/page.js');
+  const publicHome = read('src/app/public/page.js');
+  const publicMenu = read('src/app/public/menu/page.js');
+  const publicOrder = read('src/app/public/order/page.js');
+  const publicGallery = read('src/app/public/gallery/page.js');
+  const publicTable = read('src/app/public/table/[slug]/page.js');
+  const orderRoute = read('src/app/api/orders/route.js');
+  const reservationRoute = read('src/app/api/reservations/route.js');
+  const orderPost = getExportedFunctionSource(orderRoute, 'POST');
+  const reservationPost = getExportedFunctionSource(reservationRoute, 'POST');
+
+  assertIncludes(helper, 'getRestaurantBySlug', 'Restaurant helper tenant slug resolver');
+  assertIncludes(helper, 'getRestaurantWhereBySlug(restaurantSlug)', 'Restaurant helper slug where usage');
+  assertIncludes(helper, 'restaurantSlug === DEMO_RESTAURANT_SLUG', 'Restaurant helper demo slug fallback');
+  assertIncludes(tenantHelper, 'getRestaurantBySlug', 'Tenant route helper resolves slug');
+  assertIncludes(tenantHelper, 'DEMO_RESTAURANT_SLUG', 'Tenant route helper demo slug validation');
+  assertIncludes(tenantHelper, 'notFound()', 'Tenant route helper unknown slug 404');
+  assertIncludes(tenantHelper, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Tenant route helper only supports demo restaurant');
+
+  assertIncludes(tenantLayout, '../../public/layout', 'Tenant alias uses public layout');
+  assertIncludes(tenantHome, '../../public/page', 'Tenant home aliases public page');
+  assertIncludes(tenantMenu, '../../../public/menu/page', 'Tenant menu aliases public menu');
+  assertIncludes(tenantOrder, '../../../public/order/page', 'Tenant order aliases public order');
+  assertIncludes(tenantGallery, '../../../public/gallery/page', 'Tenant gallery aliases public gallery');
+  assertIncludes(tenantTable, '../../../../public/table/[slug]/page', 'Tenant table aliases public table page');
+
+  for (const [source, label] of [
+    [tenantHome, 'tenant home'],
+    [tenantMenu, 'tenant menu'],
+    [tenantOrder, 'tenant order'],
+    [tenantGallery, 'tenant gallery'],
+    [tenantTable, 'tenant table'],
+  ]) {
+    assertIncludes(source, 'requireDemoTenantRestaurant(params)', `${label} validates demo tenant slug`);
+  }
+
+  assertIncludes(publicHome, 'withDemoRestaurantWhere({ recommended: true })', 'Tenant alias public home scoped read');
+  assertIncludes(publicMenu, 'withDemoRestaurantWhere()', 'Tenant alias public menu category scoped read');
+  assertIncludes(publicMenu, 'where: getDemoRestaurantFilter()', 'Tenant alias public menu item scoped read');
+  assertIncludes(publicOrder, 'withDemoRestaurantWhere()', 'Tenant alias public order category scoped read');
+  assertIncludes(publicOrder, 'where: getDemoRestaurantFilter()', 'Tenant alias public order item scoped read');
+  assertIncludes(publicOrder, 'withDemoRestaurantWhere({ slug, qrToken: tableToken, isActive: true })', 'Tenant alias public order table scoped read');
+  assertIncludes(publicGallery, 'withDemoRestaurantWhere()', 'Tenant alias public gallery category scoped read');
+  assertIncludes(publicGallery, 'where: getDemoRestaurantFilter()', 'Tenant alias public gallery photo scoped read');
+  assertIncludes(publicTable, 'withDemoRestaurantWhere({ slug })', 'Tenant alias public table scoped read');
+  assertIncludes(orderPost, 'data: withDemoRestaurantData({', 'Tenant alias order write keeps restaurantId stamping');
+  assertIncludes(orderPost, 'create: orderItems.map((item) => withDemoRestaurantData(item))', 'Tenant alias order item write keeps restaurantId stamping');
+  assertIncludes(reservationPost, 'data: withDemoRestaurantData({', 'Tenant alias reservation write keeps restaurantId stamping');
+
+  for (const publicRoutePath of [
+    'src/app/public/page.js',
+    'src/app/public/menu/page.js',
+    'src/app/public/order/page.js',
+    'src/app/public/gallery/page.js',
+    'src/app/public/table/[slug]/page.js',
+  ]) {
+    assert(fs.existsSync(path.join(root, publicRoutePath)), `${publicRoutePath} should still exist`);
+  }
+
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'Tenant public alias AdminUser scoping');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Tenant public alias GatewayLead scoping');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant public alias should not add restaurants slug route yet');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Tenant public alias should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant public alias should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant public alias should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Tenant public alias should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Tenant public alias should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant public alias should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant public alias should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Tenant public alias Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Tenant public alias nodemailer dependency');
+  assertNotIncludes([tenantHome, tenantMenu, tenantOrder, tenantGallery, tenantTable].join('\n'), 'sendMail', 'Tenant public alias email sending');
+  assertNotIncludes([tenantHome, tenantMenu, tenantOrder, tenantGallery, tenantTable].join('\n'), 'sendWhatsApp', 'Tenant public alias WhatsApp sending');
+
+  assertIncludes(readme, 'Tenant-style public route alias added.', 'README tenant public alias note');
+  assertIncludes(readme, '`/r/demo-restaurant` works as a tenant-style alias.', 'README tenant public alias route note');
+  assertIncludes(readme, '`/public` remains the demo shortcut.', 'README tenant public alias public shortcut note');
+  assertIncludes(readme, 'Only the Demo Restaurant slug is supported for now.', 'README tenant public alias supported slug note');
+  assertIncludes(readme, 'No provisioning/custom domains yet.', 'README tenant public alias no provisioning note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2420,6 +2529,7 @@ const checks = [
   checkPublicDemoReadTenantScoping,
   checkRestaurantAdminDemoOperationTenantScoping,
   checkPublicDemoWriteTenantScoping,
+  checkTenantPublicRouteAlias,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

@@ -107,7 +107,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Restaurant context helper added.
 - Helper resolves Demo Restaurant tenant identity.
 - Runtime route behavior is not broadly tenant-scoped yet.
-- No new tenant routes/provisioning yet.
+- No client restaurant provisioning yet.
 - Public demo reads are tenant-scoped to Demo Restaurant.
 - Public demo read scoping keeps current routes unchanged.
 - Current routes are unchanged.
@@ -121,7 +121,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Public orders and reservations now write restaurantId = demo-restaurant.
 - Current URLs are unchanged.
 - AdminUser and GatewayLead remain global/platform-owned.
-- No tenant routes/provisioning yet.
+- No client restaurant provisioning yet.
+- Tenant-style public route alias added.
+- `/r/demo-restaurant` works as a tenant-style alias.
+- `/public` remains the demo shortcut.
+- Only the Demo Restaurant slug is supported for now.
+- No provisioning/custom domains yet.
 
 ## Feature Modules Foundation
 
