@@ -83,6 +83,19 @@ const defaultSettings = {
   displayHours: createDefaultDisplayHours(),
 };
 
+export function getDefaultRestaurantSettingsData(overrides = {}) {
+  const settings = {
+    ...defaultSettings,
+    ...overrides,
+  };
+
+  return {
+    ...settings,
+    workingHoursByDay: JSON.stringify(settings.workingHoursByDay || defaultSettings.workingHoursByDay),
+    displayHours: JSON.stringify(settings.displayHours || defaultSettings.displayHours),
+  };
+}
+
 function parseDisplayHours(displayHours, openingTime, closingTime) {
   const defaults = createDefaultDisplayHours(openingTime, closingTime);
   const provided = (() => {
@@ -121,11 +134,7 @@ export async function getRestaurantSettings() {
 
     if (!settings) {
       settings = await prisma.restaurantSettings.create({
-        data: withDemoRestaurantData({
-          ...defaultSettings,
-          workingHoursByDay: JSON.stringify(defaultSettings.workingHoursByDay),
-          displayHours: JSON.stringify(defaultSettings.displayHours),
-        }),
+        data: withDemoRestaurantData(getDefaultRestaurantSettingsData()),
       });
     }
 
