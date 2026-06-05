@@ -127,6 +127,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - `/public` remains the demo shortcut.
 - Only the Demo Restaurant slug is supported for now.
 - No provisioning/custom domains yet.
+- Platform client restaurant registry added.
+- Backed by the Restaurant table.
+- Shows the Demo Restaurant tenant anchor.
+- Links to the tenant public route.
+- No create/edit/delete/provisioning yet.
+- No billing/subscriptions/custom domains yet.
 
 ## Feature Modules Foundation
 
