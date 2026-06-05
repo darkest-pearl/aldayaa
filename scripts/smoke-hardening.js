@@ -1433,6 +1433,72 @@ function checkPlatformClientRestaurantCreate() {
   assertIncludes(readme, 'No billing/subscriptions/custom domains yet.', 'README client restaurant create billing note');
 }
 
+function checkClientRestaurantProfileSettingsInitBlocker() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const blockerPath = path.join(root, 'docs/CLIENT_RESTAURANT_PROFILE_SETTINGS_INIT_BLOCKER.md');
+  const action = read('src/app/platform-admin/(protected)/client-restaurants/actions.js');
+  const page = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+
+  const profileBlock = getModelBlock(schema, 'RestaurantProfile');
+  const settingsBlock = getModelBlock(schema, 'RestaurantSettings');
+  assertIncludes(profileBlock, 'id                 Int      @id @default(1)', 'RestaurantProfile singleton id blocker');
+  assertIncludes(settingsBlock, 'id                    Int     @id @default(1)', 'RestaurantSettings singleton id blocker');
+
+  assert(fs.existsSync(blockerPath), 'Client restaurant profile/settings initialization blocker doc is missing');
+  const blocker = read('docs/CLIENT_RESTAURANT_PROFILE_SETTINGS_INIT_BLOCKER.md');
+  assertIncludes(blocker, 'Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.', 'Blocker doc title');
+  assertIncludes(blocker, 'RestaurantProfile.id', 'Blocker doc RestaurantProfile id detail');
+  assertIncludes(blocker, 'RestaurantSettings.id', 'Blocker doc RestaurantSettings id detail');
+  assertIncludes(blocker, 'Do not initialize per-restaurant profile/settings rows yet', 'Blocker doc no unsafe init');
+  assertIncludes(blocker, 'Next safe migration', 'Blocker doc next migration section');
+  assertIncludes(blocker, 'make profile/settings identity tenant-safe', 'Blocker doc migration purpose');
+  assertIncludes(blocker, 'backfill Demo Restaurant', 'Blocker doc demo backfill');
+  assertIncludes(blocker, 'preserve existing Demo Restaurant behavior', 'Blocker doc demo preservation');
+
+  assertNotIncludes(action, 'initializeRestaurantBasics', 'Client restaurant init action should not exist while blocked');
+  assertNotIncludes(action, 'restaurantProfile.create', 'Blocked init should not create RestaurantProfile');
+  assertNotIncludes(action, 'restaurantSettings.create', 'Blocked init should not create RestaurantSettings');
+  assertNotIncludes(action, 'restaurantProfile.upsert', 'Blocked init should not upsert RestaurantProfile');
+  assertNotIncludes(action, 'restaurantSettings.upsert', 'Blocked init should not upsert RestaurantSettings');
+  assertNotIncludes(page, 'Initialize profile/settings', 'Blocked init UI should not show unsafe action');
+
+  for (const forbidden of [
+    'menuCategory',
+    'menuItem',
+    'galleryCategory',
+    'photo',
+    'order.',
+    'reservation',
+    'inventoryItem',
+    'menuItemIngredient',
+    'adminUser',
+    'gatewayLead',
+  ]) {
+    assertNotIncludes(action, forbidden, `Blocked init should not touch ${forbidden}`);
+  }
+
+  assertIncludes(page, 'Tenant public route is not active for non-demo restaurants yet.', 'Blocked init keeps non-demo route inactive');
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'Blocked init AdminUser scoping');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Blocked init GatewayLead scoping');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Blocked init should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Blocked init should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Blocked init should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Blocked init should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Blocked init should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Blocked init should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Blocked init should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Blocked init Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Blocked init nodemailer dependency');
+
+  assertIncludes(readme, 'Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.', 'README client init blocker note');
+  assertIncludes(readme, 'Next safe step is a schema migration that makes RestaurantProfile and RestaurantSettings tenant-safe.', 'README client init next migration note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -2643,6 +2709,7 @@ const checks = [
   checkTenantPublicRouteAlias,
   checkPlatformClientRestaurantRegistry,
   checkPlatformClientRestaurantCreate,
+  checkClientRestaurantProfileSettingsInitBlocker,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
