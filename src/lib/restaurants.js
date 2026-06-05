@@ -10,6 +10,18 @@ export const RESTAURANT_STATUSES = Object.freeze([
   'ARCHIVED',
 ]);
 
+export const RESERVED_RESTAURANT_SLUGS = Object.freeze([
+  'public',
+  'admin',
+  'platform-admin',
+  'api',
+  'r',
+  'demo',
+  'login',
+  'settings',
+  'dashboard',
+]);
+
 const DEFAULT_DEMO_RESTAURANT = Object.freeze({
   id: DEMO_RESTAURANT_ID,
   name: 'Demo Restaurant',
@@ -38,6 +50,50 @@ function getDemoRestaurantCreateData(overrides = {}) {
 
 export function isValidRestaurantStatus(status) {
   return RESTAURANT_STATUSES.includes(status);
+}
+
+export function normalizeRestaurantSlug(input) {
+  return cleanString(input).toLowerCase();
+}
+
+export function isValidRestaurantSlug(slug) {
+  const normalizedSlug = normalizeRestaurantSlug(slug);
+  return (
+    Boolean(normalizedSlug) &&
+    normalizedSlug === cleanString(slug) &&
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug) &&
+    !RESERVED_RESTAURANT_SLUGS.includes(normalizedSlug)
+  );
+}
+
+export function validateRestaurantSlug(slug) {
+  const normalizedSlug = normalizeRestaurantSlug(slug);
+
+  if (!normalizedSlug) {
+    return { valid: false, slug: normalizedSlug, error: 'Restaurant slug is required.' };
+  }
+
+  if (normalizedSlug !== cleanString(slug)) {
+    return {
+      valid: false,
+      slug: normalizedSlug,
+      error: 'Use lowercase letters, numbers, and hyphens only.',
+    };
+  }
+
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+    return {
+      valid: false,
+      slug: normalizedSlug,
+      error: 'Use lowercase letters, numbers, and hyphens only. Do not use spaces.',
+    };
+  }
+
+  if (RESERVED_RESTAURANT_SLUGS.includes(normalizedSlug)) {
+    return { valid: false, slug: normalizedSlug, error: 'This slug is reserved. Choose another slug.' };
+  }
+
+  return { valid: true, slug: normalizedSlug, error: null };
 }
 
 export function normalizeRestaurant(restaurant = {}) {
