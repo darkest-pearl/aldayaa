@@ -4,12 +4,12 @@ import { handleApiError, success } from '../../../../../lib/api-response';
 import { requireAdmin } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
 import {
-  defaultRestaurantProfile,
   getNeutralDemoRestaurantProfile,
   getRestaurantProfile,
   setRestaurantProfileCache,
   toPrismaRestaurantProfileData,
 } from '../../../../../lib/restaurant-profile';
+import { DEMO_RESTAURANT_ID, withDemoRestaurantData } from '../../../../../lib/restaurants';
 
 export async function POST(request) {
   try {
@@ -21,11 +21,11 @@ export async function POST(request) {
     });
 
     const profile = await prisma.restaurantProfile.upsert({
-      where: { id: defaultRestaurantProfile.id },
-      create: toPrismaRestaurantProfileData({
+      where: { restaurantId: DEMO_RESTAURANT_ID },
+      create: withDemoRestaurantData(toPrismaRestaurantProfileData({
         ...neutralProfile,
         enabledFeatures: existingProfile.enabledFeatures,
-      }),
+      })),
       update: toPrismaRestaurantProfileData({
         ...neutralProfile,
         enabledFeatures: existingProfile.enabledFeatures,

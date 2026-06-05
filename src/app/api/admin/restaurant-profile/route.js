@@ -10,7 +10,7 @@ import {
   setRestaurantProfileCache,
   toPrismaRestaurantProfileData,
 } from '../../../../lib/restaurant-profile';
-import { withDemoRestaurantData } from '../../../../lib/restaurants';
+import { DEMO_RESTAURANT_ID, withDemoRestaurantData } from '../../../../lib/restaurants';
 
 const optionalUrlSchema = z
   .string()
@@ -83,7 +83,7 @@ export async function PUT(request) {
 
     const updates = cleanProfilePayload(parsed.data);
     const profile = await prisma.restaurantProfile.upsert({
-      where: { id: 1 },
+      where: { restaurantId: DEMO_RESTAURANT_ID },
       create: {
         ...withDemoRestaurantData(toPrismaRestaurantProfileData(defaultRestaurantProfile)),
         ...withDemoRestaurantData(updates),

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { prisma } from "./prisma";
-import { getDemoRestaurantOrGlobalWhere, withDemoRestaurantData } from "./restaurants";
+import { getDemoRestaurantFilter, withDemoRestaurantData } from "./restaurants";
 
 /** Ordered list of valid week days for working hours. */
 export const DAYS_OF_WEEK = [
@@ -74,7 +74,6 @@ export function normalizeWorkingHoursByDay(workingHoursByDay, fallbackOpeningTim
 }
 
 const defaultSettings = {
-  id: 1,
   openingTime: "08:00",
   closingTime: "23:00",
   allowCancelPaid: false,
@@ -116,7 +115,7 @@ function parseDisplayHours(displayHours, openingTime, closingTime) {
 export async function getRestaurantSettings() {
   try {
     let settings = await prisma.restaurantSettings.findFirst({
-      where: getDemoRestaurantOrGlobalWhere({ id: 1 }),
+      where: getDemoRestaurantFilter(),
       orderBy: { restaurantId: "asc" },
     });
 

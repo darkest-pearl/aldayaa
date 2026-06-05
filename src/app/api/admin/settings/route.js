@@ -92,7 +92,7 @@ export async function PUT(request) {
       : fallbackDisplayHours;
 
     const settings = await prisma.restaurantSettings.update({
-      where: { id: 1 },
+      where: { id: existingSettings.id },
       data: withDemoRestaurantData({
         openingTime: parsed.data.openingTime,
         closingTime: parsed.data.closingTime,
