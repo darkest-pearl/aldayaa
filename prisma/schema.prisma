@@ -190,7 +190,7 @@ model AdminUser {
 }
 
 model RestaurantSettings {
-  id                    Int     @id @default(1)
+  id                    Int     @id @default(autoincrement())
   openingTime           String
   closingTime           String
   allowCancelPaid       Boolean @default(false)
@@ -202,10 +202,11 @@ model RestaurantSettings {
   restaurant            Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
 
   @@index([restaurantId])
+  @@unique([restaurantId])
 }
 
 model RestaurantProfile {
-  id                 Int      @id @default(1)
+  id                 Int      @id @default(autoincrement())
   restaurantName     String   @default("Demo Restaurant")
   tagline            String   @default("A configurable restaurant demo for modern digital operations.")
   cuisineType        String   @default("Demo cuisine")
@@ -229,6 +230,7 @@ model RestaurantProfile {
   updatedAt          DateTime @updatedAt
 
   @@index([restaurantId])
+  @@unique([restaurantId])
 }
 
 model RestaurantTable {

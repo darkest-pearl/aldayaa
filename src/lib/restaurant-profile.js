@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { getDefaultEnabledFeatures, normalizeEnabledFeatures } from './features';
-import { getDemoRestaurantOrGlobalWhere, withDemoRestaurantData } from './restaurants';
+import { DEMO_RESTAURANT_ID, getDemoRestaurantFilter, withDemoRestaurantData } from './restaurants';
 import { strings } from './strings';
 
 export function getNeutralDemoRestaurantProfile(overrides = {}) {
@@ -123,8 +123,8 @@ async function createDefaultRestaurantProfile() {
     return setRestaurantProfileCache(profile);
   } catch (error) {
     if (error?.code === 'P2002') {
-      const profile = await prisma.restaurantProfile.findUnique({
-        where: { id: defaultRestaurantProfile.id },
+      const profile = await prisma.restaurantProfile.findFirst({
+        where: { restaurantId: DEMO_RESTAURANT_ID },
       });
 
       if (profile) {
@@ -156,7 +156,7 @@ export async function ensureRestaurantProfile() {
 
 async function loadRestaurantProfileFromDatabase({ ensureExists }) {
   const profile = await prisma.restaurantProfile.findFirst({
-    where: getDemoRestaurantOrGlobalWhere({ id: defaultRestaurantProfile.id }),
+    where: getDemoRestaurantFilter(),
     orderBy: { restaurantId: 'asc' },
   });
 

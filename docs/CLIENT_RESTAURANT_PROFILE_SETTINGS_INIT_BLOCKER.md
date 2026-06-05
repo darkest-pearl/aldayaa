@@ -2,6 +2,8 @@
 
 Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.
 
+Blocker status: resolved by Batch 44 schema migration.
+
 Batch 43 inspected the current tenant foundation before adding an initialization action for non-demo restaurants. The safe implementation is blocked because the current profile/settings models still carry singleton identity from the original demo app:
 
 - `RestaurantProfile.id` is `Int @id @default(1)`.
@@ -10,6 +12,17 @@ Batch 43 inspected the current tenant foundation before adding an initialization
 That shape is safe for the existing Demo Restaurant singleton behavior, but it is not safe for creating one profile/settings pair per client restaurant. A platform action that creates rows for `test-restaurant` or any future client would either collide with the singleton `id = 1` default or require ad hoc manual IDs that are not supported by the schema contract.
 
 Do not initialize per-restaurant profile/settings rows yet.
+
+Batch 44 changes the schema so the identity blocker is removed:
+
+- RestaurantProfile.id now uses `autoincrement()`.
+- RestaurantSettings.id now uses `autoincrement()`.
+- Each model has a unique `restaurantId` constraint while `restaurantId` remains nullable during the transition.
+- The Demo Restaurant rows remain backfilled to `restaurantId = demo-restaurant`.
+
+one profile/settings row per restaurant is now possible at the schema level.
+
+Initialization UI/action still comes next.
 
 ## Next safe migration
 

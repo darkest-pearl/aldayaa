@@ -613,7 +613,6 @@ function checkMultitenantArchitecturePlan() {
   assertIncludes(readme, 'Multi-tenancy was not implemented in Batch 32.', 'README no multi-tenancy implementation note');
 
   assertIncludes(schema, 'model RestaurantProfile', 'Existing RestaurantProfile model');
-  assertIncludes(schema, 'id                 Int      @id @default(1)', 'Existing singleton RestaurantProfile id');
   assertOperationalTablesAreNotRestaurantScoped(schema, 'Multi-tenant plan operational tenant scope');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Multi-tenant plan should not add billing API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Multi-tenant plan should not add payments API route');
@@ -954,7 +953,7 @@ function checkPublicDemoReadTenantScoping() {
   assertIncludes(publicTable, 'withDemoRestaurantWhere({ slug })', 'Public table lookup tenant filter');
   assertIncludes(publicTable, 'restaurantTable.findFirst', 'Public table lookup no longer uses unique slug only');
   assertIncludes(announcementHelper, 'withDemoRestaurantWhere({ isActive: true })', 'Public active announcement tenant filter');
-  assertIncludes(profileHelper, 'getDemoRestaurantOrGlobalWhere({ id: defaultRestaurantProfile.id })', 'Restaurant profile tenant filter');
+  assertIncludes(profileHelper, 'where: getDemoRestaurantFilter()', 'Restaurant profile tenant filter');
 
   assertIncludes(menuCategoriesApi, 'withDemoRestaurantWhere()', 'Menu categories API GET tenant filter');
   assertIncludes(menuCategoriesApi, 'where: getDemoRestaurantFilter()', 'Menu categories API included items tenant filter');
@@ -1433,29 +1432,65 @@ function checkPlatformClientRestaurantCreate() {
   assertIncludes(readme, 'No billing/subscriptions/custom domains yet.', 'README client restaurant create billing note');
 }
 
-function checkClientRestaurantProfileSettingsInitBlocker() {
+function checkTenantSafeProfileSettingsSchema() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
   const readme = read('README.md');
   const blockerPath = path.join(root, 'docs/CLIENT_RESTAURANT_PROFILE_SETTINGS_INIT_BLOCKER.md');
+  const migrationPath = path.join(root, 'prisma/migrations/20260605043000_make_profile_settings_tenant_safe/migration.sql');
+  const profileHelper = read('src/lib/restaurant-profile.js');
+  const settingsHelper = read('src/lib/restaurant-settings.js');
+  const profileRoute = read('src/app/api/admin/restaurant-profile/route.js');
+  const settingsRoute = read('src/app/api/admin/settings/route.js');
+  const resetRoute = read('src/app/api/platform/demo-profile/reset/route.js');
   const action = read('src/app/platform-admin/(protected)/client-restaurants/actions.js');
   const page = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
 
   const profileBlock = getModelBlock(schema, 'RestaurantProfile');
   const settingsBlock = getModelBlock(schema, 'RestaurantSettings');
-  assertIncludes(profileBlock, 'id                 Int      @id @default(1)', 'RestaurantProfile singleton id blocker');
-  assertIncludes(settingsBlock, 'id                    Int     @id @default(1)', 'RestaurantSettings singleton id blocker');
+  assertIncludes(profileBlock, 'id                 Int      @id @default(autoincrement())', 'RestaurantProfile tenant-safe generated id');
+  assertIncludes(settingsBlock, 'id                    Int     @id @default(autoincrement())', 'RestaurantSettings tenant-safe generated id');
+  assertNotIncludes(profileBlock, '@default(1)', 'RestaurantProfile singleton id default');
+  assertNotIncludes(settingsBlock, '@default(1)', 'RestaurantSettings singleton id default');
+  assertIncludes(profileBlock, '@@unique([restaurantId])', 'RestaurantProfile unique restaurantId constraint');
+  assertIncludes(settingsBlock, '@@unique([restaurantId])', 'RestaurantSettings unique restaurantId constraint');
 
   assert(fs.existsSync(blockerPath), 'Client restaurant profile/settings initialization blocker doc is missing');
+  assert(fs.existsSync(migrationPath), 'Tenant-safe profile/settings migration is missing');
+  const migration = read('prisma/migrations/20260605043000_make_profile_settings_tenant_safe/migration.sql');
   const blocker = read('docs/CLIENT_RESTAURANT_PROFILE_SETTINGS_INIT_BLOCKER.md');
-  assertIncludes(blocker, 'Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.', 'Blocker doc title');
-  assertIncludes(blocker, 'RestaurantProfile.id', 'Blocker doc RestaurantProfile id detail');
-  assertIncludes(blocker, 'RestaurantSettings.id', 'Blocker doc RestaurantSettings id detail');
-  assertIncludes(blocker, 'Do not initialize per-restaurant profile/settings rows yet', 'Blocker doc no unsafe init');
-  assertIncludes(blocker, 'Next safe migration', 'Blocker doc next migration section');
-  assertIncludes(blocker, 'make profile/settings identity tenant-safe', 'Blocker doc migration purpose');
-  assertIncludes(blocker, 'backfill Demo Restaurant', 'Blocker doc demo backfill');
-  assertIncludes(blocker, 'preserve existing Demo Restaurant behavior', 'Blocker doc demo preservation');
+
+  assertIncludes(migration, 'UPDATE "RestaurantProfile"', 'Tenant-safe migration profile demo backfill');
+  assertIncludes(migration, 'UPDATE "RestaurantSettings"', 'Tenant-safe migration settings demo backfill');
+  assertIncludes(migration, 'SET "restaurantId" = \'demo-restaurant\'', 'Tenant-safe migration demo restaurant backfill id');
+  assertIncludes(migration, 'CREATE SEQUENCE IF NOT EXISTS "RestaurantProfile_id_seq"', 'Tenant-safe migration profile sequence');
+  assertIncludes(migration, 'CREATE SEQUENCE IF NOT EXISTS "RestaurantSettings_id_seq"', 'Tenant-safe migration settings sequence');
+  assertIncludes(migration, 'MAX("id") FROM "RestaurantProfile"', 'Tenant-safe migration profile sequence max id');
+  assertIncludes(migration, 'MAX("id") FROM "RestaurantSettings"', 'Tenant-safe migration settings sequence max id');
+  assertIncludes(migration, 'ALTER COLUMN "id" SET DEFAULT nextval', 'Tenant-safe migration generated id default');
+  assertIncludes(migration, 'CREATE UNIQUE INDEX "RestaurantProfile_restaurantId_key"', 'Tenant-safe migration profile unique restaurantId');
+  assertIncludes(migration, 'CREATE UNIQUE INDEX "RestaurantSettings_restaurantId_key"', 'Tenant-safe migration settings unique restaurantId');
+  assertIncludes(migration, 'unique indexes allow multiple NULL values', 'Tenant-safe migration nullable restaurantId note');
+
+  assertIncludes(profileHelper, 'where: getDemoRestaurantFilter()', 'Tenant-safe profile helper demo tenant lookup');
+  assertIncludes(profileHelper, 'where: { restaurantId: DEMO_RESTAURANT_ID }', 'Tenant-safe profile helper duplicate fallback');
+  assertNotIncludes(profileHelper, 'getDemoRestaurantOrGlobalWhere({ id: defaultRestaurantProfile.id })', 'Tenant-safe profile helper id-only filter');
+  assertNotIncludes(profileHelper, 'restaurantProfile.findUnique', 'Tenant-safe profile helper id-only findUnique');
+  assertIncludes(settingsHelper, 'where: getDemoRestaurantFilter()', 'Tenant-safe settings helper demo tenant lookup');
+  assertNotIncludes(settingsHelper, 'getDemoRestaurantOrGlobalWhere({ id: 1 })', 'Tenant-safe settings helper id-only filter');
+  assertNotIncludes(settingsHelper, 'id: 1,', 'Tenant-safe settings helper singleton default id');
+  assertIncludes(profileRoute, 'where: { restaurantId: DEMO_RESTAURANT_ID }', 'Tenant-safe admin profile route restaurantId upsert');
+  assertNotIncludes(profileRoute, 'where: { id: 1 }', 'Tenant-safe admin profile route no singleton upsert');
+  assertIncludes(settingsRoute, 'where: { id: existingSettings.id }', 'Tenant-safe admin settings route loaded row update');
+  assertNotIncludes(settingsRoute, 'where: { id: 1 }', 'Tenant-safe admin settings route no singleton update');
+  assertIncludes(resetRoute, 'where: { restaurantId: DEMO_RESTAURANT_ID }', 'Tenant-safe demo reset route restaurantId upsert');
+  assertIncludes(resetRoute, 'withDemoRestaurantData(toPrismaRestaurantProfileData', 'Tenant-safe demo reset route create restaurantId');
+
+  assertIncludes(blocker, 'Blocker status: resolved by Batch 44 schema migration.', 'Blocker doc resolved status');
+  assertIncludes(blocker, 'Initialization UI/action still comes next.', 'Blocker doc initialization next note');
+  assertIncludes(blocker, 'RestaurantProfile.id now uses `autoincrement()`', 'Blocker doc profile resolved detail');
+  assertIncludes(blocker, 'RestaurantSettings.id now uses `autoincrement()`', 'Blocker doc settings resolved detail');
+  assertIncludes(blocker, 'one profile/settings row per restaurant is now possible', 'Blocker doc tenant-safe possibility');
 
   assertNotIncludes(action, 'initializeRestaurantBasics', 'Client restaurant init action should not exist while blocked');
   assertNotIncludes(action, 'restaurantProfile.create', 'Blocked init should not create RestaurantProfile');
@@ -1495,8 +1530,10 @@ function checkClientRestaurantProfileSettingsInitBlocker() {
   assertNotIncludes(packageJson, '"stripe"', 'Blocked init Stripe dependency');
   assertNotIncludes(packageJson, '"nodemailer"', 'Blocked init nodemailer dependency');
 
-  assertIncludes(readme, 'Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.', 'README client init blocker note');
-  assertIncludes(readme, 'Next safe step is a schema migration that makes RestaurantProfile and RestaurantSettings tenant-safe.', 'README client init next migration note');
+  assertIncludes(readme, 'RestaurantProfile/RestaurantSettings tenant-safe schema migration added.', 'README tenant-safe profile/settings migration note');
+  assertIncludes(readme, 'Profile/settings id defaults no longer use singleton constants.', 'README tenant-safe no singleton default note');
+  assertIncludes(readme, 'One profile/settings row per restaurant is now possible.', 'README tenant-safe per restaurant note');
+  assertIncludes(readme, 'Profile/settings initialization UI/action still has not been added yet.', 'README tenant-safe no init action note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -1907,7 +1944,7 @@ function checkRestaurantProfileFoundation() {
   assertIncludes(schema, 'model RestaurantProfile', 'RestaurantProfile Prisma model');
   assertIncludes(schema, 'enabledFeatures', 'RestaurantProfile enabledFeatures field');
   assertIncludes(helper, 'getRestaurantProfile', 'Restaurant profile helper');
-  assertIncludes(helper, 'restaurantProfile.findUnique', 'Restaurant profile read-first lookup');
+  assertIncludes(helper, 'restaurantProfile.findFirst', 'Restaurant profile tenant read lookup');
   assertNotIncludes(helper, 'restaurantProfile.upsert', 'Restaurant profile helper normal read path');
   assertIncludes(helper, 'ensureRestaurantProfile', 'Restaurant profile controlled default creation helper');
   assertIncludes(helper, 'pendingProfileLoad', 'Restaurant profile concurrent read guard');
@@ -2709,7 +2746,7 @@ const checks = [
   checkTenantPublicRouteAlias,
   checkPlatformClientRestaurantRegistry,
   checkPlatformClientRestaurantCreate,
-  checkClientRestaurantProfileSettingsInitBlocker,
+  checkTenantSafeProfileSettingsSchema,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
