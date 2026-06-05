@@ -1487,17 +1487,35 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(resetRoute, 'withDemoRestaurantData(toPrismaRestaurantProfileData', 'Tenant-safe demo reset route create restaurantId');
 
   assertIncludes(blocker, 'Blocker status: resolved by Batch 44 schema migration.', 'Blocker doc resolved status');
-  assertIncludes(blocker, 'Initialization UI/action still comes next.', 'Blocker doc initialization next note');
+  assertIncludes(blocker, 'Initialization action status: added in Batch 45.', 'Blocker doc initialization added status');
   assertIncludes(blocker, 'RestaurantProfile.id now uses `autoincrement()`', 'Blocker doc profile resolved detail');
   assertIncludes(blocker, 'RestaurantSettings.id now uses `autoincrement()`', 'Blocker doc settings resolved detail');
   assertIncludes(blocker, 'one profile/settings row per restaurant is now possible', 'Blocker doc tenant-safe possibility');
+  assertIncludes(blocker, 'creates only missing `RestaurantProfile` and/or `RestaurantSettings` rows', 'Blocker doc init missing-only scope');
+  assertIncludes(blocker, 'does not activate non-demo `/r/[slug]` public routes', 'Blocker doc non-demo route boundary');
 
-  assertNotIncludes(action, 'initializeRestaurantBasics', 'Client restaurant init action should not exist while blocked');
-  assertNotIncludes(action, 'restaurantProfile.create', 'Blocked init should not create RestaurantProfile');
-  assertNotIncludes(action, 'restaurantSettings.create', 'Blocked init should not create RestaurantSettings');
-  assertNotIncludes(action, 'restaurantProfile.upsert', 'Blocked init should not upsert RestaurantProfile');
-  assertNotIncludes(action, 'restaurantSettings.upsert', 'Blocked init should not upsert RestaurantSettings');
-  assertNotIncludes(page, 'Initialize profile/settings', 'Blocked init UI should not show unsafe action');
+  const initAction = getExportedFunctionSource(action, 'initializeRestaurantBasics');
+  assertIncludes(action, 'initializeRestaurantBasics', 'Client restaurant profile/settings init action');
+  assertIncludes(initAction, 'getAdminFromRequest(cookies())', 'Client restaurant init ADMIN auth lookup');
+  assertIncludes(initAction, "admin.role !== 'ADMIN'", 'Client restaurant init ADMIN-only role guard');
+  assertIncludes(initAction, 'prisma.restaurant.findUnique', 'Client restaurant init target Restaurant lookup');
+  assertIncludes(initAction, 'prisma.restaurantProfile.findUnique', 'Client restaurant init profile restaurantId lookup');
+  assertIncludes(initAction, 'where: { restaurantId: restaurant.id }', 'Client restaurant init restaurantId ownership lookup');
+  assertIncludes(initAction, 'prisma.restaurantSettings.findUnique', 'Client restaurant init settings restaurantId lookup');
+  assertIncludes(initAction, 'prisma.restaurantProfile.create', 'Client restaurant init creates missing RestaurantProfile');
+  assertIncludes(initAction, 'prisma.restaurantSettings.create', 'Client restaurant init creates missing RestaurantSettings');
+  assertIncludes(initAction, 'if (!existingProfile)', 'Client restaurant init does not overwrite existing profile');
+  assertIncludes(initAction, 'if (!existingSettings)', 'Client restaurant init does not overwrite existing settings');
+  assertNotIncludes(initAction, 'restaurantProfile.upsert', 'Client restaurant init should not upsert RestaurantProfile');
+  assertNotIncludes(initAction, 'restaurantSettings.upsert', 'Client restaurant init should not upsert RestaurantSettings');
+  assertIncludes(initAction, 'already initialized', 'Client restaurant init already initialized message');
+  assertIncludes(initAction, 'partially initialized', 'Client restaurant init partially initialized message');
+  assertIncludes(page, 'profile/settings status', 'Client restaurant registry profile/settings status copy');
+  assertIncludes(page, 'hasProfile', 'Client restaurant registry profile status data');
+  assertIncludes(page, 'hasSettings', 'Client restaurant registry settings status data');
+  assertIncludes(page, 'Initialize profile/settings', 'Client restaurant registry initialize button');
+  assertIncludes(page, 'Creates basic profile/settings only. Does not create menu, admin users, or activate public tenant route.', 'Client restaurant init scope copy');
+  assertIncludes(page, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Client restaurant init non-demo guard');
 
   for (const forbidden of [
     'menuCategory',
@@ -1533,7 +1551,10 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(readme, 'RestaurantProfile/RestaurantSettings tenant-safe schema migration added.', 'README tenant-safe profile/settings migration note');
   assertIncludes(readme, 'Profile/settings id defaults no longer use singleton constants.', 'README tenant-safe no singleton default note');
   assertIncludes(readme, 'One profile/settings row per restaurant is now possible.', 'README tenant-safe per restaurant note');
-  assertIncludes(readme, 'Profile/settings initialization UI/action still has not been added yet.', 'README tenant-safe no init action note');
+  assertIncludes(readme, 'Client restaurant profile/settings initialization added.', 'README client restaurant init note');
+  assertIncludes(readme, 'Creates only missing RestaurantProfile and RestaurantSettings rows.', 'README client restaurant init missing-only note');
+  assertIncludes(readme, 'No full provisioning/menu/admin user/public activation yet.', 'README client restaurant init provisioning boundary');
+  assertIncludes(readme, 'Non-demo public routes remain inactive.', 'README client restaurant init route boundary');
 }
 
 function checkGatewayLeadAdminManagement() {

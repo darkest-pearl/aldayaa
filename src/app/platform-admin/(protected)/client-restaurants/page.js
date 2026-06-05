@@ -4,7 +4,7 @@ import {
   DEMO_RESTAURANT_SLUG,
   normalizeRestaurant,
 } from '../../../../lib/restaurants';
-import { createClientRestaurant } from './actions';
+import { createClientRestaurant, initializeRestaurantBasics } from './actions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Client Restaurants | Platform Admin' };
@@ -16,13 +16,25 @@ async function getClientRestaurants() {
 
   try {
     const restaurants = await prisma.restaurant.findMany({
+      include: {
+        _count: {
+          select: {
+            profiles: true,
+            settings: true,
+          },
+        },
+      },
       orderBy: [
         { createdAt: 'asc' },
         { name: 'asc' },
       ],
     });
 
-    return restaurants.map(normalizeRestaurant);
+    return restaurants.map((restaurant) => ({
+      ...normalizeRestaurant(restaurant),
+      hasProfile: restaurant._count?.profiles > 0,
+      hasSettings: restaurant._count?.settings > 0,
+    }));
   } catch (error) {
     console.error('Failed to load client restaurant registry', error);
     return [];
@@ -41,6 +53,18 @@ function formatDate(value) {
 function StatusPill({ children }) {
   return (
     <span className="inline-flex w-fit rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+      {children}
+    </span>
+  );
+}
+
+function SetupPill({ ready, children }) {
+  return (
+    <span
+      className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${
+        ready ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-900'
+      }`}
+    >
       {children}
     </span>
   );
@@ -86,6 +110,44 @@ function TenantActionLinks({ restaurant }) {
         </Link>
       ) : null}
       <span className="sr-only">{tenantHref}</span>
+    </div>
+  );
+}
+
+function InitializationControls({ restaurant }) {
+  const isDemoRestaurant = restaurant.slug === DEMO_RESTAURANT_SLUG;
+  const fullyInitialized = restaurant.hasProfile && restaurant.hasSettings;
+
+  if (isDemoRestaurant) {
+    return (
+      <p className="text-sm leading-6 text-neutral-600">
+        Demo Restaurant uses the dedicated reset controls. Existing demo behavior is unchanged.
+      </p>
+    );
+  }
+
+  if (fullyInitialized) {
+    return (
+      <p className="text-sm font-semibold text-emerald-800">
+        Profile/settings initialized. Tenant public route is not active for non-demo restaurants yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="max-w-3xl text-sm leading-6 text-neutral-600">
+        Creates basic profile/settings only. Does not create menu, admin users, or activate public tenant route.
+      </p>
+      <form action={initializeRestaurantBasics}>
+        <input type="hidden" name="restaurantId" value={restaurant.id} />
+        <button
+          type="submit"
+          className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#18362f]"
+        >
+          Initialize profile/settings
+        </button>
+      </form>
     </div>
   );
 }
@@ -219,6 +281,27 @@ function RestaurantCard({ restaurant }) {
           <dd className="mt-1 text-neutral-900">{formatDate(restaurant.updatedAt)}</dd>
         </div>
       </dl>
+
+      <section className="mt-5 rounded-lg border border-neutral-100 bg-neutral-50 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">
+              profile/settings status
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <SetupPill ready={restaurant.hasProfile}>
+                Profile {restaurant.hasProfile ? 'initialized' : 'missing'}
+              </SetupPill>
+              <SetupPill ready={restaurant.hasSettings}>
+                Settings {restaurant.hasSettings ? 'initialized' : 'missing'}
+              </SetupPill>
+            </div>
+          </div>
+          <div className="lg:max-w-md">
+            <InitializationControls restaurant={restaurant} />
+          </div>
+        </div>
+      </section>
     </article>
   );
 }
@@ -240,6 +323,7 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
   const restaurants = await getClientRestaurants();
   const error = typeof searchParams.error === 'string' ? searchParams.error : null;
   const created = typeof searchParams.created === 'string' ? searchParams.created : null;
+  const initialized = typeof searchParams.initialized === 'string' ? searchParams.initialized : null;
 
   return (
     <div className="space-y-6">
@@ -257,6 +341,12 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
       </section>
 
       <CreateRestaurantForm error={error} created={created} />
+
+      {initialized ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          Restaurant profile/settings status updated: {initialized}
+        </p>
+      ) : null}
 
       <section className="space-y-4">
         {restaurants.length ? (

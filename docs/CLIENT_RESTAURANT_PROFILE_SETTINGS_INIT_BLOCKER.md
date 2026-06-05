@@ -1,17 +1,17 @@
 # Client Restaurant Profile/Settings Initialization Blocker
 
-Client restaurant profile/settings initialization blocked by singleton RestaurantProfile schema.
+Client restaurant profile/settings initialization was blocked by singleton RestaurantProfile schema.
 
 Blocker status: resolved by Batch 44 schema migration.
 
-Batch 43 inspected the current tenant foundation before adding an initialization action for non-demo restaurants. The safe implementation is blocked because the current profile/settings models still carry singleton identity from the original demo app:
+Initialization action status: added in Batch 45.
+
+Batch 43 inspected the current tenant foundation before adding an initialization action for non-demo restaurants. The safe implementation was blocked because the profile/settings models still carried singleton identity from the original demo app:
 
 - `RestaurantProfile.id` is `Int @id @default(1)`.
 - `RestaurantSettings.id` is `Int @id @default(1)`.
 
-That shape is safe for the existing Demo Restaurant singleton behavior, but it is not safe for creating one profile/settings pair per client restaurant. A platform action that creates rows for `test-restaurant` or any future client would either collide with the singleton `id = 1` default or require ad hoc manual IDs that are not supported by the schema contract.
-
-Do not initialize per-restaurant profile/settings rows yet.
+That shape was safe for the existing Demo Restaurant singleton behavior, but it was not safe for creating one profile/settings pair per client restaurant. A platform action that created rows for `test-restaurant` or any future client would either collide with the singleton `id = 1` default or require ad hoc manual IDs that were not supported by the schema contract.
 
 Batch 44 changes the schema so the identity blocker is removed:
 
@@ -22,18 +22,19 @@ Batch 44 changes the schema so the identity blocker is removed:
 
 one profile/settings row per restaurant is now possible at the schema level.
 
-Initialization UI/action still comes next.
+Batch 45 adds a focused platform-admin initialization action for non-demo Restaurant tenants:
 
-## Next safe migration
+- creates only missing `RestaurantProfile` and/or `RestaurantSettings` rows
+- uses the Restaurant row as the target tenant anchor
+- does not overwrite existing profile/settings rows
+- does not create menu, gallery, order, reservation, inventory, recipe, AdminUser, or GatewayLead rows
+- does not activate non-demo `/r/[slug]` public routes
 
-The next safe step is a focused schema migration that makes profile/settings identity tenant-safe while preserving existing Demo Restaurant behavior.
+## Remaining boundaries
 
-Recommended migration batch:
+Full provisioning is still not implemented. The next provisioning batches still need to stay isolated and deliberate:
 
-- make profile/settings identity tenant-safe with generated IDs or a tenant-specific unique key
-- add `@@unique([restaurantId])` where one profile/settings row per restaurant is intended
-- backfill Demo Restaurant profile/settings rows to `restaurantId = demo-restaurant`
 - preserve existing Demo Restaurant behavior at `/public`, `/r/demo-restaurant`, `/admin`, and `/platform-admin`
-- update profile/settings helpers after the schema supports tenant-safe lookup
-
-Keep that migration isolated. It should not create menus, gallery content, orders, reservations, inventory, recipes, admin users, custom domains, billing, payments, CRM automation, email sending, or WhatsApp sending.
+- keep non-demo public routes inactive until tenant public reads are generalized
+- create menus, gallery content, restaurant admin users, domains, and public activation only in later explicit batches
+- continue avoiding billing, payments, subscriptions, CRM automation, email sending, and WhatsApp sending
