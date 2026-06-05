@@ -1229,15 +1229,24 @@ function checkTenantPublicRouteAlias() {
   assertIncludes(helper, 'getRestaurantWhereBySlug(restaurantSlug)', 'Restaurant helper slug where usage');
   assertIncludes(helper, 'restaurantSlug === DEMO_RESTAURANT_SLUG', 'Restaurant helper demo slug fallback');
   assertIncludes(tenantHelper, 'getRestaurantBySlug', 'Tenant route helper resolves slug');
-  assertIncludes(tenantHelper, 'DEMO_RESTAURANT_SLUG', 'Tenant route helper demo slug validation');
+  assertIncludes(tenantHelper, 'getTenantRestaurantProfile', 'Tenant route helper tenant profile loader');
+  assertIncludes(tenantHelper, 'getTenantRestaurantSettings', 'Tenant route helper tenant settings loader');
+  assertIncludes(tenantHelper, 'getTenantRestaurantContext', 'Tenant route helper tenant context loader');
+  assertIncludes(tenantHelper, 'const restaurantId = restaurant.id', 'Tenant route helper non-demo restaurantId lookup');
+  assertIncludes(tenantHelper, 'restaurant.slug === DEMO_RESTAURANT_SLUG', 'Tenant route helper preserves demo branch');
+  assertIncludes(tenantHelper, 'where: { restaurantId }', 'Tenant route helper exact tenant profile/settings lookup');
+  assertIncludes(tenantHelper, 'getDemoRestaurantFilter()', 'Tenant route helper demo fallback preserved');
   assertIncludes(tenantHelper, 'notFound()', 'Tenant route helper unknown slug 404');
-  assertIncludes(tenantHelper, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Tenant route helper only supports demo restaurant');
+  assertNotIncludes(tenantHelper, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Tenant route helper no longer only supports demo restaurant');
 
-  assertIncludes(tenantLayout, '../../public/layout', 'Tenant alias uses public layout');
-  assertIncludes(tenantHome, '../../public/page', 'Tenant home aliases public page');
-  assertIncludes(tenantMenu, '../../../public/menu/page', 'Tenant menu aliases public menu');
-  assertIncludes(tenantOrder, '../../../public/order/page', 'Tenant order aliases public order');
-  assertIncludes(tenantGallery, '../../../public/gallery/page', 'Tenant gallery aliases public gallery');
+  assertIncludes(tenantLayout, 'getTenantRestaurantContext(params)', 'Tenant layout uses tenant context');
+  assertIncludes(tenantLayout, '<Header profile={context.profile}', 'Tenant layout tenant header profile');
+  assertIncludes(tenantLayout, '<Footer profile={context.profile}', 'Tenant layout tenant footer profile');
+  assertNotIncludes(tenantLayout, '../../public/layout', 'Tenant layout should not use demo public layout');
+  assertNotIncludes(tenantHome, '../../public/page', 'Tenant home should not blindly alias public page');
+  assertNotIncludes(tenantMenu, '../../../public/menu/page', 'Tenant menu should not blindly alias public menu');
+  assertIncludes(tenantOrder, '../../../public/order/page', 'Tenant order preserves demo public order page');
+  assertNotIncludes(tenantGallery, '../../../public/gallery/page', 'Tenant gallery should not blindly alias public gallery');
   assertIncludes(tenantTable, '../../../../public/table/[slug]/page', 'Tenant table aliases public table page');
 
   for (const [source, label] of [
@@ -1245,10 +1254,22 @@ function checkTenantPublicRouteAlias() {
     [tenantMenu, 'tenant menu'],
     [tenantOrder, 'tenant order'],
     [tenantGallery, 'tenant gallery'],
-    [tenantTable, 'tenant table'],
   ]) {
-    assertIncludes(source, 'requireDemoTenantRestaurant(params)', `${label} validates demo tenant slug`);
+    assertIncludes(source, 'getTenantRestaurantContext(params)', `${label} loads tenant context`);
   }
+
+  assertIncludes(tenantHome, 'Menu content has not been added yet.', 'Tenant home menu empty state');
+  assertIncludes(tenantHome, 'Gallery content has not been added yet.', 'Tenant home gallery empty state');
+  assertIncludes(tenantHome, 'context.isDemoRestaurant', 'Tenant home preserves demo rendering branch');
+  assertIncludes(tenantMenu, 'getTenantContentWhere(context)', 'Tenant menu uses tenant category filter');
+  assertIncludes(tenantMenu, 'getTenantRelationWhere(context)', 'Tenant menu uses tenant item filter');
+  assertIncludes(tenantMenu, 'Menu content has not been added yet.', 'Tenant menu empty state');
+  assertIncludes(tenantGallery, 'getTenantContentWhere(context)', 'Tenant gallery uses tenant category filter');
+  assertIncludes(tenantGallery, 'getTenantRelationWhere(context)', 'Tenant gallery uses tenant photo filter');
+  assertIncludes(tenantGallery, 'Gallery content has not been added yet.', 'Tenant gallery empty state');
+  assertIncludes(tenantOrder, 'ordering is not available yet', 'Tenant order unavailable state');
+  assertIncludes(tenantOrder, 'if (context.isDemoRestaurant)', 'Tenant order non-demo unsafe global order guard');
+  assertIncludes(tenantOrder, 'return <PublicOrderPage searchParams={searchParams} />', 'Tenant order demo order branch preserved');
 
   assertIncludes(publicHome, 'withDemoRestaurantWhere({ recommended: true })', 'Tenant alias public home scoped read');
   assertIncludes(publicMenu, 'withDemoRestaurantWhere()', 'Tenant alias public menu category scoped read');
@@ -1291,11 +1312,12 @@ function checkTenantPublicRouteAlias() {
   assertNotIncludes([tenantHome, tenantMenu, tenantOrder, tenantGallery, tenantTable].join('\n'), 'sendMail', 'Tenant public alias email sending');
   assertNotIncludes([tenantHome, tenantMenu, tenantOrder, tenantGallery, tenantTable].join('\n'), 'sendWhatsApp', 'Tenant public alias WhatsApp sending');
 
-  assertIncludes(readme, 'Tenant-style public route alias added.', 'README tenant public alias note');
-  assertIncludes(readme, '`/r/demo-restaurant` works as a tenant-style alias.', 'README tenant public alias route note');
-  assertIncludes(readme, '`/public` remains the demo shortcut.', 'README tenant public alias public shortcut note');
-  assertIncludes(readme, 'Only the Demo Restaurant slug is supported for now.', 'README tenant public alias supported slug note');
-  assertIncludes(readme, 'No provisioning/custom domains yet.', 'README tenant public alias no provisioning note');
+  assertIncludes(readme, 'Initialized tenant public reads activated.', 'README initialized tenant public reads note');
+  assertIncludes(readme, '`/r/[slug]` works after profile/settings initialization.', 'README initialized tenant route note');
+  assertIncludes(readme, 'Non-demo tenants use their own profile/settings.', 'README initialized tenant profile note');
+  assertIncludes(readme, 'Menu/gallery/order content still require later provisioning.', 'README initialized tenant content boundary');
+  assertIncludes(readme, '`/public` remains the Demo Restaurant shortcut.', 'README initialized tenant public shortcut note');
+  assertIncludes(readme, 'No custom domains/billing/provisioning yet.', 'README initialized tenant no provisioning note');
 }
 
 function checkPlatformClientRestaurantRegistry() {
@@ -1401,10 +1423,12 @@ function checkPlatformClientRestaurantCreate() {
   assertNotIncludes(createAction, 'adminUser', 'Client restaurant create should not create AdminUser');
   assertNotIncludes(createAction, 'gatewayLead', 'Client restaurant create should not touch GatewayLead');
 
-  assertIncludes(page, 'Tenant public route is not active for non-demo restaurants yet.', 'Client restaurant non-demo route inactive copy');
+  assertIncludes(page, 'Tenant public route activates after profile/settings initialization.', 'Client restaurant non-demo route pre-init copy');
+  assertIncludes(page, 'Tenant public reads are active; menu/gallery/order content still require later provisioning.', 'Client restaurant initialized tenant route active copy');
   assertIncludes(page, 'restaurant.slug === DEMO_RESTAURANT_SLUG', 'Client restaurant non-demo link guard');
   assertIncludes(page, 'href={`/r/${restaurant.slug}`}', 'Client restaurant demo tenant home link retained');
   assertIncludes(page, 'href={`/r/${restaurant.slug}/menu`}', 'Client restaurant demo tenant menu link retained');
+  assertIncludes(page, 'href={`/r/${restaurant.slug}/gallery`}', 'Client restaurant tenant gallery link retained');
   assertIncludes(page, 'href={`/r/${restaurant.slug}/order`}', 'Client restaurant demo tenant order link retained');
 
   const adminUserBlock = getModelBlock(schema, 'AdminUser');
@@ -1514,7 +1538,7 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(page, 'hasProfile', 'Client restaurant registry profile status data');
   assertIncludes(page, 'hasSettings', 'Client restaurant registry settings status data');
   assertIncludes(page, 'Initialize profile/settings', 'Client restaurant registry initialize button');
-  assertIncludes(page, 'Creates basic profile/settings only. Does not create menu, admin users, or activate public tenant route.', 'Client restaurant init scope copy');
+  assertIncludes(page, 'Creates basic profile/settings only. Does not create menu, admin users, or activate ordering.', 'Client restaurant init scope copy');
   assertIncludes(page, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Client restaurant init non-demo guard');
 
   for (const forbidden of [
@@ -1532,7 +1556,7 @@ function checkTenantSafeProfileSettingsSchema() {
     assertNotIncludes(action, forbidden, `Blocked init should not touch ${forbidden}`);
   }
 
-  assertIncludes(page, 'Tenant public route is not active for non-demo restaurants yet.', 'Blocked init keeps non-demo route inactive');
+  assertIncludes(page, 'Tenant public reads are active; menu/gallery/order content still require later provisioning.', 'Client restaurant init keeps provisioning boundary copy');
   const adminUserBlock = getModelBlock(schema, 'AdminUser');
   const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
   assertNotIncludes(adminUserBlock, 'restaurantId', 'Blocked init AdminUser scoping');
@@ -1553,8 +1577,8 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(readme, 'One profile/settings row per restaurant is now possible.', 'README tenant-safe per restaurant note');
   assertIncludes(readme, 'Client restaurant profile/settings initialization added.', 'README client restaurant init note');
   assertIncludes(readme, 'Creates only missing RestaurantProfile and RestaurantSettings rows.', 'README client restaurant init missing-only note');
-  assertIncludes(readme, 'No full provisioning/menu/admin user/public activation yet.', 'README client restaurant init provisioning boundary');
-  assertIncludes(readme, 'Non-demo public routes remain inactive.', 'README client restaurant init route boundary');
+  assertIncludes(readme, 'No full provisioning/menu/admin user/order activation yet.', 'README client restaurant init provisioning boundary');
+  assertIncludes(readme, 'Initialized tenant public reads activated.', 'README client restaurant init route boundary');
 }
 
 function checkGatewayLeadAdminManagement() {

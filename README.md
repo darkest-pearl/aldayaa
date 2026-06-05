@@ -145,8 +145,13 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - One profile/settings row per restaurant is now possible.
 - Client restaurant profile/settings initialization added.
 - Creates only missing RestaurantProfile and RestaurantSettings rows.
-- No full provisioning/menu/admin user/public activation yet.
-- Non-demo public routes remain inactive.
+- No full provisioning/menu/admin user/order activation yet.
+- Initialized tenant public reads activated.
+- `/r/[slug]` works after profile/settings initialization.
+- Non-demo tenants use their own profile/settings.
+- Menu/gallery/order content still require later provisioning.
+- `/public` remains the Demo Restaurant shortcut.
+- No custom domains/billing/provisioning yet.
 
 ## Feature Modules Foundation
 

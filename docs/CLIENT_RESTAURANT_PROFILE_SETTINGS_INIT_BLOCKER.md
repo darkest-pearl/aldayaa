@@ -35,6 +35,6 @@ Batch 45 adds a focused platform-admin initialization action for non-demo Restau
 Full provisioning is still not implemented. The next provisioning batches still need to stay isolated and deliberate:
 
 - preserve existing Demo Restaurant behavior at `/public`, `/r/demo-restaurant`, `/admin`, and `/platform-admin`
-- keep non-demo public routes inactive until tenant public reads are generalized
-- create menus, gallery content, restaurant admin users, domains, and public activation only in later explicit batches
+- keep non-demo ordering inactive until tenant-aware write APIs are added
+- create menus, gallery content, restaurant admin users, domains, and write/public ordering activation only in later explicit batches
 - continue avoiding billing, payments, subscriptions, CRM automation, email sending, and WhatsApp sending
