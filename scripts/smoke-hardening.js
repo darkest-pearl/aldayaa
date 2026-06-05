@@ -476,21 +476,18 @@ function checkPlatformPlaceholderPagePolish() {
   const componentPath = path.join(root, 'src/app/platform-admin/components/PlatformRoadmapPlaceholder.jsx');
   const gatewayWebsitePath = path.join(root, 'src/app/platform-admin/(protected)/gateway-website/page.js');
   const packagesPath = path.join(root, 'src/app/platform-admin/(protected)/packages/page.js');
-  const clientRestaurantsPath = path.join(root, 'src/app/platform-admin/(protected)/client-restaurants/page.js');
   const settingsPath = path.join(root, 'src/app/platform-admin/(protected)/settings/page.js');
 
   assert(fs.existsSync(componentPath), 'Platform roadmap placeholder component is missing');
   assert(fs.existsSync(gatewayWebsitePath), 'Platform gateway website placeholder page is missing');
   assert(fs.existsSync(packagesPath), 'Platform packages placeholder page is missing');
-  assert(fs.existsSync(clientRestaurantsPath), 'Platform client restaurants placeholder page is missing');
   assert(fs.existsSync(settingsPath), 'Platform settings placeholder page is missing');
 
   const component = read('src/app/platform-admin/components/PlatformRoadmapPlaceholder.jsx');
   const gatewayWebsite = read('src/app/platform-admin/(protected)/gateway-website/page.js');
   const packages = read('src/app/platform-admin/(protected)/packages/page.js');
-  const clientRestaurants = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
   const settings = read('src/app/platform-admin/(protected)/settings/page.js');
-  const placeholderSource = [component, gatewayWebsite, packages, clientRestaurants, settings].join('\n');
+  const placeholderSource = [component, gatewayWebsite, packages, settings].join('\n');
 
   assertIncludes(component, 'Current actions', 'Platform placeholder current actions section');
   assertIncludes(component, 'Future scope', 'Platform placeholder future scope section');
@@ -528,25 +525,6 @@ function checkPlatformPlaceholderPagePolish() {
     'No payments/subscriptions/billing logic exists yet',
   ]) {
     assertIncludes(packages, expected, `Packages placeholder copy ${expected}`);
-  }
-
-  for (const expected of [
-    'manage client restaurant accounts',
-    'one demo restaurant, not multi-tenant clients',
-    'View demo restaurant',
-    'Open restaurant admin',
-    'Reset demo profile',
-    "href: '/public'",
-    "href: '/admin'",
-    "href: '/platform-admin/demo-restaurant'",
-    'create client restaurant records',
-    'assign domains/subdomains',
-    'assign package/modules',
-    'create first restaurant admin',
-    'provision demo/live restaurant instance',
-    'No multi-tenancy/provisioning exists yet',
-  ]) {
-    assertIncludes(clientRestaurants, expected, `Client Restaurants placeholder copy ${expected}`);
   }
 
   for (const expected of [
@@ -710,8 +688,7 @@ function checkRestaurantTenantAnchorModel() {
 
   const clientRestaurantsPage = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
   assertIncludes(clientRestaurantsPage, 'Demo Restaurant tenant anchor', 'Platform client restaurants tenant anchor copy');
-  assertIncludes(clientRestaurantsPage, 'real client provisioning is not implemented yet', 'Platform client restaurants no provisioning copy');
-  assertNotIncludes(clientRestaurantsPage, 'prisma.', 'Platform client restaurants placeholder database query');
+  assertIncludes(clientRestaurantsPage, 'No create/edit/delete/provisioning yet', 'Platform client restaurants no provisioning copy');
 
   assert(!fs.existsSync(path.join(root, 'src/app/restaurants/[restaurantSlug]')), 'Tenant restaurants slug route should not exist yet');
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Restaurant tenant anchor should not add provisioning API route');
@@ -907,8 +884,8 @@ function checkRestaurantContextHelper() {
   assertIncludes(platformDashboard, 'getCurrentDemoRestaurant', 'Platform dashboard demo tenant identity lookup');
   assertIncludes(platformDashboard, 'demoRestaurant.name', 'Platform dashboard demo tenant name display');
   assertIncludes(platformDashboard, 'demoRestaurant.slug', 'Platform dashboard demo tenant slug display');
-  assertIncludes(clientRestaurantsPage, 'getCurrentDemoRestaurant', 'Client restaurants placeholder demo tenant identity lookup');
-  assertIncludes(clientRestaurantsPage, 'demoRestaurant.slug', 'Client restaurants placeholder demo tenant slug display');
+  assertIncludes(clientRestaurantsPage, 'DEMO_RESTAURANT_SLUG', 'Client restaurants registry demo tenant identity reference');
+  assertIncludes(clientRestaurantsPage, 'normalizeRestaurant', 'Client restaurants registry restaurant normalization');
   assertIncludes(demoRestaurantPage, 'getCurrentDemoRestaurant', 'Demo restaurant platform page demo tenant identity lookup');
   assertIncludes(demoRestaurantPage, 'initialRestaurant', 'Demo restaurant platform page passes demo tenant identity');
 
@@ -1320,6 +1297,63 @@ function checkTenantPublicRouteAlias() {
   assertIncludes(readme, '`/public` remains the demo shortcut.', 'README tenant public alias public shortcut note');
   assertIncludes(readme, 'Only the Demo Restaurant slug is supported for now.', 'README tenant public alias supported slug note');
   assertIncludes(readme, 'No provisioning/custom domains yet.', 'README tenant public alias no provisioning note');
+}
+
+function checkPlatformClientRestaurantRegistry() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const pagePath = path.join(root, 'src/app/platform-admin/(protected)/client-restaurants/page.js');
+
+  assert(fs.existsSync(pagePath), '/platform-admin/client-restaurants registry page is missing');
+  const page = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+
+  assertIncludes(page, 'prisma.restaurant.findMany', 'Client restaurant registry database read');
+  assertIncludes(page, 'normalizeRestaurant', 'Client restaurant registry normalization');
+  assertIncludes(page, 'DEMO_RESTAURANT_SLUG', 'Client restaurant registry demo slug helper');
+  assertIncludes(page, 'restaurant.name', 'Client restaurant registry name display');
+  assertIncludes(page, 'restaurant.slug', 'Client restaurant registry slug display');
+  assertIncludes(page, 'restaurant.status', 'Client restaurant registry status display');
+  assertIncludes(page, 'restaurant.type', 'Client restaurant registry type display');
+  assertIncludes(page, 'restaurant.createdAt', 'Client restaurant registry createdAt display');
+  assertIncludes(page, 'restaurant.updatedAt', 'Client restaurant registry updatedAt display');
+  assertIncludes(page, 'restaurant.notes', 'Client restaurant registry notes display');
+  assertIncludes(page, 'href={`/r/${restaurant.slug}`}', 'Client restaurant registry tenant home link');
+  assertIncludes(page, 'href={`/r/${restaurant.slug}/menu`}', 'Client restaurant registry tenant menu link');
+  assertIncludes(page, 'href={`/r/${restaurant.slug}/order`}', 'Client restaurant registry tenant order link');
+  assertIncludes(page, 'href="/platform-admin/demo-restaurant"', 'Client restaurant registry demo reset link');
+  assertIncludes(page, 'Demo Restaurant tenant anchor is missing.', 'Client restaurant registry empty state');
+  assertIncludes(page, 'Use future provisioning controls later.', 'Client restaurant registry future provisioning empty copy');
+  assertIncludes(page, 'No create/edit/delete/provisioning yet', 'Client restaurant registry no mutation copy');
+
+  assertNotIncludes(page, 'prisma.restaurant.create', 'Client restaurant registry create mutation');
+  assertNotIncludes(page, 'prisma.restaurant.update', 'Client restaurant registry update mutation');
+  assertNotIncludes(page, 'prisma.restaurant.delete', 'Client restaurant registry delete mutation');
+  assertNotIncludes(page, '<form', 'Client restaurant registry form mutation UI');
+
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'Client restaurant registry AdminUser scoping');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Client restaurant registry GatewayLead scoping');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/platform/restaurants')), 'Client restaurant registry should not add platform restaurant API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/platform/client-restaurants')), 'Client restaurant registry should not add client restaurant API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Client restaurant registry should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Client restaurant registry should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Client restaurant registry should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Client restaurant registry should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Client restaurant registry should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Client restaurant registry should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Client restaurant registry should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Client restaurant registry Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Client restaurant registry nodemailer dependency');
+
+  assertIncludes(readme, 'Platform client restaurant registry added.', 'README client restaurant registry note');
+  assertIncludes(readme, 'Backed by the Restaurant table.', 'README client restaurant registry table note');
+  assertIncludes(readme, 'Shows the Demo Restaurant tenant anchor.', 'README client restaurant registry demo note');
+  assertIncludes(readme, 'Links to the tenant public route.', 'README client restaurant registry tenant link note');
+  assertIncludes(readme, 'No create/edit/delete/provisioning yet.', 'README client restaurant registry mutation note');
+  assertIncludes(readme, 'No billing/subscriptions/custom domains yet.', 'README client restaurant registry billing note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2530,6 +2564,7 @@ const checks = [
   checkRestaurantAdminDemoOperationTenantScoping,
   checkPublicDemoWriteTenantScoping,
   checkTenantPublicRouteAlias,
+  checkPlatformClientRestaurantRegistry,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
