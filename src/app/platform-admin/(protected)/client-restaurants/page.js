@@ -71,15 +71,16 @@ function SetupPill({ ready, children }) {
 }
 
 function TenantActionLinks({ restaurant }) {
-  if (restaurant.slug !== DEMO_RESTAURANT_SLUG) {
+  const tenantHref = `/r/${restaurant.slug}`;
+  const fullyInitialized = restaurant.hasProfile && restaurant.hasSettings;
+
+  if (restaurant.slug !== DEMO_RESTAURANT_SLUG && !fullyInitialized) {
     return (
       <div className="max-w-xs rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">
-        Tenant public route is not active for non-demo restaurants yet.
+        Tenant public route activates after profile/settings initialization.
       </div>
     );
   }
-
-  const tenantHref = `/r/${restaurant.slug}`;
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -96,11 +97,19 @@ function TenantActionLinks({ restaurant }) {
         Menu
       </Link>
       <Link
-        href={`/r/${restaurant.slug}/order`}
+        href={`/r/${restaurant.slug}/gallery`}
         className="rounded-md border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-emerald-800 hover:text-emerald-800"
       >
-        Order
+        Gallery
       </Link>
+      {restaurant.slug === DEMO_RESTAURANT_SLUG ? (
+        <Link
+          href={`/r/${restaurant.slug}/order`}
+          className="rounded-md border border-neutral-200 px-3 py-2 text-xs font-semibold text-neutral-800 transition hover:border-emerald-800 hover:text-emerald-800"
+        >
+          Order
+        </Link>
+      ) : null}
       {restaurant.slug === DEMO_RESTAURANT_SLUG ? (
         <Link
           href="/platform-admin/demo-restaurant"
@@ -129,7 +138,7 @@ function InitializationControls({ restaurant }) {
   if (fullyInitialized) {
     return (
       <p className="text-sm font-semibold text-emerald-800">
-        Profile/settings initialized. Tenant public route is not active for non-demo restaurants yet.
+        Profile/settings initialized. Tenant public reads are active; menu/gallery/order content still require later provisioning.
       </p>
     );
   }
@@ -137,7 +146,7 @@ function InitializationControls({ restaurant }) {
   return (
     <div className="space-y-3">
       <p className="max-w-3xl text-sm leading-6 text-neutral-600">
-        Creates basic profile/settings only. Does not create menu, admin users, or activate public tenant route.
+        Creates basic profile/settings only. Does not create menu, admin users, or activate ordering.
       </p>
       <form action={initializeRestaurantBasics}>
         <input type="hidden" name="restaurantId" value={restaurant.id} />

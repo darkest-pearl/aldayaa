@@ -7,23 +7,27 @@ import { strings } from '../lib/strings';
 import { gentleEase } from '../lib/easings';
 
 const navLinks = [
-  { href: '/public', label: 'Home' },
-  { href: '/public/menu', label: 'Menu', featureKey: FEATURE_KEYS.MENU },
-  { href: '/public/reservations', label: 'Reservations', featureKey: FEATURE_KEYS.RESERVATIONS },
-  { href: '/public/order', label: 'Order Online', featureKey: FEATURE_KEYS.ONLINE_ORDERING },
-  { href: '/public/gallery', label: 'Gallery', featureKey: FEATURE_KEYS.GALLERY },
-  { href: '/public/about', label: 'About' },
-  { href: '/public/contact', label: 'Contact' },
+  { path: '', label: 'Home' },
+  { path: '/menu', label: 'Menu', featureKey: FEATURE_KEYS.MENU },
+  { path: '/reservations', label: 'Reservations', featureKey: FEATURE_KEYS.RESERVATIONS },
+  { path: '/order', label: 'Order Online', featureKey: FEATURE_KEYS.ONLINE_ORDERING },
+  { path: '/gallery', label: 'Gallery', featureKey: FEATURE_KEYS.GALLERY },
+  { path: '/about', label: 'About' },
+  { path: '/contact', label: 'Contact' },
 ];
 
-export default function Header({ profile = {} }) {
+export default function Header({ profile = {}, basePath = '/public' }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const restaurantName = profile.restaurantName || strings.restaurantName;
   const tagline = profile.tagline || strings.tagline;
   const logoUrl = profile.logoUrl || '/images/food-mezze.jpg';
-  const visibleNavLinks = navLinks.filter(
-    (link) => !link.featureKey || isFeatureEnabled(profile.enabledFeatures, link.featureKey),
-  );
+  const visibleNavLinks = navLinks
+    .filter((link) => basePath === '/public' || ['', '/menu', '/order', '/gallery'].includes(link.path))
+    .filter((link) => !link.featureKey || isFeatureEnabled(profile.enabledFeatures, link.featureKey))
+    .map((link) => ({
+      ...link,
+      href: `${basePath}${link.path}`,
+    }));
   const reservationsEnabled = isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.RESERVATIONS);
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
@@ -33,7 +37,7 @@ export default function Header({ profile = {} }) {
     <header className="sticky top-0 z-50 border-b border-neutral-200/70 bg-beige/85 backdrop-blur-xl shadow-soft">
       <div className="site-container py-3">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/public" className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-white/60">
+          <Link href={basePath} className="flex items-center gap-3 rounded-2xl px-2 py-1 transition hover:bg-white/60">
             <img
               src={logoUrl}
               alt={restaurantName}
@@ -57,7 +61,7 @@ export default function Header({ profile = {} }) {
             ))}
             {reservationsEnabled && (
               <Link
-                href="/public/reservations"
+                href={`${basePath}/reservations`}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
               >
                 Reserve
@@ -146,7 +150,7 @@ export default function Header({ profile = {} }) {
                 {reservationsEnabled && (
                 <div className="pt-4">
                   <Link
-                    href="/public/reservations"
+                    href={`${basePath}/reservations`}
                     onClick={closeMenu}
                     className="flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-secondary shadow-soft transition duration-200 ease-gentle hover:-translate-y-0.5 hover:shadow-lifted"
                   >

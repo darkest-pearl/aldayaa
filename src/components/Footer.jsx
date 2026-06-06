@@ -46,9 +46,9 @@ async function fetchSettingsHours() {
   }
 }
 
-export default async function Footer({ profile: profileProp } = {}) {
+export default async function Footer({ profile: profileProp, displayHours: displayHoursProp } = {}) {
   const [hours, loadedProfile] = await Promise.all([
-    fetchSettingsHours(),
+    displayHoursProp ? Promise.resolve(displayHoursProp) : fetchSettingsHours(),
     profileProp ? Promise.resolve(profileProp) : getRestaurantProfile(),
   ]);
   const profile = toPublicRestaurantProfile(loadedProfile);
