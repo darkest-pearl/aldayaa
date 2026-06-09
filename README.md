@@ -156,17 +156,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Starter content is platform-admin provisioned.
 - Tenant public menu/gallery pages read tenant-scoped content.
 - Ordering/admin users/billing/custom domains are still future work.
-- Tenant admin access requires schema/auth boundary work before implementation.
-- No restaurant-scoped AdminUser or membership model exists yet.
-- No tenant admin creation action was added.
-- Tenant admins must not access `/platform-admin` until role/session scoping is added.
 - Restaurant staff auth schema boundary added.
 - RestaurantUser is separate from platform AdminUser.
-- Restaurant staff sessions must not use the platform admin cookie or access `/platform-admin`.
-- Tenant admin creation and login/session wiring remain future work.
 - Tenant first-owner provisioning and restaurant staff login added.
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
+- Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
 - Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.
 
 ## Feature Modules Foundation

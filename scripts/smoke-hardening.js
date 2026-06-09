@@ -1813,12 +1813,16 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin blocker Batch 49 status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; operational tenant admin modules remain future work.', 'Tenant admin foundation Batch 50 status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 49 adds a separate RestaurantUser model.', 'Tenant admin blocker RestaurantUser schema update');
-  assertIncludes(blocker, 'Platform AdminUser remains separate from RestaurantUser.', 'Tenant admin blocker separate platform users');
-  assertIncludes(blocker, 'RestaurantUser sessions must not use the platform admin cookie.', 'Tenant admin blocker separate cookie');
-  assertIncludes(blocker, 'Operational tenant admin modules remain future work.', 'Tenant admin operational modules future note');
+  assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
+  assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
+  assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
+  assertIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin operational modules future note');
+  assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
+  assertNotIncludes(blocker, 'roles cannot be safely separated yet', 'Tenant admin doc stale role separation blocker');
+  assertNotIncludes(blocker, 'Tenant admin creation remains future work', 'Tenant admin doc stale tenant creation future wording');
 
   assertIncludes(page, 'tenant admin access status', 'Client restaurant registry tenant admin access status copy');
   assertIncludes(page, 'tenantOwnerCount', 'Client restaurant registry tenant owner count');
@@ -1878,7 +1882,10 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(readme, 'Tenant first-owner provisioning and restaurant staff login added.', 'README tenant admin provisioning note');
   assertIncludes(readme, 'Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.', 'README tenant owner creation note');
   assertIncludes(readme, 'Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.', 'README tenant login route note');
-  assertIncludes(readme, 'Restaurant staff sessions must not use the platform admin cookie or access `/platform-admin`.', 'README tenant staff platform boundary note');
+  assertIncludes(readme, 'Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.', 'README tenant staff platform boundary note');
+  assertNotIncludes(readme, 'No tenant admin creation action was added.', 'README stale no tenant admin action note');
+  assertNotIncludes(readme, 'Tenant admin creation and login/session wiring remain future work.', 'README stale tenant login future note');
+  assertNotIncludes(readme, 'No restaurant-scoped AdminUser or membership model exists yet.', 'README stale missing restaurant user note');
 }
 
 function checkGatewayLeadAdminManagement() {
