@@ -488,10 +488,13 @@ function RestaurantCard({ restaurant }) {
               tenant admin access status
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <SetupPill ready={false}>Admin access blocked</SetupPill>
               <SetupPill ready={restaurant.tenantOwnerCount > 0}>
                 OWNER {restaurant.tenantOwnerCount > 0 ? 'created' : 'missing'}
               </SetupPill>
+              <SetupPill ready={restaurant.tenantOwnerCount > 0}>
+                Auth {restaurant.tenantOwnerCount > 0 ? 'ready' : 'pending'}
+              </SetupPill>
+              <SetupPill ready={false}>Operational modules pending</SetupPill>
             </div>
           </div>
           <div className="lg:max-w-md">

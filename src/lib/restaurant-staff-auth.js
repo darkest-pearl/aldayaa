@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { DEMO_RESTAURANT_SLUG } from './restaurants';
 
 export const RESTAURANT_STAFF_COOKIE_NAME = 'aldayaa_restaurant_staff';
 export const RESTAURANT_STAFF_TOKEN_TYPE = 'restaurant_staff';
+const DEMO_RESTAURANT_SLUG = 'demo-restaurant';
 const TOKEN_EXPIRY = '7d';
 const DEVELOPMENT_RESTAURANT_STAFF_JWT_SECRET = 'development-only-restaurant-staff-secret';
 

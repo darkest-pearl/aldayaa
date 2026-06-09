@@ -1754,6 +1754,9 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(staffAuth, 'RESTAURANT_STAFF_COOKIE_NAME', 'Restaurant staff separate cookie constant');
   assertIncludes(staffAuth, 'aldayaa_restaurant_staff', 'Restaurant staff cookie name value');
   assertNotIncludes(staffAuth, 'aldayaa_admin', 'Restaurant staff auth must not use platform admin cookie');
+  assertNotIncludes(staffAuth, "from './restaurants'", 'Restaurant staff auth should not import Prisma-backed restaurants helper');
+  assertNotIncludes(staffAuth, 'from "./restaurants"', 'Restaurant staff auth should not import Prisma-backed restaurants helper double quote');
+  assertNotIncludes(staffAuth, 'import { prisma }', 'Restaurant staff auth should not import Prisma at module load');
   assertIncludes(staffAuth, 'RESTAURANT_STAFF_ROLES', 'Restaurant staff role constants');
   assertIncludes(staffAuth, 'OWNER: \'OWNER\'', 'Restaurant staff OWNER role');
   assertIncludes(staffAuth, 'MANAGER: \'MANAGER\'', 'Restaurant staff MANAGER role');
@@ -1789,6 +1792,9 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(middleware, 'RESTAURANT_STAFF_COOKIE_NAME', 'Middleware reads staff cookie');
   assertIncludes(middleware, 'isTenantAdminRoute', 'Middleware identifies tenant admin routes');
   assertIncludes(middleware, 'verifyRestaurantStaffToken', 'Middleware verifies staff token');
+  assertNotIncludes(middleware, './src/lib/restaurants', 'Middleware should not import Prisma-backed restaurants helper');
+  assertNotIncludes(middleware, './src/lib/prisma', 'Middleware should not import Prisma helper');
+  assertNotIncludes(middleware, '@prisma/client', 'Middleware should not import Prisma client');
   assertIncludes(middleware, 'session.restaurantSlug !== restaurantSlug', 'Middleware enforces tenant slug boundary');
   assertIncludes(middleware, '`/r/${restaurantSlug}/admin/login`', 'Middleware tenant login redirect');
   assertIncludes(middleware, '`/r/${restaurantSlug}/admin`', 'Middleware authenticated login redirect');
@@ -1818,6 +1824,10 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(page, 'tenantOwnerCount', 'Client restaurant registry tenant owner count');
   assertIncludes(page, 'Create first owner access', 'Client restaurant registry first owner button');
   assertIncludes(page, 'Tenant admin login', 'Client restaurant registry tenant admin login link');
+  assertIncludes(page, "OWNER {restaurant.tenantOwnerCount > 0 ? 'created' : 'missing'}", 'Client restaurant registry owner created/missing status');
+  assertIncludes(page, "Auth {restaurant.tenantOwnerCount > 0 ? 'ready' : 'pending'}", 'Client restaurant registry auth ready/pending status');
+  assertIncludes(page, 'Operational modules pending', 'Client restaurant registry operational modules pending status');
+  assertNotIncludes(page, 'Admin access blocked', 'Client restaurant registry should not always show admin blocked');
   assertIncludes(page, 'restaurant.hasProfile && restaurant.hasSettings', 'Client restaurant owner creation initialized-only UI guard');
   assertIncludes(page, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Client restaurant owner creation non-demo UI guard');
   assertIncludes(action, 'createTenantOwnerAccess', 'Tenant owner creation action exists');
@@ -1825,6 +1835,8 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(ownerAction, 'getAdminFromRequest(cookies())', 'Tenant owner creation platform admin auth lookup');
   assertIncludes(ownerAction, "admin.role !== 'ADMIN'", 'Tenant owner creation platform ADMIN-only guard');
   assertIncludes(ownerAction, 'restaurant.slug === DEMO_RESTAURANT_SLUG', 'Tenant owner creation rejects Demo Restaurant');
+  assertIncludes(ownerAction, "restaurant.status === 'ARCHIVED'", 'Tenant owner creation rejects archived restaurants');
+  assertIncludes(ownerAction, 'Archived restaurants cannot receive tenant owner access.', 'Tenant owner creation archived error copy');
   assertIncludes(ownerAction, 'prisma.restaurantProfile.findUnique', 'Tenant owner creation requires profile');
   assertIncludes(ownerAction, 'prisma.restaurantSettings.findUnique', 'Tenant owner creation requires settings');
   assertIncludes(action, 'z.string().email()', 'Tenant owner creation validates email');

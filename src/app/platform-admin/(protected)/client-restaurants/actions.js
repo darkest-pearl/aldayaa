@@ -400,6 +400,10 @@ export async function createTenantOwnerAccess(formData) {
     redirectWithError('Tenant owner access does not modify Demo Restaurant data.');
   }
 
+  if (restaurant.status === 'ARCHIVED') {
+    redirectWithError('Archived restaurants cannot receive tenant owner access.');
+  }
+
   const [existingProfile, existingSettings] = await Promise.all([
     prisma.restaurantProfile.findUnique({
       where: { restaurantId: restaurant.id },
