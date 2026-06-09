@@ -31,6 +31,7 @@ model Restaurant {
   inventoryMovements InventoryMovement[]
   menuItemIngredients MenuItemIngredient[]
   orderRecipeConsumptions OrderRecipeConsumption[]
+  restaurantUsers   RestaurantUser[]
 }
 
 model MenuCategory {
@@ -187,6 +188,26 @@ model AdminUser {
   passwordHash String
   createdAt    DateTime @default(now())
   role         String   @default("ADMIN")
+}
+
+model RestaurantUser {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  email        String
+  passwordHash String
+  name         String?
+  role         String     @default("OWNER")
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  lastLoginAt  DateTime?
+
+  @@unique([restaurantId, email])
+  @@index([restaurantId])
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
 }
 
 model RestaurantSettings {

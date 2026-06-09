@@ -160,6 +160,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - No restaurant-scoped AdminUser or membership model exists yet.
 - No tenant admin creation action was added.
 - Tenant admins must not access `/platform-admin` until role/session scoping is added.
+- Restaurant staff auth schema boundary added.
+- RestaurantUser is separate from platform AdminUser.
+- Restaurant staff sessions must not use the platform admin cookie or access `/platform-admin`.
+- Tenant admin creation and login/session wiring remain future work.
 
 ## Feature Modules Foundation
 
