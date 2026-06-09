@@ -216,6 +216,28 @@ function StarterContentControls({ restaurant }) {
   );
 }
 
+function TenantAdminAccessStatus({ restaurant }) {
+  if (restaurant.slug === DEMO_RESTAURANT_SLUG) {
+    return (
+      <p className="text-sm leading-6 text-neutral-600">
+        Demo Restaurant keeps its existing admin access. Batch 48 does not modify demo admin data.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-amber-900">
+        Blocked: AdminUser is not tenant-scoped yet.
+      </p>
+      <p className="max-w-3xl text-sm leading-6 text-neutral-600">
+        Does not create tenant admin access yet. A future schema/auth batch needs a restaurant-scoped user or
+        membership model before tenant staff can safely sign in without platform-admin access.
+      </p>
+    </div>
+  );
+}
+
 function CreateRestaurantForm({ error, created }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
@@ -384,6 +406,22 @@ function RestaurantCard({ restaurant }) {
           </div>
           <div className="lg:max-w-md">
             <StarterContentControls restaurant={restaurant} />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-5 rounded-lg border border-amber-100 bg-amber-50 p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-amber-800">
+              tenant admin access status
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <SetupPill ready={false}>Admin access blocked</SetupPill>
+            </div>
+          </div>
+          <div className="lg:max-w-md">
+            <TenantAdminAccessStatus restaurant={restaurant} />
           </div>
         </div>
       </section>

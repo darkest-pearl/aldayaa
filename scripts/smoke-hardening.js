@@ -1668,6 +1668,73 @@ function checkTenantStarterContentProvisioning() {
   assertIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README tenant starter content boundaries note');
 }
 
+function checkTenantAdminAccessFoundationBlocker() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const page = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+  const action = read('src/app/platform-admin/(protected)/client-restaurants/actions.js');
+  const platformLayout = read('src/app/platform-admin/(protected)/layout.js');
+  const auth = read('src/lib/auth.js');
+  const blockerPath = path.join(root, 'docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+
+  assert(fs.existsSync(blockerPath), 'Tenant admin access foundation blocker doc is missing');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const adminUserBlock = getModelBlock(schema, 'AdminUser');
+  const gatewayLeadBlock = getModelBlock(schema, 'GatewayLead');
+
+  assertIncludes(adminUserBlock, 'email        String   @unique', 'Tenant admin blocker current AdminUser unique email');
+  assertIncludes(adminUserBlock, 'role         String   @default("ADMIN")', 'Tenant admin blocker current AdminUser global role');
+  assertNotIncludes(adminUserBlock, 'restaurantId', 'Tenant admin blocker AdminUser remains unscoped');
+  assertNotIncludes(gatewayLeadBlock, 'restaurantId', 'Tenant admin blocker GatewayLead remains unscoped');
+  assertIncludes(platformLayout, "admin.role !== 'ADMIN'", 'Tenant admin blocker platform ADMIN-only guard remains');
+  assertIncludes(auth, 'jwt.sign({ id: admin.id, email: admin.email, role: admin.role }', 'Tenant admin blocker token has no tenant scope');
+  assertNotIncludes(auth, 'restaurantId', 'Tenant admin blocker auth payload remains unscoped');
+
+  assertIncludes(blocker, 'Blocker status: active for Batch 48.', 'Tenant admin blocker active status');
+  assertIncludes(blocker, 'AdminUser has no restaurantId or membership relation.', 'Tenant admin blocker missing AdminUser tenant scope');
+  assertIncludes(blocker, 'platform ADMIN and tenant admin roles cannot be safely separated yet.', 'Tenant admin blocker role separation risk');
+  assertIncludes(blocker, 'tenant admins could accidentally satisfy the existing ADMIN role checks', 'Tenant admin blocker platform access risk');
+  assertIncludes(blocker, 'Do not create tenant admin users until the schema/auth boundary is added.', 'Tenant admin blocker no unsafe creation guidance');
+  assertIncludes(blocker, 'RestaurantUser or AdminUserRestaurantMembership', 'Tenant admin blocker recommended membership model');
+  assertIncludes(blocker, 'include restaurantId or membership scope in the authenticated session', 'Tenant admin blocker session scope recommendation');
+
+  assertIncludes(page, 'tenant admin access status', 'Client restaurant registry tenant admin access status copy');
+  assertIncludes(page, 'Blocked: AdminUser is not tenant-scoped yet.', 'Client restaurant registry tenant admin blocker copy');
+  assertIncludes(page, 'Does not create tenant admin access yet.', 'Client restaurant registry no tenant admin creation copy');
+  assertNotIncludes(page, 'Create tenant admin access', 'Client restaurant registry should not show tenant admin create button while blocked');
+  assertNotIncludes(action, 'createTenantAdminAccess', 'Tenant admin access action should not exist while blocked');
+  assertNotIncludes(action, 'prisma.adminUser.create', 'Tenant admin blocker should not create AdminUser');
+  assertNotIncludes(action, 'hashPassword', 'Tenant admin blocker should not hash temporary passwords yet');
+
+  for (const forbidden of [
+    'order.create',
+    'reservation.create',
+    'inventoryItem.create',
+    'menuItemIngredient.create',
+    'gatewayLead.create',
+    'sendMail',
+    'sendWhatsApp',
+  ]) {
+    assertNotIncludes(action, forbidden, `Tenant admin blocker should not touch ${forbidden}`);
+  }
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Tenant admin blocker should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant admin blocker should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant admin blocker should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Tenant admin blocker should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Tenant admin blocker should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant admin blocker should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant admin blocker should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Tenant admin blocker Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Tenant admin blocker nodemailer dependency');
+
+  assertIncludes(readme, 'Tenant admin access requires schema/auth boundary work before implementation.', 'README tenant admin blocker note');
+  assertIncludes(readme, 'No restaurant-scoped AdminUser or membership model exists yet.', 'README tenant admin missing schema note');
+  assertIncludes(readme, 'No tenant admin creation action was added.', 'README tenant admin no action note');
+  assertIncludes(readme, 'Tenant admins must not access `/platform-admin` until role/session scoping is added.', 'README tenant admin platform boundary note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -2880,6 +2947,7 @@ const checks = [
   checkPlatformClientRestaurantCreate,
   checkTenantSafeProfileSettingsSchema,
   checkTenantStarterContentProvisioning,
+  checkTenantAdminAccessFoundationBlocker,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
