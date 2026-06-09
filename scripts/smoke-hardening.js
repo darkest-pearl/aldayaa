@@ -1516,7 +1516,7 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(blocker, 'RestaurantSettings.id now uses `autoincrement()`', 'Blocker doc settings resolved detail');
   assertIncludes(blocker, 'one profile/settings row per restaurant is now possible', 'Blocker doc tenant-safe possibility');
   assertIncludes(blocker, 'creates only missing `RestaurantProfile` and/or `RestaurantSettings` rows', 'Blocker doc init missing-only scope');
-  assertIncludes(blocker, 'does not activate non-demo `/r/[slug]` public routes', 'Blocker doc non-demo route boundary');
+  assertIncludes(blocker, 'keep non-demo ordering inactive until tenant-aware write APIs are added', 'Blocker doc non-demo ordering boundary');
 
   const initAction = getExportedFunctionSource(action, 'initializeRestaurantBasics');
   assertIncludes(action, 'initializeRestaurantBasics', 'Client restaurant profile/settings init action');
@@ -1553,7 +1553,7 @@ function checkTenantSafeProfileSettingsSchema() {
     'adminUser',
     'gatewayLead',
   ]) {
-    assertNotIncludes(action, forbidden, `Blocked init should not touch ${forbidden}`);
+    assertNotIncludes(initAction, forbidden, `Client restaurant init should not touch ${forbidden}`);
   }
 
   assertIncludes(page, 'Tenant public reads are active; menu/gallery/order content still require later provisioning.', 'Client restaurant init keeps provisioning boundary copy');
@@ -1579,6 +1579,93 @@ function checkTenantSafeProfileSettingsSchema() {
   assertIncludes(readme, 'Creates only missing RestaurantProfile and RestaurantSettings rows.', 'README client restaurant init missing-only note');
   assertIncludes(readme, 'No full provisioning/menu/admin user/order activation yet.', 'README client restaurant init provisioning boundary');
   assertIncludes(readme, 'Initialized tenant public reads activated.', 'README client restaurant init route boundary');
+}
+
+function checkTenantStarterContentProvisioning() {
+  const packageJson = read('package.json');
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const page = read('src/app/platform-admin/(protected)/client-restaurants/page.js');
+  const action = read('src/app/platform-admin/(protected)/client-restaurants/actions.js');
+  const tenantMenu = read('src/app/r/[restaurantSlug]/menu/page.js');
+  const tenantGallery = read('src/app/r/[restaurantSlug]/gallery/page.js');
+  const tenantOrder = read('src/app/r/[restaurantSlug]/order/page.js');
+  const provisionAction = getExportedFunctionSource(action, 'provisionRestaurantStarterContent');
+
+  for (const modelName of ['MenuCategory', 'MenuItem', 'GalleryCategory', 'Photo']) {
+    const modelBlock = getModelBlock(schema, modelName);
+    assertIncludes(modelBlock, 'restaurantId', `${modelName} starter provisioning restaurantId field`);
+    assertIncludes(modelBlock, 'Restaurant?', `${modelName} starter provisioning Restaurant relation`);
+    assertIncludes(modelBlock, '@@index([restaurantId])', `${modelName} starter provisioning restaurantId index`);
+  }
+
+  assertIncludes(action, 'provisionRestaurantStarterContent', 'Tenant starter content provisioning action exists');
+  assertIncludes(provisionAction, 'getAdminFromRequest(cookies())', 'Tenant starter content provisioning ADMIN auth lookup');
+  assertIncludes(provisionAction, "admin.role !== 'ADMIN'", 'Tenant starter content provisioning ADMIN-only guard');
+  assertIncludes(provisionAction, 'prisma.restaurant.findUnique', 'Tenant starter content provisioning Restaurant lookup');
+  assertIncludes(provisionAction, 'restaurant.slug === DEMO_RESTAURANT_SLUG', 'Tenant starter content provisioning rejects Demo Restaurant');
+  assertIncludes(provisionAction, 'prisma.restaurantProfile.findUnique', 'Tenant starter content provisioning profile initialization check');
+  assertIncludes(provisionAction, 'prisma.restaurantSettings.findUnique', 'Tenant starter content provisioning settings initialization check');
+  assertIncludes(provisionAction, 'where: { restaurantId: restaurant.id }', 'Tenant starter content provisioning restaurantId ownership checks');
+  assertIncludes(provisionAction, 'prisma.menuCategory.findMany', 'Tenant starter content provisioning menu category check');
+  assertIncludes(provisionAction, 'prisma.menuItem.count', 'Tenant starter content provisioning menu item check');
+  assertIncludes(provisionAction, 'prisma.galleryCategory.findMany', 'Tenant starter content provisioning gallery category check');
+  assertIncludes(provisionAction, 'prisma.photo.count', 'Tenant starter content provisioning photo check');
+  assertIncludes(provisionAction, 'prisma.menuCategory.create', 'Tenant starter content provisioning creates missing menu category');
+  assertIncludes(provisionAction, 'prisma.menuItem.create', 'Tenant starter content provisioning creates missing menu item');
+  assertIncludes(provisionAction, 'prisma.galleryCategory.create', 'Tenant starter content provisioning creates missing gallery category');
+  assertIncludes(provisionAction, 'prisma.photo.create', 'Tenant starter content provisioning creates missing photo');
+  assertIncludes(provisionAction, 'restaurantId: restaurant.id', 'Tenant starter content provisioning scopes created rows');
+  assertIncludes(provisionAction, 'isAvailable: false', 'Tenant starter content provisioning keeps starter menu unavailable');
+  assertIncludes(provisionAction, 'already provisioned', 'Tenant starter content provisioning already provisioned message');
+  assertIncludes(provisionAction, 'partially provisioned', 'Tenant starter content provisioning partial message');
+  assertNotIncludes(provisionAction, 'upsert', 'Tenant starter content provisioning should not overwrite existing content');
+  assertNotIncludes(provisionAction, 'update(', 'Tenant starter content provisioning should not update existing content');
+
+  for (const forbidden of [
+    'adminUser',
+    'order.',
+    'reservation',
+    'inventoryItem',
+    'inventoryMovement',
+    'recipe',
+    'gatewayLead',
+    'sendMail',
+    'sendWhatsApp',
+  ]) {
+    assertNotIncludes(provisionAction, forbidden, `Tenant starter content provisioning should not touch ${forbidden}`);
+  }
+
+  assertIncludes(page, 'menu/gallery starter status', 'Tenant starter content registry status copy');
+  assertIncludes(page, 'hasStarterMenu', 'Tenant starter content registry menu status data');
+  assertIncludes(page, 'hasStarterGallery', 'Tenant starter content registry gallery status data');
+  assertIncludes(page, 'Provision starter menu/gallery', 'Tenant starter content provisioning button');
+  assertIncludes(page, '<form action={provisionRestaurantStarterContent}', 'Tenant starter content provisioning form');
+  assertIncludes(page, 'Creates starter menu/gallery content only. Does not create admin users, ordering setup, billing, or custom domains.', 'Tenant starter content provisioning scope copy');
+  assertIncludes(page, 'restaurant.hasProfile && restaurant.hasSettings', 'Tenant starter content provisioning initialized-only UI guard');
+  assertIncludes(page, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Tenant starter content provisioning non-demo UI guard');
+
+  assertIncludes(tenantMenu, 'getTenantContentWhere(context)', 'Tenant starter content public menu tenant category read');
+  assertIncludes(tenantMenu, 'getTenantRelationWhere(context)', 'Tenant starter content public menu tenant item read');
+  assertIncludes(tenantGallery, 'getTenantContentWhere(context)', 'Tenant starter content public gallery tenant category read');
+  assertIncludes(tenantGallery, 'getTenantRelationWhere(context)', 'Tenant starter content public gallery tenant photo read');
+  assertIncludes(tenantOrder, 'ordering is not available yet', 'Tenant starter content non-demo order remains unavailable');
+  assertIncludes(tenantOrder, 'tenant-aware checkout APIs are still a later platform step', 'Tenant starter content non-demo order safety copy');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Tenant starter content should not add provisioning API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant starter content should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant starter content should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/subscriptions')), 'Tenant starter content should not add subscriptions API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/crm')), 'Tenant starter content should not add CRM API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant starter content should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant starter content should not add WhatsApp API route');
+  assertNotIncludes(packageJson, '"stripe"', 'Tenant starter content Stripe dependency');
+  assertNotIncludes(packageJson, '"nodemailer"', 'Tenant starter content nodemailer dependency');
+
+  assertIncludes(readme, 'Initialized tenants can now receive starter menu/gallery content.', 'README tenant starter content note');
+  assertIncludes(readme, 'Starter content is platform-admin provisioned.', 'README tenant starter content platform action note');
+  assertIncludes(readme, 'Tenant public menu/gallery pages read tenant-scoped content.', 'README tenant starter content public read note');
+  assertIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README tenant starter content boundaries note');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -2792,6 +2879,7 @@ const checks = [
   checkPlatformClientRestaurantRegistry,
   checkPlatformClientRestaurantCreate,
   checkTenantSafeProfileSettingsSchema,
+  checkTenantStarterContentProvisioning,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

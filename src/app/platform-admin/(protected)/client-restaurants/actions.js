@@ -43,6 +43,54 @@ function redirectWithInitialization(message) {
   redirect(`/platform-admin/client-restaurants?initialized=${encodeURIComponent(message)}`);
 }
 
+function redirectWithProvisioned(message) {
+  redirect(`/platform-admin/client-restaurants?provisioned=${encodeURIComponent(message)}`);
+}
+
+const STARTER_MENU_CATEGORIES = Object.freeze([
+  { name: 'House Starters', description: 'Simple opening plates for the starter menu.', sortOrder: 10 },
+  { name: 'Main Plates', description: 'Core dishes to shape the first public menu.', sortOrder: 20 },
+]);
+
+const STARTER_MENU_ITEMS = Object.freeze([
+  {
+    categoryName: 'House Starters',
+    name: 'Signature Starter Plate',
+    description: 'A placeholder starter item ready for the restaurant team to customize.',
+    price: 28,
+    imageUrl: '/images/food-mezze.jpg',
+  },
+  {
+    categoryName: 'Main Plates',
+    name: 'House Main Plate',
+    description: 'A sample main dish for validating the tenant menu experience.',
+    price: 48,
+    imageUrl: '/images/food-grill.jpg',
+  },
+  {
+    categoryName: 'Main Plates',
+    name: 'Fresh Daily Special',
+    description: 'A flexible starter menu item for future real menu setup.',
+    price: 36,
+    imageUrl: '/images/food-salads.jpg',
+  },
+]);
+
+const STARTER_GALLERY_CATEGORY = 'Starter Gallery';
+
+const STARTER_GALLERY_PHOTOS = Object.freeze([
+  {
+    title: 'Restaurant atmosphere placeholder',
+    description: 'Starter gallery image for the tenant public page.',
+    imageUrl: '/images/interior-1.jpg',
+  },
+  {
+    title: 'Signature dish placeholder',
+    description: 'Starter gallery food image for the tenant public page.',
+    imageUrl: '/images/food-mezze.jpg',
+  },
+]);
+
 export async function createClientRestaurant(formData) {
   const admin = await getAdminFromRequest(cookies());
 
@@ -164,4 +212,143 @@ export async function initializeRestaurantBasics(formData) {
   }
 
   redirectWithInitialization(`${restaurant.slug} initialized`);
+}
+
+export async function provisionRestaurantStarterContent(formData) {
+  const admin = await getAdminFromRequest(cookies());
+
+  if (!admin || admin.role !== 'ADMIN') {
+    redirectWithError('Only platform ADMIN users can provision starter menu/gallery content.');
+  }
+
+  const restaurantId = cleanRequiredField(formData.get('restaurantId'));
+
+  if (!restaurantId) {
+    redirectWithError('Restaurant is required for starter content provisioning.');
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+  });
+
+  if (!restaurant) {
+    redirectWithError('Restaurant was not found.');
+  }
+
+  if (restaurant.slug === DEMO_RESTAURANT_SLUG) {
+    redirectWithError('Starter provisioning does not modify Demo Restaurant data.');
+  }
+
+  const [existingProfile, existingSettings] = await Promise.all([
+    prisma.restaurantProfile.findUnique({
+      where: { restaurantId: restaurant.id },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+    }),
+  ]);
+
+  if (!existingProfile || !existingSettings) {
+    redirectWithError('Initialize profile/settings before provisioning starter menu/gallery content.');
+  }
+
+  const [existingMenuCategories, existingMenuItemCount, existingGalleryCategories, existingPhotoCount] =
+    await Promise.all([
+      prisma.menuCategory.findMany({
+        where: { restaurantId: restaurant.id },
+        select: { id: true, name: true },
+      }),
+      prisma.menuItem.count({
+        where: { restaurantId: restaurant.id },
+      }),
+      prisma.galleryCategory.findMany({
+        where: { restaurantId: restaurant.id },
+        select: { id: true, name: true },
+      }),
+      prisma.photo.count({
+        where: { restaurantId: restaurant.id },
+      }),
+    ]);
+
+  let createdMenu = false;
+  let createdGallery = false;
+
+  if (existingMenuItemCount === 0) {
+    const categoryByName = new Map(existingMenuCategories.map((category) => [category.name, category]));
+
+    for (const starterCategory of STARTER_MENU_CATEGORIES) {
+      if (!categoryByName.has(starterCategory.name)) {
+        const category = await prisma.menuCategory.create({
+          data: {
+            ...starterCategory,
+            restaurantId: restaurant.id,
+          },
+          select: { id: true, name: true },
+        });
+        categoryByName.set(category.name, category);
+      }
+    }
+
+    for (const starterItem of STARTER_MENU_ITEMS) {
+      const category = categoryByName.get(starterItem.categoryName);
+      if (!category) continue;
+
+      await prisma.menuItem.create({
+        data: {
+          name: starterItem.name,
+          description: starterItem.description,
+          price: starterItem.price,
+          imageUrl: starterItem.imageUrl,
+          isAvailable: false,
+          recommended: false,
+          isSignature: false,
+          categoryId: category.id,
+          restaurantId: restaurant.id,
+        },
+      });
+    }
+
+    createdMenu = true;
+  }
+
+  if (existingPhotoCount === 0) {
+    let galleryCategory = existingGalleryCategories.find((category) => category.name === STARTER_GALLERY_CATEGORY);
+
+    if (!galleryCategory) {
+      galleryCategory = await prisma.galleryCategory.create({
+        data: {
+          name: STARTER_GALLERY_CATEGORY,
+          restaurantId: restaurant.id,
+        },
+        select: { id: true, name: true },
+      });
+    }
+
+    for (const starterPhoto of STARTER_GALLERY_PHOTOS) {
+      await prisma.photo.create({
+        data: {
+          ...starterPhoto,
+          categoryId: galleryCategory.id,
+          restaurantId: restaurant.id,
+        },
+      });
+    }
+
+    createdGallery = true;
+  }
+
+  revalidatePath('/platform-admin/client-restaurants');
+  revalidatePath(`/r/${restaurant.slug}`);
+  revalidatePath(`/r/${restaurant.slug}/menu`);
+  revalidatePath(`/r/${restaurant.slug}/gallery`);
+
+  if (!createdMenu && !createdGallery) {
+    redirectWithProvisioned(`${restaurant.slug} already provisioned`);
+  }
+
+  if (!createdMenu || !createdGallery) {
+    redirectWithProvisioned(`${restaurant.slug} partially provisioned`);
+  }
+
+  redirectWithProvisioned(`${restaurant.slug} provisioned`);
 }

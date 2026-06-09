@@ -4,7 +4,11 @@ import {
   DEMO_RESTAURANT_SLUG,
   normalizeRestaurant,
 } from '../../../../lib/restaurants';
-import { createClientRestaurant, initializeRestaurantBasics } from './actions';
+import {
+  createClientRestaurant,
+  initializeRestaurantBasics,
+  provisionRestaurantStarterContent,
+} from './actions';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Client Restaurants | Platform Admin' };
@@ -21,6 +25,8 @@ async function getClientRestaurants() {
           select: {
             profiles: true,
             settings: true,
+            menuItems: true,
+            photos: true,
           },
         },
       },
@@ -34,6 +40,8 @@ async function getClientRestaurants() {
       ...normalizeRestaurant(restaurant),
       hasProfile: restaurant._count?.profiles > 0,
       hasSettings: restaurant._count?.settings > 0,
+      hasStarterMenu: restaurant._count?.menuItems > 0,
+      hasStarterGallery: restaurant._count?.photos > 0,
     }));
   } catch (error) {
     console.error('Failed to load client restaurant registry', error);
@@ -155,6 +163,53 @@ function InitializationControls({ restaurant }) {
           className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#18362f]"
         >
           Initialize profile/settings
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function StarterContentControls({ restaurant }) {
+  const isDemoRestaurant = restaurant.slug === DEMO_RESTAURANT_SLUG;
+  const fullyInitialized = restaurant.hasProfile && restaurant.hasSettings;
+  const starterContentReady = restaurant.hasStarterMenu && restaurant.hasStarterGallery;
+
+  if (isDemoRestaurant) {
+    return (
+      <p className="text-sm leading-6 text-neutral-600">
+        Demo Restaurant starter content is managed through the existing demo data.
+      </p>
+    );
+  }
+
+  if (!fullyInitialized) {
+    return (
+      <p className="text-sm leading-6 text-amber-900">
+        Initialize profile/settings before starter menu/gallery content.
+      </p>
+    );
+  }
+
+  if (starterContentReady) {
+    return (
+      <p className="text-sm font-semibold text-emerald-800">
+        Starter menu/gallery content is provisioned. Ordering remains disabled for non-demo tenants.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="max-w-3xl text-sm leading-6 text-neutral-600">
+        Creates starter menu/gallery content only. Does not create admin users, ordering setup, billing, or custom domains.
+      </p>
+      <form action={provisionRestaurantStarterContent}>
+        <input type="hidden" name="restaurantId" value={restaurant.id} />
+        <button
+          type="submit"
+          className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#18362f]"
+        >
+          Provision starter menu/gallery
         </button>
       </form>
     </div>
@@ -311,6 +366,27 @@ function RestaurantCard({ restaurant }) {
           </div>
         </div>
       </section>
+
+      <section className="mt-5 rounded-lg border border-neutral-100 bg-white p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">
+              menu/gallery starter status
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <SetupPill ready={restaurant.hasStarterMenu}>
+                Menu {restaurant.hasStarterMenu ? 'provisioned' : 'missing'}
+              </SetupPill>
+              <SetupPill ready={restaurant.hasStarterGallery}>
+                Gallery {restaurant.hasStarterGallery ? 'provisioned' : 'missing'}
+              </SetupPill>
+            </div>
+          </div>
+          <div className="lg:max-w-md">
+            <StarterContentControls restaurant={restaurant} />
+          </div>
+        </div>
+      </section>
     </article>
   );
 }
@@ -333,6 +409,7 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
   const error = typeof searchParams.error === 'string' ? searchParams.error : null;
   const created = typeof searchParams.created === 'string' ? searchParams.created : null;
   const initialized = typeof searchParams.initialized === 'string' ? searchParams.initialized : null;
+  const provisioned = typeof searchParams.provisioned === 'string' ? searchParams.provisioned : null;
 
   return (
     <div className="space-y-6">
@@ -354,6 +431,12 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
       {initialized ? (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           Restaurant profile/settings status updated: {initialized}
+        </p>
+      ) : null}
+
+      {provisioned ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          Restaurant starter content status updated: {provisioned}
         </p>
       ) : null}
 

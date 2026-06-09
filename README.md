@@ -152,6 +152,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Menu/gallery/order content still require later provisioning.
 - `/public` remains the Demo Restaurant shortcut.
 - No custom domains/billing/provisioning yet.
+- Initialized tenants can now receive starter menu/gallery content.
+- Starter content is platform-admin provisioned.
+- Tenant public menu/gallery pages read tenant-scoped content.
+- Ordering/admin users/billing/custom domains are still future work.
 
 ## Feature Modules Foundation
 
