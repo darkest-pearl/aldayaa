@@ -1931,6 +1931,16 @@ function checkTenantMenuGalleryAdmin() {
 
   assertIncludes(helper, 'getRestaurantStaffFromRequest', 'Tenant staff helper reads restaurant staff session');
   assertIncludes(helper, 'staff.restaurantSlug !== cleanSlug', 'Tenant staff helper enforces route slug boundary');
+  assertIncludes(helper, 'prisma.restaurantUser.findUnique', 'Tenant staff helper verifies RestaurantUser from DB');
+  assertIncludes(helper, 'include: {', 'Tenant staff helper includes related Restaurant');
+  assertIncludes(helper, 'currentStaff.restaurantId !== staff.restaurantId', 'Tenant staff helper verifies DB restaurantId matches token');
+  assertIncludes(helper, '!currentStaff.isActive', 'Tenant staff helper rejects inactive RestaurantUser');
+  assertIncludes(helper, '!isValidCurrentRestaurantStaffRole(currentStaff.role)', 'Tenant staff helper validates current DB role');
+  assertIncludes(helper, '!currentStaff.restaurant', 'Tenant staff helper requires related Restaurant');
+  assertIncludes(helper, 'currentStaff.restaurant.slug !== cleanSlug', 'Tenant staff helper verifies Restaurant slug boundary from DB');
+  assertIncludes(helper, "currentStaff.restaurant.status === 'ARCHIVED'", 'Tenant staff helper rejects archived restaurants');
+  assertIncludes(helper, 'Restaurant staff access is no longer active for this restaurant', 'Tenant staff helper inactive access error');
+  assertIncludes(helper, 'return currentSession', 'Tenant staff helper returns DB-backed session');
   assertIncludes(helper, 'RESTAURANT_STAFF_WRITE_ROLES', 'Tenant staff helper defines write roles');
   assertIncludes(helper, 'RESTAURANT_STAFF_ROLES.OWNER', 'Tenant staff write role includes OWNER');
   assertIncludes(helper, 'RESTAURANT_STAFF_ROLES.MANAGER', 'Tenant staff write role includes MANAGER');
@@ -1953,9 +1963,17 @@ function checkTenantMenuGalleryAdmin() {
   assertIncludes(tenantGalleryPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant gallery page enforces slug boundary');
   assertIncludes(tenantMenuClient, '/api/restaurant-admin/menu/categories', 'Tenant menu client uses restaurant-admin category API');
   assertIncludes(tenantMenuClient, '/api/restaurant-admin/menu/items', 'Tenant menu client uses restaurant-admin item API');
+  assertIncludes(tenantMenuClient, 'updateCategory', 'Tenant menu client supports category edits');
+  assertIncludes(tenantMenuClient, 'updateItem', 'Tenant menu client supports item edits');
+  assertIncludes(tenantMenuClient, "method: 'PUT'", 'Tenant menu client calls PUT APIs');
+  assertIncludes(tenantMenuClient, 'window.confirm', 'Tenant menu client confirms destructive deletes');
   assertIncludes(tenantMenuClient, 'SUPPORT access is read-only', 'Tenant menu client support read-only state');
   assertIncludes(tenantGalleryClient, '/api/restaurant-admin/gallery/categories', 'Tenant gallery client uses restaurant-admin category API');
   assertIncludes(tenantGalleryClient, '/api/restaurant-admin/gallery/photos', 'Tenant gallery client uses restaurant-admin photo API');
+  assertIncludes(tenantGalleryClient, 'updateCategory', 'Tenant gallery client supports category edits');
+  assertIncludes(tenantGalleryClient, 'updatePhoto', 'Tenant gallery client supports photo edits');
+  assertIncludes(tenantGalleryClient, "method: 'PUT'", 'Tenant gallery client calls PUT APIs');
+  assertIncludes(tenantGalleryClient, 'window.confirm', 'Tenant gallery client confirms destructive deletes');
   assertIncludes(tenantGalleryClient, 'SUPPORT access is read-only', 'Tenant gallery client support read-only state');
 
   for (const [apiPath, source] of apiSources) {

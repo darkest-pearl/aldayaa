@@ -27,6 +27,8 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState('');
+  const [editingItemId, setEditingItemId] = useState('');
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '', sortOrder: 0 });
   const [itemForm, setItemForm] = useState({
     name: '',
@@ -75,6 +77,28 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
         }),
       });
       setCategoryForm({ name: '', description: '', sortOrder: 0 });
+      setEditingCategoryId('');
+      await load();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function updateCategory(event) {
+    event.preventDefault();
+    if (!writable || !editingCategoryId) return;
+    try {
+      await apiRequest(`/api/restaurant-admin/menu/categories/${editingCategoryId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          restaurantSlug,
+          name: categoryForm.name,
+          description: categoryForm.description,
+          sortOrder: Number(categoryForm.sortOrder) || 0,
+        }),
+      });
+      setCategoryForm({ name: '', description: '', sortOrder: 0 });
+      setEditingCategoryId('');
       await load();
     } catch (requestError) {
       setError(requestError.message);
@@ -109,6 +133,35 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
     }
   }
 
+  async function updateItem(event) {
+    event.preventDefault();
+    if (!writable || !editingItemId) return;
+    try {
+      await apiRequest(`/api/restaurant-admin/menu/items/${editingItemId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...itemForm,
+          restaurantSlug,
+          price: Number(itemForm.price) || 0,
+        }),
+      });
+      setItemForm({
+        name: '',
+        description: '',
+        price: '',
+        categoryId: '',
+        imageUrl: '',
+        isAvailable: true,
+        recommended: false,
+        isSignature: false,
+      });
+      setEditingItemId('');
+      await load();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   async function toggleItem(item, field) {
     if (!writable) return;
     try {
@@ -124,6 +177,7 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
 
   async function deleteCategory(category) {
     if (!writable) return;
+    if (!window.confirm(`Delete category "${category.name}" and its menu items?`)) return;
     try {
       await apiRequest(`/api/restaurant-admin/menu/categories/${category.id}?restaurantSlug=${encodeURIComponent(restaurantSlug)}`, {
         method: 'DELETE',
@@ -136,6 +190,7 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
 
   async function deleteItem(item) {
     if (!writable) return;
+    if (!window.confirm(`Delete menu item "${item.name}"?`)) return;
     try {
       await apiRequest(`/api/restaurant-admin/menu/items/${item.id}?restaurantSlug=${encodeURIComponent(restaurantSlug)}`, {
         method: 'DELETE',
@@ -148,6 +203,48 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
 
   const categoryById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
 
+  function startEditCategory(category) {
+    setEditingCategoryId(category.id);
+    setCategoryForm({
+      name: category.name || '',
+      description: category.description || '',
+      sortOrder: category.sortOrder || 0,
+    });
+  }
+
+  function startEditItem(item) {
+    setEditingItemId(item.id);
+    setItemForm({
+      name: item.name || '',
+      description: item.description || '',
+      price: item.price ?? '',
+      categoryId: item.categoryId || '',
+      imageUrl: item.imageUrl || '',
+      isAvailable: Boolean(item.isAvailable),
+      recommended: Boolean(item.recommended),
+      isSignature: Boolean(item.isSignature),
+    });
+  }
+
+  function resetCategoryForm() {
+    setEditingCategoryId('');
+    setCategoryForm({ name: '', description: '', sortOrder: 0 });
+  }
+
+  function resetItemForm() {
+    setEditingItemId('');
+    setItemForm({
+      name: '',
+      description: '',
+      price: '',
+      categoryId: '',
+      imageUrl: '',
+      isAvailable: true,
+      recommended: false,
+      isSignature: false,
+    });
+  }
+
   return (
     <div className="space-y-5">
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
@@ -158,18 +255,21 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <form onSubmit={submitCategory} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Add category</h2>
+        <form onSubmit={editingCategoryId ? updateCategory : submitCategory} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold">{editingCategoryId ? 'Edit category' : 'Add category'}</h2>
           <div className="mt-4 grid gap-3">
             <input className={inputClass} required disabled={!writable} placeholder="Category name" value={categoryForm.name} onChange={(event) => setCategoryForm((form) => ({ ...form, name: event.target.value }))} />
             <textarea className={inputClass} disabled={!writable} placeholder="Description" value={categoryForm.description} onChange={(event) => setCategoryForm((form) => ({ ...form, description: event.target.value }))} />
             <input className={inputClass} disabled={!writable} type="number" placeholder="Sort order" value={categoryForm.sortOrder} onChange={(event) => setCategoryForm((form) => ({ ...form, sortOrder: event.target.value }))} />
-            <button disabled={!writable} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Save category</button>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={!writable} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{editingCategoryId ? 'Update category' : 'Save category'}</button>
+              {editingCategoryId ? <button type="button" onClick={resetCategoryForm} className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700">Cancel edit</button> : null}
+            </div>
           </div>
         </form>
 
-        <form onSubmit={submitItem} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Add menu item</h2>
+        <form onSubmit={editingItemId ? updateItem : submitItem} className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold">{editingItemId ? 'Edit menu item' : 'Add menu item'}</h2>
           <div className="mt-4 grid gap-3">
             <input className={inputClass} required disabled={!writable} placeholder="Item name" value={itemForm.name} onChange={(event) => setItemForm((form) => ({ ...form, name: event.target.value }))} />
             <textarea className={inputClass} disabled={!writable} placeholder="Description" value={itemForm.description} onChange={(event) => setItemForm((form) => ({ ...form, description: event.target.value }))} />
@@ -191,7 +291,10 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
                 </label>
               ))}
             </div>
-            <button disabled={!writable} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Save item</button>
+            <div className="flex flex-wrap gap-2">
+              <button disabled={!writable} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{editingItemId ? 'Update item' : 'Save item'}</button>
+              {editingItemId ? <button type="button" onClick={resetItemForm} className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700">Cancel edit</button> : null}
+            </div>
           </div>
         </form>
       </section>
@@ -205,7 +308,10 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
                 <p className="font-semibold">{category.name}</p>
                 <p className="text-sm text-neutral-600">{category.description || 'No description'} · order {category.sortOrder}</p>
               </div>
-              <button disabled={!writable} onClick={() => deleteCategory(category)} className="text-left text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
+              <div className="flex gap-3">
+                <button disabled={!writable} onClick={() => startEditCategory(category)} className="text-left text-sm font-semibold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-40">Edit</button>
+                <button disabled={!writable} onClick={() => deleteCategory(category)} className="text-left text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
+              </div>
             </div>
           )) : <p className="text-sm text-neutral-500">{loading ? 'Loading categories...' : 'No menu categories yet.'}</p>}
         </div>
@@ -222,7 +328,10 @@ export default function TenantMenuClient({ restaurantSlug, staffRole }) {
                   <p className="text-sm text-neutral-600">{categoryById.get(item.categoryId)?.name || item.category?.name || 'Uncategorized'} · AED {Number(item.price).toFixed(2)}</p>
                   {item.description ? <p className="mt-1 text-sm text-neutral-600">{item.description}</p> : null}
                 </div>
-                <button disabled={!writable} onClick={() => deleteItem(item)} className="text-left text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
+                <div className="flex gap-3">
+                  <button disabled={!writable} onClick={() => startEditItem(item)} className="text-left text-sm font-semibold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-40">Edit</button>
+                  <button disabled={!writable} onClick={() => deleteItem(item)} className="text-left text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-40">Delete</button>
+                </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {[
