@@ -1665,7 +1665,8 @@ function checkTenantStarterContentProvisioning() {
   assertIncludes(readme, 'Initialized tenants can now receive starter menu/gallery content.', 'README tenant starter content note');
   assertIncludes(readme, 'Starter content is platform-admin provisioned.', 'README tenant starter content platform action note');
   assertIncludes(readme, 'Tenant public menu/gallery pages read tenant-scoped content.', 'README tenant starter content public read note');
-  assertIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README tenant starter content boundaries note');
+  assertIncludes(readme, 'Ordering, billing, custom domains, and broader tenant staff management are still future work.', 'README tenant starter content boundaries note');
+  assertNotIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README stale tenant starter content boundaries note');
 }
 
 function checkRestaurantStaffAuthSchemaBoundary() {
@@ -1677,14 +1678,31 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   const platformLayout = read('src/app/platform-admin/(protected)/layout.js');
   const auth = read('src/lib/auth.js');
   const staffAuth = read('src/lib/restaurant-staff-auth.js');
+  const middleware = read('middleware.js');
   const seed = read('prisma/seed.js');
+  const envExample = read('.env.example');
   const blockerPath = path.join(root, 'docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
   const migrationPath = path.join(root, 'prisma/migrations/20260609170000_add_restaurant_user_model/migration.sql');
+  const loginApiPath = path.join(root, 'src/app/api/restaurant-admin/login/route.js');
+  const logoutApiPath = path.join(root, 'src/app/api/restaurant-admin/logout/route.js');
+  const tenantAdminPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/page.js');
+  const tenantAdminLoginPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/login/page.js');
+  const tenantAdminLayoutPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/layout.js');
 
   assert(fs.existsSync(blockerPath), 'Tenant admin access foundation blocker doc is missing');
   assert(fs.existsSync(migrationPath), 'RestaurantUser schema boundary migration is missing');
+  assert(fs.existsSync(loginApiPath), 'Restaurant staff login API route is missing');
+  assert(fs.existsSync(logoutApiPath), 'Restaurant staff logout API route is missing');
+  assert(fs.existsSync(tenantAdminPath), 'Tenant admin dashboard page is missing');
+  assert(fs.existsSync(tenantAdminLoginPath), 'Tenant admin login page is missing');
+  assert(fs.existsSync(tenantAdminLayoutPath), 'Tenant admin layout is missing');
   const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
   const migration = read('prisma/migrations/20260609170000_add_restaurant_user_model/migration.sql');
+  const loginApi = read('src/app/api/restaurant-admin/login/route.js');
+  const logoutApi = read('src/app/api/restaurant-admin/logout/route.js');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const tenantAdminLogin = read('src/app/r/[restaurantSlug]/admin/login/page.js');
+  const tenantAdminLayout = read('src/app/r/[restaurantSlug]/admin/layout.js');
   const restaurantBlock = getModelBlock(schema, 'Restaurant');
   const restaurantUserBlock = getModelBlock(schema, 'RestaurantUser');
   const adminUserBlock = getModelBlock(schema, 'AdminUser');
@@ -1733,32 +1751,111 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(auth, 'jwt.sign({ id: admin.id, email: admin.email, role: admin.role }', 'Tenant admin blocker token has no tenant scope');
   assertNotIncludes(auth, 'restaurantId', 'Tenant admin blocker auth payload remains unscoped');
 
+  assertIncludes(envExample, 'RESTAURANT_STAFF_JWT_SECRET', 'Restaurant staff JWT secret env example');
   assertIncludes(staffAuth, 'RESTAURANT_STAFF_COOKIE_NAME', 'Restaurant staff separate cookie constant');
   assertIncludes(staffAuth, 'aldayaa_restaurant_staff', 'Restaurant staff cookie name value');
   assertNotIncludes(staffAuth, 'aldayaa_admin', 'Restaurant staff auth must not use platform admin cookie');
+  assertNotIncludes(staffAuth, "from './restaurants'", 'Restaurant staff auth should not import Prisma-backed restaurants helper');
+  assertNotIncludes(staffAuth, 'from "./restaurants"', 'Restaurant staff auth should not import Prisma-backed restaurants helper double quote');
+  assertNotIncludes(staffAuth, 'import { prisma }', 'Restaurant staff auth should not import Prisma at module load');
   assertIncludes(staffAuth, 'RESTAURANT_STAFF_ROLES', 'Restaurant staff role constants');
   assertIncludes(staffAuth, 'OWNER: \'OWNER\'', 'Restaurant staff OWNER role');
   assertIncludes(staffAuth, 'MANAGER: \'MANAGER\'', 'Restaurant staff MANAGER role');
   assertIncludes(staffAuth, 'SUPPORT: \'SUPPORT\'', 'Restaurant staff SUPPORT role');
+  assertIncludes(staffAuth, "tokenType: 'restaurant_staff'", 'Restaurant staff token type payload');
   assertIncludes(staffAuth, 'restaurantId', 'Restaurant staff session payload includes restaurantId');
+  assertIncludes(staffAuth, 'restaurantSlug', 'Restaurant staff session payload includes restaurantSlug');
   assertIncludes(staffAuth, 'createRestaurantStaffTokenPayload', 'Restaurant staff token payload helper');
   assertIncludes(staffAuth, 'Invalid restaurant staff payload', 'Restaurant staff payload validation');
+  assertIncludes(staffAuth, 'RESTAURANT_STAFF_JWT_SECRET', 'Restaurant staff preferred JWT secret');
+  assertIncludes(staffAuth, 'process.env.ADMIN_JWT_SECRET', 'Restaurant staff fallback JWT secret');
+  assertIncludes(staffAuth, 'RESTAURANT_STAFF_JWT_SECRET must be configured in production', 'Restaurant staff production secret guard');
+  assertIncludes(staffAuth, 'setRestaurantStaffSessionCookie', 'Restaurant staff set cookie helper');
+  assertIncludes(staffAuth, 'clearRestaurantStaffSessionCookie', 'Restaurant staff clear cookie helper');
+  assertIncludes(staffAuth, 'authenticateRestaurantStaff', 'Restaurant staff authentication helper');
+  assertIncludes(staffAuth, "restaurantSlug === DEMO_RESTAURANT_SLUG", 'Restaurant staff rejects demo restaurant');
+  assertIncludes(staffAuth, "restaurant.status === 'ARCHIVED'", 'Restaurant staff rejects archived restaurant');
+  assertIncludes(staffAuth, '!staffUser.isActive', 'Restaurant staff rejects inactive users');
+  assertIncludes(staffAuth, 'lastLoginAt: new Date()', 'Restaurant staff updates last login');
+  assertIncludes(staffAuth, 'hashRestaurantStaffPassword', 'Restaurant staff password hash helper');
+  assertIncludes(staffAuth, 'password.length < 10', 'Restaurant staff password min length');
   assertNotIncludes(staffAuth, 'setSessionCookie', 'Restaurant staff auth should not reuse platform admin session helper');
 
-  assertIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin blocker Batch 49 status');
+  assertIncludes(loginApi, 'authenticateRestaurantStaff', 'Restaurant staff login API authenticates staff');
+  assertIncludes(loginApi, 'setRestaurantStaffSessionCookie', 'Restaurant staff login API sets staff cookie');
+  assertIncludes(loginApi, 'restaurantSlug: z.string()', 'Restaurant staff login validates restaurantSlug');
+  assertIncludes(loginApi, 'password: z.string().min(10)', 'Restaurant staff login validates password length');
+  assertNotIncludes(loginApi, 'setSessionCookie', 'Restaurant staff login must not set platform admin cookie');
+  assertNotIncludes(loginApi, 'requireAdmin', 'Restaurant staff login should be public');
+  assertIncludes(logoutApi, 'clearRestaurantStaffSessionCookie', 'Restaurant staff logout clears staff cookie');
+  assertNotIncludes(logoutApi, 'clearSessionCookie', 'Restaurant staff logout must not clear platform admin cookie');
+
+  assertIncludes(middleware, 'RESTAURANT_STAFF_COOKIE_NAME', 'Middleware reads staff cookie');
+  assertIncludes(middleware, 'isTenantAdminRoute', 'Middleware identifies tenant admin routes');
+  assertIncludes(middleware, 'verifyRestaurantStaffToken', 'Middleware verifies staff token');
+  assertNotIncludes(middleware, './src/lib/restaurants', 'Middleware should not import Prisma-backed restaurants helper');
+  assertNotIncludes(middleware, './src/lib/prisma', 'Middleware should not import Prisma helper');
+  assertNotIncludes(middleware, '@prisma/client', 'Middleware should not import Prisma client');
+  assertIncludes(middleware, 'session.restaurantSlug !== restaurantSlug', 'Middleware enforces tenant slug boundary');
+  assertIncludes(middleware, '`/r/${restaurantSlug}/admin/login`', 'Middleware tenant login redirect');
+  assertIncludes(middleware, '`/r/${restaurantSlug}/admin`', 'Middleware authenticated login redirect');
+  assertNotIncludes(middleware, 'COOKIE_NAME = "aldayaa_admin";\nconst JWT_SECRET', 'Middleware should not rely on weak platform fallback secret');
+  assertIncludes(middleware, 'matcher: ["/admin/:path*", "/api/admin/:path*", "/r/:restaurantSlug/admin/:path*"]', 'Middleware matcher includes tenant admin');
+
+  assertIncludes(tenantAdmin, 'getRestaurantStaffFromRequest', 'Tenant admin page verifies staff session');
+  assertIncludes(tenantAdmin, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant admin page enforces slug boundary');
+  assertIncludes(tenantAdmin, "redirect(`/r/${params.restaurantSlug}/admin/login`)", 'Tenant admin page redirects unauthenticated staff');
+  assertIncludes(tenantAdminLayout, 'bg-neutral-950', 'Tenant admin layout minimal shell styling');
+  assertIncludes(tenantAdmin, 'Restaurant staff access is active', 'Tenant admin minimal dashboard copy');
+  assertIncludes(tenantAdmin, 'Operational tools are not enabled yet', 'Tenant admin no operational modules copy');
+  assertIncludes(tenantAdminLogin, '/api/restaurant-admin/login', 'Tenant admin login posts to staff login API');
+  assertIncludes(tenantAdminLogin, 'restaurantSlug', 'Tenant admin login sends route slug');
+  assertNotIncludes(tenantAdmin, 'MenuClient', 'Tenant admin dashboard should not expose menu tools');
+  assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
+  assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
+
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; operational tenant admin modules remain future work.', 'Tenant admin foundation Batch 50 status');
+  assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 49 adds a separate RestaurantUser model.', 'Tenant admin blocker RestaurantUser schema update');
-  assertIncludes(blocker, 'Platform AdminUser remains separate from RestaurantUser.', 'Tenant admin blocker separate platform users');
-  assertIncludes(blocker, 'RestaurantUser sessions must not use the platform admin cookie.', 'Tenant admin blocker separate cookie');
-  assertIncludes(blocker, 'Tenant admin creation remains future work.', 'Tenant admin blocker future creation note');
+  assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
+  assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
+  assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
+  assertIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin operational modules future note');
+  assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
+  assertNotIncludes(blocker, 'roles cannot be safely separated yet', 'Tenant admin doc stale role separation blocker');
+  assertNotIncludes(blocker, 'Tenant admin creation remains future work', 'Tenant admin doc stale tenant creation future wording');
 
   assertIncludes(page, 'tenant admin access status', 'Client restaurant registry tenant admin access status copy');
-  assertIncludes(page, 'Schema boundary added; tenant admin creation is still pending.', 'Client restaurant registry tenant admin schema-boundary copy');
-  assertIncludes(page, 'Does not create tenant admin access yet.', 'Client restaurant registry no tenant admin creation copy');
-  assertNotIncludes(page, 'Create tenant admin access', 'Client restaurant registry should not show tenant admin create button while blocked');
-  assertNotIncludes(action, 'createTenantAdminAccess', 'Tenant admin access action should not exist while blocked');
+  assertIncludes(page, 'tenantOwnerCount', 'Client restaurant registry tenant owner count');
+  assertIncludes(page, 'Create first owner access', 'Client restaurant registry first owner button');
+  assertIncludes(page, 'Tenant admin login', 'Client restaurant registry tenant admin login link');
+  assertIncludes(page, "OWNER {restaurant.tenantOwnerCount > 0 ? 'created' : 'missing'}", 'Client restaurant registry owner created/missing status');
+  assertIncludes(page, "Auth {restaurant.tenantOwnerCount > 0 ? 'ready' : 'pending'}", 'Client restaurant registry auth ready/pending status');
+  assertIncludes(page, 'Operational modules pending', 'Client restaurant registry operational modules pending status');
+  assertNotIncludes(page, 'Admin access blocked', 'Client restaurant registry should not always show admin blocked');
+  assertIncludes(page, 'restaurant.hasProfile && restaurant.hasSettings', 'Client restaurant owner creation initialized-only UI guard');
+  assertIncludes(page, 'restaurant.slug !== DEMO_RESTAURANT_SLUG', 'Client restaurant owner creation non-demo UI guard');
+  assertIncludes(action, 'createTenantOwnerAccess', 'Tenant owner creation action exists');
+  const ownerAction = getExportedFunctionSource(action, 'createTenantOwnerAccess');
+  assertIncludes(ownerAction, 'getAdminFromRequest(cookies())', 'Tenant owner creation platform admin auth lookup');
+  assertIncludes(ownerAction, "admin.role !== 'ADMIN'", 'Tenant owner creation platform ADMIN-only guard');
+  assertIncludes(ownerAction, 'restaurant.slug === DEMO_RESTAURANT_SLUG', 'Tenant owner creation rejects Demo Restaurant');
+  assertIncludes(ownerAction, "restaurant.status === 'ARCHIVED'", 'Tenant owner creation rejects archived restaurants');
+  assertIncludes(ownerAction, 'Archived restaurants cannot receive tenant owner access.', 'Tenant owner creation archived error copy');
+  assertIncludes(ownerAction, 'prisma.restaurantProfile.findUnique', 'Tenant owner creation requires profile');
+  assertIncludes(ownerAction, 'prisma.restaurantSettings.findUnique', 'Tenant owner creation requires settings');
+  assertIncludes(action, 'z.string().email()', 'Tenant owner creation validates email');
+  assertIncludes(action, 'z.string().min(10)', 'Tenant owner creation validates password length');
+  assertIncludes(ownerAction, 'hashRestaurantStaffPassword', 'Tenant owner creation hashes password');
+  assertIncludes(ownerAction, 'prisma.restaurantUser.count', 'Tenant owner creation prevents duplicate owner');
+  assertIncludes(ownerAction, 'role: RESTAURANT_STAFF_ROLES.OWNER', 'Tenant owner creation creates OWNER role');
+  assertIncludes(ownerAction, 'prisma.restaurantUser.findUnique', 'Tenant owner creation checks duplicate restaurant email');
+  assertIncludes(ownerAction, 'prisma.restaurantUser.create', 'Tenant owner creation creates RestaurantUser');
+  assertIncludes(ownerAction, 'redirectWithOwner', 'Tenant owner creation redirects with owner message');
   assertNotIncludes(action, 'prisma.adminUser.create', 'Tenant admin blocker should not create AdminUser');
-  assertNotIncludes(action, 'prisma.restaurantUser.create', 'Tenant admin boundary should not create RestaurantUser yet');
-  assertNotIncludes(action, 'hashPassword', 'Tenant admin blocker should not hash temporary passwords yet');
+  assertNotIncludes(ownerAction, 'prisma.adminUser', 'Tenant owner creation must not touch AdminUser');
+  assertNotIncludes(ownerAction, 'gatewayLead', 'Tenant owner creation must not touch GatewayLead');
+  assertNotIncludes(action, 'hashPassword(', 'Tenant owner creation should use staff password helper');
   assertNotIncludes(seed, 'restaurantUser', 'RestaurantUser rows should not be created by seed');
 
   assertNotIncludes(staffAuth, 'order.create', 'Restaurant staff auth boundary should not create orders');
@@ -1783,8 +1880,13 @@ function checkRestaurantStaffAuthSchemaBoundary() {
 
   assertIncludes(readme, 'Restaurant staff auth schema boundary added.', 'README restaurant staff schema boundary note');
   assertIncludes(readme, 'RestaurantUser is separate from platform AdminUser.', 'README restaurant user separation note');
-  assertIncludes(readme, 'No tenant admin creation action was added.', 'README tenant admin no action note');
-  assertIncludes(readme, 'Restaurant staff sessions must not use the platform admin cookie or access `/platform-admin`.', 'README tenant staff platform boundary note');
+  assertIncludes(readme, 'Tenant first-owner provisioning and restaurant staff login added.', 'README tenant admin provisioning note');
+  assertIncludes(readme, 'Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.', 'README tenant owner creation note');
+  assertIncludes(readme, 'Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.', 'README tenant login route note');
+  assertIncludes(readme, 'Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.', 'README tenant staff platform boundary note');
+  assertNotIncludes(readme, 'No tenant admin creation action was added.', 'README stale no tenant admin action note');
+  assertNotIncludes(readme, 'Tenant admin creation and login/session wiring remain future work.', 'README stale tenant login future note');
+  assertNotIncludes(readme, 'No restaurant-scoped AdminUser or membership model exists yet.', 'README stale missing restaurant user note');
 }
 
 function checkGatewayLeadAdminManagement() {
