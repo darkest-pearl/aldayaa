@@ -228,11 +228,11 @@ function TenantAdminAccessStatus({ restaurant }) {
   return (
     <div className="space-y-3">
       <p className="text-sm font-semibold text-amber-900">
-        Blocked: AdminUser is not tenant-scoped yet.
+        Schema boundary added; tenant admin creation is still pending.
       </p>
       <p className="max-w-3xl text-sm leading-6 text-neutral-600">
-        Does not create tenant admin access yet. A future schema/auth batch needs a restaurant-scoped user or
-        membership model before tenant staff can safely sign in without platform-admin access.
+        Does not create tenant admin access yet. RestaurantUser is separate from platform AdminUser, and a future
+        login/session batch must keep restaurant staff out of platform-admin.
       </p>
     </div>
   );
