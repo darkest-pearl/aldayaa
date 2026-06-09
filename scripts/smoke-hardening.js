@@ -2005,8 +2005,10 @@ function checkTenantMenuGalleryAdmin() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
 
   assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
+  assertIncludes(readme, 'Restaurant staff access now includes tenant-scoped menu/gallery management; orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 51 updated tenant staff access note');
   assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
   assertIncludes(readme, 'Orders, reservations, settings, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 51 future modules note');
+  assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
 }
 
 function checkGatewayLeadAdminManagement() {
