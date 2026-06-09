@@ -2250,7 +2250,10 @@ function checkTenantReservationsManagement() {
   assertIncludes(collectionRoute, 'where: { restaurantId: staff.restaurantId }', 'Tenant reservations GET scopes by restaurantId');
   assertIncludes(itemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant reservations PUT rejects cross-tenant id access');
   assertIncludes(collectionRoute, 'prisma.reservation.findMany', 'Tenant reservations GET reads Reservation');
-  assertIncludes(itemRoute, 'prisma.reservation.update', 'Tenant reservations PUT updates Reservation status');
+  assertIncludes(itemRoute, 'prisma.reservation.updateMany', 'Tenant reservations PUT mutation is tenant-scoped');
+  assertIncludes(itemRoute, 'updated.count !== 1', 'Tenant reservations PUT checks scoped update count');
+  assertIncludes(itemRoute, 'const reservation = await prisma.reservation.findFirst', 'Tenant reservations PUT reads updated reservation with tenant scope');
+  assertNotIncludes(itemRoute, 'prisma.reservation.update({', 'Tenant reservations PUT must not update by id only');
   assertIncludes(itemRoute, 'status: z.enum(RESERVATION_STATUSES)', 'Tenant reservations PUT validates status');
   assertIncludes(itemRoute, 'Reservation not found', 'Tenant reservations PUT hides cross-tenant records');
   assertIncludes(reservationsApiSource, 'normalizeReservation', 'Tenant reservations API returns normalized reservations');

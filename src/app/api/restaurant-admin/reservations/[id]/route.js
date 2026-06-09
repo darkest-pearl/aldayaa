@@ -20,17 +20,18 @@ export async function PUT(request, { params }) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
-    const existing = await prisma.reservation.findFirst({
+    const updated = await prisma.reservation.updateMany({
       where: { id: params.id, restaurantId: staff.restaurantId },
-      select: { id: true },
-    });
-
-    if (!existing) return failure('Reservation not found', 404);
-
-    const reservation = await prisma.reservation.update({
-      where: { id: params.id },
       data: { status: parsed.data.status },
     });
+
+    if (updated.count !== 1) return failure('Reservation not found', 404);
+
+    const reservation = await prisma.reservation.findFirst({
+      where: { id: params.id, restaurantId: staff.restaurantId },
+    });
+
+    if (!reservation) return failure('Reservation not found', 404);
 
     return success({ reservation: normalizeReservation(reservation) });
   } catch (error) {
