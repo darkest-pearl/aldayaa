@@ -5,7 +5,7 @@ import { requireAdmin } from '../../../lib/auth';
 import { generateReservationReference } from "../../../lib/reference";
 import { DAYS_OF_WEEK, getRestaurantSettings, normalizeWorkingHoursByDay } from '../../../lib/restaurant-settings';
 import { handleApiError, success, failure } from '../../../lib/api-response';
-import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
+import { DEMO_RESTAURANT_SLUG, withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
 
 const createSchema = z.object({
   name: z.string().min(2),
@@ -15,6 +15,7 @@ const createSchema = z.object({
   time: z.string().min(1),
   guests: z.number().int().min(1),
   specialRequests: z.string().optional().nullable(),
+  restaurantSlug: z.string().trim().optional().nullable(),
 });
 
 const RESERVATION_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'NO_SHOW'];
@@ -70,6 +71,55 @@ function serializeReservation(reservation) {
   };
 }
 
+function normalizeReservationRestaurantSlug(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+async function resolveReservationCreationContext(restaurantSlug) {
+  const normalizedSlug = normalizeReservationRestaurantSlug(restaurantSlug);
+
+  if (!normalizedSlug || normalizedSlug === DEMO_RESTAURANT_SLUG) {
+    return {
+      isDemoRestaurant: true,
+      restaurantId: DEMO_RESTAURANT_SLUG,
+      settings: await getRestaurantSettings(),
+    };
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: normalizedSlug },
+    select: { id: true, slug: true, status: true },
+  });
+
+  if (!restaurant || restaurant.status === 'ARCHIVED') {
+    return {
+      error: failure('Restaurant is not available for reservations', 404),
+    };
+  }
+
+  const [profile, settings] = await Promise.all([
+    prisma.restaurantProfile.findUnique({
+      where: { restaurantId: restaurant.id },
+      select: { id: true },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+    }),
+  ]);
+
+  if (!profile || !settings) {
+    return {
+      error: failure('Restaurant reservations are not initialized yet', 404),
+    };
+  }
+
+  return {
+    isDemoRestaurant: false,
+    restaurantId: restaurant.id,
+    settings,
+  };
+}
+
 export async function GET(request) {
   try {
     await requireAdmin(request, ['ADMIN', 'MANAGER', 'SUPPORT']);
@@ -91,11 +141,15 @@ export async function POST(request) {
       ...body,
       guests: Number(body.guests),
       email: body.email?.trim() || null,
+      restaurantSlug: body.restaurantSlug?.trim() || null,
     });
 
     if (!parsed.success) return failure('Invalid reservation data', 400, { details: parsed.error.flatten() });
 
-    const settings = await getRestaurantSettings();
+    const reservationContext = await resolveReservationCreationContext(parsed.data.restaurantSlug);
+    if (reservationContext.error) return reservationContext.error;
+
+    const settings = reservationContext.settings;
     const workingHoursByDay = normalizeWorkingHoursByDay(
       settings.workingHoursByDay,
       settings.openingTime,
@@ -138,17 +192,24 @@ export async function POST(request) {
 
     const reference = generateReservationReference();
 
+    const reservationData = {
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      email: parsed.data.email,
+      date: reservationDate,
+      time: parsed.data.time,
+      guests: parsed.data.guests,
+      specialRequests: parsed.data.specialRequests,
+      reference,
+    };
+
     const reservation = await prisma.reservation.create({
-      data: withDemoRestaurantData({
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        email: parsed.data.email,
-        date: reservationDate,
-        time: parsed.data.time,
-        guests: parsed.data.guests,
-        specialRequests: parsed.data.specialRequests,
-        reference,
-      }),
+      data: reservationContext.isDemoRestaurant
+        ? withDemoRestaurantData(reservationData)
+        : {
+            ...reservationData,
+            restaurantId: reservationContext.restaurantId,
+          },
     });
 
     const serializedReservation = serializeReservation(reservation);

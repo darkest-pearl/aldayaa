@@ -4,7 +4,13 @@ import { useState } from "react";
 import Button from "./Button";
 import { strings } from "../lib/strings";
 
-export default function ReservationForm() {
+export default function ReservationForm({
+  restaurantSlug = null,
+  restaurantName = "Demo Restaurant",
+  whatsappNumber = strings.whatsapp,
+  whatsappLink = strings.whatsappLink,
+  showCancellation = true,
+}) {
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -36,10 +42,11 @@ export default function ReservationForm() {
 
     setLoading(true);
 
+    const payload = restaurantSlug ? { ...form, restaurantSlug } : form;
     const res = await fetch("/api/reservations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -137,7 +144,7 @@ export default function ReservationForm() {
         </h1>
 
         <p className="text-center text-neutral-600 mb-6 text-sm">
-          We are open late for families and friends. Fill in your details and we will confirm over WhatsApp.
+          Reserve with {restaurantName}. Fill in your details and we will confirm over WhatsApp.
         </p>
         <form className="grid gap-4" onSubmit={submit}>
           <div className="space-y-1">
@@ -283,25 +290,31 @@ export default function ReservationForm() {
       <div className="section-bg p-4 sm:p-5 text-center space-y-1">
         <p className="text-sm text-neutral-700">Prefer WhatsApp? Message us directly.</p>
         <a
-          href={strings.whatsappLink}
+          href={whatsappLink}
           target="_blank"
           className="text-primary font-semibold"
         >
-          WhatsApp {strings.whatsapp}
+          WhatsApp {whatsappNumber}
         </a>
         <p className="text-xs text-neutral-500">
-          Need to cancel a reservation?{' '}
-          <button
-            type="button"
-            onClick={() => setShowCancelModal(true)}
-            className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
-          >
-            Click here
-          </button>
-          .
+          {showCancellation ? (
+            <>
+              Need to cancel a reservation?{' '}
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(true)}
+                className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
+              >
+                Click here
+              </button>
+              .
+            </>
+          ) : (
+            'Cancellation support will be handled directly by the restaurant.'
+          )}
         </p>
       </div>
-      {showCancelModal && (
+      {showCancellation && showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white/95 shadow-lifted p-6">
             <button
