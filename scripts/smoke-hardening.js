@@ -1807,24 +1807,25 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(tenantAdmin, "redirect(`/r/${params.restaurantSlug}/admin/login`)", 'Tenant admin page redirects unauthenticated staff');
   assertIncludes(tenantAdminLayout, 'bg-neutral-950', 'Tenant admin layout minimal shell styling');
   assertIncludes(tenantAdmin, 'Restaurant staff access is active', 'Tenant admin minimal dashboard copy');
-  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, and staff management are available now.', 'Tenant admin current modules copy');
+  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, staff management, and reservations are available now.', 'Tenant admin current modules copy');
   assertIncludes(tenantAdminLogin, '/api/restaurant-admin/login', 'Tenant admin login posts to staff login API');
   assertIncludes(tenantAdminLogin, 'restaurantSlug', 'Tenant admin login sends route slug');
   assertNotIncludes(tenantAdmin, 'MenuClient', 'Tenant admin dashboard should not expose menu tools');
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
   assertIncludes(blocker, 'Batch 53 adds OWNER-only tenant staff management for RestaurantUser records.', 'Tenant admin doc Batch 53 update');
+  assertIncludes(blocker, 'Batch 54 adds tenant-scoped reservation viewing and status management.', 'Tenant admin doc Batch 54 update');
   assertIncludes(blocker, 'Batch 49 adds a separate RestaurantUser model.', 'Tenant admin blocker RestaurantUser schema update');
   assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
   assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
   assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
-  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, and staff management foundation.', 'Tenant admin enabled modules note');
-  assertIncludes(blocker, 'Orders, reservations, inventory, recipes, staff invitations, audit logging, password reset flows, and other advanced tenant admin modules remain future work.', 'Tenant admin operational modules future note');
+  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, and reservations management.', 'Tenant admin enabled modules note');
+  assertIncludes(blocker, 'Orders, inventory, recipes, staff invitations, audit logging, password reset flows, and other advanced tenant admin modules remain future work.', 'Tenant admin operational modules future note');
   assertNotIncludes(blocker, 'Restaurant staff login is authentication-only for now.', 'Tenant admin doc stale auth-only wording');
   assertNotIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin doc stale module future wording');
   assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
@@ -1958,12 +1959,13 @@ function checkTenantMenuGalleryAdmin() {
   assertIncludes(tenantNav, 'Menu', 'Tenant admin navigation includes Menu');
   assertIncludes(tenantNav, 'Gallery', 'Tenant admin navigation includes Gallery');
   assertIncludes(tenantNav, 'Orders', 'Tenant admin navigation keeps Orders future');
-  assertIncludes(tenantNav, 'Reservations', 'Tenant admin navigation keeps Reservations future');
+  assertIncludes(tenantNav, "label: 'Reservations'", 'Tenant admin navigation includes Reservations route');
+  assertIncludes(tenantNav, "href: `/r/${restaurantSlug}/admin/reservations`", 'Tenant admin navigation reservations route');
   assertIncludes(tenantNav, "href: `/r/${restaurantSlug}/admin/settings`", 'Tenant admin navigation includes Settings route');
   assertIncludes(tenantAdmin, 'Open menu', 'Tenant admin dashboard links to menu');
   assertIncludes(tenantAdmin, 'Open gallery', 'Tenant admin dashboard links to gallery');
   assertIncludes(tenantAdmin, 'Open settings', 'Tenant admin dashboard links to settings');
-  assertIncludes(tenantAdmin, 'Orders, reservations, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
+  assertIncludes(tenantAdmin, 'Orders, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
   assertIncludes(tenantMenuPage, 'getRestaurantStaffFromRequest', 'Tenant menu page verifies staff session');
   assertIncludes(tenantMenuPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant menu page enforces slug boundary');
   assertIncludes(tenantGalleryPage, 'getRestaurantStaffFromRequest', 'Tenant gallery page verifies staff session');
@@ -2012,9 +2014,9 @@ function checkTenantMenuGalleryAdmin() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
 
   assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, and staff management foundation; orders, reservations, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 53 updated tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, and reservations management; orders, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 54 updated tenant staff access note');
   assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
-  assertIncludes(readme, 'Orders, reservations, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 51 future modules note');
+  assertIncludes(readme, 'Orders, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 54 future modules note');
   assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
   assertNotIncludes(readme, 'orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README stale settings future work note');
 }
@@ -2095,7 +2097,7 @@ function checkTenantProfileSettingsAdmin() {
   assertIncludes(readme, 'Tenant profile/settings admin added.', 'README Batch 52 note');
   assertIncludes(readme, 'Restaurant staff can manage tenant-scoped public profile metadata, contact links, brand colors, display hours, and cancellation settings under `/r/[restaurantSlug]/admin/settings`.', 'README Batch 52 scope note');
   assertIncludes(readme, 'OWNER and MANAGER can update profile/settings; SUPPORT remains read-only.', 'README Batch 52 role note');
-  assertIncludes(readme, 'Feature/module activation, ordering activation, orders, reservations, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 52 future boundary note');
+  assertIncludes(readme, 'Feature/module activation, ordering activation, orders, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 52 future boundary note');
   assertNotIncludes(readme, 'orders, reservations, settings, inventory, recipes', 'README should not say settings remain future work after Batch 52');
 
   assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/settings/page.jsx')), 'Demo admin settings page should remain present');
@@ -2211,6 +2213,87 @@ function checkTenantStaffManagementFoundation() {
   assertIncludes(readme, 'No email invites, WhatsApp messages, platform AdminUser changes, billing, domains, or provisioning logic was added.', 'README Batch 53 boundary note');
 
   assert(!migrationDirs.some((migrationDir) => /staff.management|tenant.staff|restaurant.staff/i.test(migrationDir)), 'Batch 53 should not add a Prisma migration');
+}
+
+function checkTenantReservationsManagement() {
+  const readme = read('README.md');
+  const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
+  const collectionRoutePath = path.join(root, 'src/app/api/restaurant-admin/reservations/route.js');
+  const itemRoutePath = path.join(root, 'src/app/api/restaurant-admin/reservations/[id]/route.js');
+  const tenantReservationsPagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/reservations/page.js');
+  const tenantReservationsClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/reservations/TenantReservationsClient.jsx');
+
+  assert(fs.existsSync(collectionRoutePath), 'Tenant reservations collection API route is missing');
+  assert(fs.existsSync(itemRoutePath), 'Tenant reservations item API route is missing');
+  assert(fs.existsSync(tenantReservationsPagePath), 'Tenant reservations admin page is missing');
+  assert(fs.existsSync(tenantReservationsClientPath), 'Tenant reservations admin client is missing');
+
+  const collectionRoute = read('src/app/api/restaurant-admin/reservations/route.js');
+  const itemRoute = read('src/app/api/restaurant-admin/reservations/[id]/route.js');
+  const tenantReservationsPage = read('src/app/r/[restaurantSlug]/admin/reservations/page.js');
+  const tenantReservationsClient = read('src/app/r/[restaurantSlug]/admin/reservations/TenantReservationsClient.jsx');
+  const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const reservationsApiSource = `${collectionRoute}\n${itemRoute}`;
+  const reservationsUiSource = `${tenantReservationsPage}\n${tenantReservationsClient}\n${tenantNav}\n${tenantAdmin}`;
+
+  assertIncludes(collectionRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant reservations GET uses restaurant staff auth');
+  assertIncludes(itemRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant reservations PUT requires OWNER/MANAGER');
+  assertIncludes(collectionRoute, 'where: { restaurantId: staff.restaurantId }', 'Tenant reservations GET scopes by restaurantId');
+  assertIncludes(itemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant reservations PUT rejects cross-tenant id access');
+  assertIncludes(collectionRoute, 'prisma.reservation.findMany', 'Tenant reservations GET reads Reservation');
+  assertIncludes(itemRoute, 'prisma.reservation.update', 'Tenant reservations PUT updates Reservation status');
+  assertIncludes(itemRoute, 'status: z.enum(RESERVATION_STATUSES)', 'Tenant reservations PUT validates status');
+  assertIncludes(itemRoute, 'Reservation not found', 'Tenant reservations PUT hides cross-tenant records');
+  assertIncludes(reservationsApiSource, 'normalizeReservation', 'Tenant reservations API returns normalized reservations');
+  assertNotIncludes(reservationsApiSource, 'requireAdmin', 'Tenant reservations APIs must not use platform requireAdmin');
+  assertNotIncludes(reservationsApiSource, 'getAdminFromRequest', 'Tenant reservations APIs must not use platform admin session');
+  assertNotIncludes(reservationsApiSource, 'prisma.adminUser', 'Tenant reservations APIs must not touch AdminUser');
+  assertNotIncludes(reservationsApiSource, 'prisma.gatewayLead', 'Tenant reservations APIs must not touch GatewayLead');
+  assertNotIncludes(reservationsApiSource, 'prisma.order', 'Tenant reservations APIs must not touch Order');
+  assertNotIncludes(reservationsApiSource, 'prisma.reservation.create', 'Tenant reservations APIs must not create reservations');
+  assertNotIncludes(reservationsApiSource, 'prisma.reservation.delete', 'Tenant reservations APIs must not hard delete reservations');
+  assertNotIncludes(itemRoute, 'export async function DELETE', 'Tenant reservations item API should not expose DELETE');
+  assertNotIncludes(collectionRoute, 'export async function POST', 'Tenant reservations collection API should not create reservations');
+  assertNotIncludes(reservationsApiSource, 'stripe', 'Tenant reservations APIs must not add billing/payment logic');
+  assertNotIncludes(reservationsApiSource, 'sendMail', 'Tenant reservations APIs must not send email');
+  assertNotIncludes(reservationsApiSource, 'sendWhatsApp', 'Tenant reservations APIs must not send WhatsApp');
+  assertNotIncludes(reservationsApiSource, 'provision', 'Tenant reservations APIs must not provision tenants');
+
+  assertIncludes(tenantReservationsPage, 'getRestaurantStaffFromRequest', 'Tenant reservations page verifies staff session');
+  assertIncludes(tenantReservationsPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant reservations page enforces slug boundary');
+  assertIncludes(tenantReservationsPage, '<TenantReservationsClient', 'Tenant reservations page renders client');
+  assertIncludes(tenantReservationsClient, '/api/restaurant-admin/reservations', 'Tenant reservations client uses reservations API');
+  assertIncludes(tenantReservationsClient, "method: 'PUT'", 'Tenant reservations client updates status via PUT');
+  assertNotIncludes(tenantReservationsClient, "method: 'POST'", 'Tenant reservations client must not create reservations');
+  assertNotIncludes(tenantReservationsClient, "method: 'DELETE'", 'Tenant reservations client must not delete reservations');
+  assertIncludes(tenantReservationsClient, 'SUPPORT access is read-only', 'Tenant reservations client support read-only state');
+  assertIncludes(tenantReservationsClient, 'OWNER or MANAGER access is required', 'Tenant reservations client write role copy');
+  assertIncludes(tenantReservationsClient, 'No reservations found', 'Tenant reservations client empty state');
+  assertIncludes(tenantReservationsClient, 'PENDING', 'Tenant reservations client supports pending status');
+  assertIncludes(tenantReservationsClient, 'CONFIRMED', 'Tenant reservations client supports confirmed status');
+  assertIncludes(tenantReservationsClient, 'CANCELLED', 'Tenant reservations client supports cancelled status');
+  assertIncludes(tenantReservationsClient, 'NO_SHOW', 'Tenant reservations client supports no-show status');
+  assertIncludes(tenantNav, "label: 'Reservations'", 'Tenant admin navigation includes Reservations');
+  assertIncludes(tenantAdmin, 'Open reservations', 'Tenant admin dashboard links to reservations');
+  assertIncludes(tenantAdmin, 'View bookings and update reservation status', 'Tenant admin dashboard reservations copy');
+  assertNotIncludes(tenantAdmin, 'reservations, inventory', 'Tenant admin dashboard should not keep reservations as future work');
+  assertNotIncludes(tenantNav, "'Reservations', 'Inventory'", 'Tenant reservations should not remain future nav item');
+  assertNotIncludes(reservationsUiSource, '/platform-admin', 'Tenant reservations UI must not link to platform admin');
+
+  assertIncludes(readme, 'Tenant reservations management added.', 'README Batch 54 note');
+  assertIncludes(readme, 'Restaurant staff can view tenant-scoped reservations and update reservation status under `/r/[restaurantSlug]/admin/reservations`.', 'README Batch 54 reservations scope note');
+  assertIncludes(readme, 'OWNER and MANAGER can update reservation status; SUPPORT remains read-only.', 'README Batch 54 reservations role note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, and reservations management; orders, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 54 tenant staff access note');
+  assertNotIncludes(readme, 'orders, reservations, inventory', 'README should not say reservations remain future work after Batch 54');
+
+  assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/reservations/page.jsx')), 'Demo admin reservations page should remain present');
+  assert(fs.existsSync(path.join(root, 'src/app/api/reservations/route.js')), 'Public/demo reservations API should remain present');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant reservations batch should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant reservations batch should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant reservations batch should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant reservations batch should not add WhatsApp API route');
+  assert(!migrationDirs.some((migrationDir) => /reservation.management|tenant.reservation/i.test(migrationDir)), 'Batch 54 should not add a Prisma migration');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -3429,6 +3512,7 @@ const checks = [
   checkTenantMenuGalleryAdmin,
   checkTenantProfileSettingsAdmin,
   checkTenantStaffManagementFoundation,
+  checkTenantReservationsManagement,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
