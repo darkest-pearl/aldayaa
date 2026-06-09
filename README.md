@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, and settings management; orders, reservations, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, and staff management foundation; orders, reservations, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -171,6 +171,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Restaurant staff can manage tenant-scoped public profile metadata, contact links, brand colors, display hours, and cancellation settings under `/r/[restaurantSlug]/admin/settings`.
 - OWNER and MANAGER can update profile/settings; SUPPORT remains read-only.
 - Feature/module activation, ordering activation, orders, reservations, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Tenant staff management foundation added.
+- OWNER users can create, edit, deactivate, and manually reset passwords for RestaurantUser records under `/r/[restaurantSlug]/admin/staff`.
+- Staff management is scoped to the current restaurant; MANAGER and SUPPORT are read-only for staff records.
+- No email invites, WhatsApp messages, platform AdminUser changes, billing, domains, or provisioning logic was added.
 
 ## Feature Modules Foundation
 
