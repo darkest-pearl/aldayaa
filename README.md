@@ -178,7 +178,9 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Tenant reservations management added.
 - Restaurant staff can view tenant-scoped reservations and update reservation status under `/r/[restaurantSlug]/admin/reservations`.
 - OWNER and MANAGER can update reservation status; SUPPORT remains read-only.
-- No reservation creation/deletion, ordering activation, payment workflow, email sending, or WhatsApp sending was added.
+- Public tenant reservation creation is available at `/r/[restaurantSlug]/reservations` for initialized, non-archived tenants.
+- Demo reservation behavior remains available at `/public/reservations` and `/r/demo-restaurant/reservations`.
+- No reservation deletion, ordering activation, payment workflow, email sending, or WhatsApp sending was added.
 
 ## Feature Modules Foundation
 

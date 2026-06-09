@@ -6,7 +6,7 @@ Batch 48 identified that the original platform `AdminUser` model could not safel
 
 Batch 49 adds a separate RestaurantUser model. This keeps platform ownership and restaurant staff access in different tables.
 
-Batch 50 adds first-owner provisioning and restaurant staff login. Batch 51 adds tenant-scoped menu/gallery management. Batch 52 adds tenant-scoped profile/settings management. Batch 53 adds OWNER-only tenant staff management for RestaurantUser records. Batch 54 adds tenant-scoped reservation viewing and status management.
+Batch 50 adds first-owner provisioning and restaurant staff login. Batch 51 adds tenant-scoped menu/gallery management. Batch 52 adds tenant-scoped profile/settings management. Batch 53 adds OWNER-only tenant staff management for RestaurantUser records. Batch 54 adds tenant-scoped reservation viewing, status management, and public tenant reservation creation.
 
 - platform ADMIN users can create the first OWNER `RestaurantUser` for initialized non-demo tenants
 - restaurant staff sign in through `/r/[restaurantSlug]/admin/login`
@@ -25,6 +25,7 @@ Batch 50 adds first-owner provisioning and restaurant staff login. Batch 51 adds
 - OWNER users can create, edit, deactivate, and manually reset passwords for RestaurantUser records in their own restaurant.
 - MANAGER and SUPPORT users remain read-only for staff management.
 - OWNER and MANAGER users can update reservation status; SUPPORT remains read-only for reservations.
+- Public reservation creation is tenant-scoped for initialized, non-archived tenants at `/r/[restaurantSlug]/reservations`.
 - Orders, inventory, recipes, staff invitations, audit logging, password reset flows, and other advanced tenant admin modules remain future work.
 - No email or WhatsApp sending is connected to first-owner creation.
 - No billing, subscription, payment, provisioning, custom domain, or subdomain logic is connected to first-owner creation or tenant staff management.
