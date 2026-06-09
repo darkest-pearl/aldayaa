@@ -1889,6 +1889,128 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(readme, 'No restaurant-scoped AdminUser or membership model exists yet.', 'README stale missing restaurant user note');
 }
 
+function checkTenantMenuGalleryAdmin() {
+  const readme = read('README.md');
+  const helperPath = path.join(root, 'src/lib/restaurant-staff-access.js');
+  const tenantNavPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
+  const tenantAdminPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/page.js');
+  const tenantMenuPagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/menu/page.js');
+  const tenantMenuClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/menu/TenantMenuClient.jsx');
+  const tenantGalleryPagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/gallery/page.js');
+  const tenantGalleryClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/gallery/TenantGalleryClient.jsx');
+  const apiPaths = [
+    'src/app/api/restaurant-admin/menu/categories/route.js',
+    'src/app/api/restaurant-admin/menu/categories/[id]/route.js',
+    'src/app/api/restaurant-admin/menu/items/route.js',
+    'src/app/api/restaurant-admin/menu/items/[id]/route.js',
+    'src/app/api/restaurant-admin/gallery/categories/route.js',
+    'src/app/api/restaurant-admin/gallery/categories/[id]/route.js',
+    'src/app/api/restaurant-admin/gallery/photos/route.js',
+    'src/app/api/restaurant-admin/gallery/photos/[id]/route.js',
+  ];
+
+  assert(fs.existsSync(helperPath), 'Restaurant staff access helper is missing');
+  assert(fs.existsSync(tenantNavPath), 'Tenant admin navigation is missing');
+  assert(fs.existsSync(tenantMenuPagePath), 'Tenant menu admin page is missing');
+  assert(fs.existsSync(tenantMenuClientPath), 'Tenant menu admin client is missing');
+  assert(fs.existsSync(tenantGalleryPagePath), 'Tenant gallery admin page is missing');
+  assert(fs.existsSync(tenantGalleryClientPath), 'Tenant gallery admin client is missing');
+  for (const apiPath of apiPaths) {
+    assert(fs.existsSync(path.join(root, apiPath)), `${apiPath} is missing`);
+  }
+
+  const helper = read('src/lib/restaurant-staff-access.js');
+  const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const tenantMenuPage = read('src/app/r/[restaurantSlug]/admin/menu/page.js');
+  const tenantMenuClient = read('src/app/r/[restaurantSlug]/admin/menu/TenantMenuClient.jsx');
+  const tenantGalleryPage = read('src/app/r/[restaurantSlug]/admin/gallery/page.js');
+  const tenantGalleryClient = read('src/app/r/[restaurantSlug]/admin/gallery/TenantGalleryClient.jsx');
+  const apiSources = apiPaths.map((apiPath) => [apiPath, read(apiPath)]);
+  const allTenantApiSource = apiSources.map(([, source]) => source).join('\n');
+
+  assertIncludes(helper, 'getRestaurantStaffFromRequest', 'Tenant staff helper reads restaurant staff session');
+  assertIncludes(helper, 'staff.restaurantSlug !== cleanSlug', 'Tenant staff helper enforces route slug boundary');
+  assertIncludes(helper, 'prisma.restaurantUser.findUnique', 'Tenant staff helper verifies RestaurantUser from DB');
+  assertIncludes(helper, 'include: {', 'Tenant staff helper includes related Restaurant');
+  assertIncludes(helper, 'currentStaff.restaurantId !== staff.restaurantId', 'Tenant staff helper verifies DB restaurantId matches token');
+  assertIncludes(helper, '!currentStaff.isActive', 'Tenant staff helper rejects inactive RestaurantUser');
+  assertIncludes(helper, '!isValidCurrentRestaurantStaffRole(currentStaff.role)', 'Tenant staff helper validates current DB role');
+  assertIncludes(helper, '!currentStaff.restaurant', 'Tenant staff helper requires related Restaurant');
+  assertIncludes(helper, 'currentStaff.restaurant.slug !== cleanSlug', 'Tenant staff helper verifies Restaurant slug boundary from DB');
+  assertIncludes(helper, "currentStaff.restaurant.status === 'ARCHIVED'", 'Tenant staff helper rejects archived restaurants');
+  assertIncludes(helper, 'Restaurant staff access is no longer active for this restaurant', 'Tenant staff helper inactive access error');
+  assertIncludes(helper, 'return currentSession', 'Tenant staff helper returns DB-backed session');
+  assertIncludes(helper, 'RESTAURANT_STAFF_WRITE_ROLES', 'Tenant staff helper defines write roles');
+  assertIncludes(helper, 'RESTAURANT_STAFF_ROLES.OWNER', 'Tenant staff write role includes OWNER');
+  assertIncludes(helper, 'RESTAURANT_STAFF_ROLES.MANAGER', 'Tenant staff write role includes MANAGER');
+  assertIncludes(helper, 'OWNER or MANAGER access is required', 'Tenant staff helper write error copy');
+  assertNotIncludes(helper, 'requireAdmin', 'Tenant staff helper must not use platform admin auth');
+  assertNotIncludes(helper, 'adminUser', 'Tenant staff helper must not touch AdminUser');
+  assertNotIncludes(helper, 'gatewayLead', 'Tenant staff helper must not touch GatewayLead');
+
+  assertIncludes(tenantNav, 'Menu', 'Tenant admin navigation includes Menu');
+  assertIncludes(tenantNav, 'Gallery', 'Tenant admin navigation includes Gallery');
+  assertIncludes(tenantNav, 'Orders', 'Tenant admin navigation keeps Orders future');
+  assertIncludes(tenantNav, 'Reservations', 'Tenant admin navigation keeps Reservations future');
+  assertIncludes(tenantNav, 'Settings', 'Tenant admin navigation keeps Settings future');
+  assertIncludes(tenantAdmin, 'Open menu', 'Tenant admin dashboard links to menu');
+  assertIncludes(tenantAdmin, 'Open gallery', 'Tenant admin dashboard links to gallery');
+  assertIncludes(tenantAdmin, 'Orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
+  assertIncludes(tenantMenuPage, 'getRestaurantStaffFromRequest', 'Tenant menu page verifies staff session');
+  assertIncludes(tenantMenuPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant menu page enforces slug boundary');
+  assertIncludes(tenantGalleryPage, 'getRestaurantStaffFromRequest', 'Tenant gallery page verifies staff session');
+  assertIncludes(tenantGalleryPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant gallery page enforces slug boundary');
+  assertIncludes(tenantMenuClient, '/api/restaurant-admin/menu/categories', 'Tenant menu client uses restaurant-admin category API');
+  assertIncludes(tenantMenuClient, '/api/restaurant-admin/menu/items', 'Tenant menu client uses restaurant-admin item API');
+  assertIncludes(tenantMenuClient, 'updateCategory', 'Tenant menu client supports category edits');
+  assertIncludes(tenantMenuClient, 'updateItem', 'Tenant menu client supports item edits');
+  assertIncludes(tenantMenuClient, "method: 'PUT'", 'Tenant menu client calls PUT APIs');
+  assertIncludes(tenantMenuClient, 'window.confirm', 'Tenant menu client confirms destructive deletes');
+  assertIncludes(tenantMenuClient, 'SUPPORT access is read-only', 'Tenant menu client support read-only state');
+  assertIncludes(tenantGalleryClient, '/api/restaurant-admin/gallery/categories', 'Tenant gallery client uses restaurant-admin category API');
+  assertIncludes(tenantGalleryClient, '/api/restaurant-admin/gallery/photos', 'Tenant gallery client uses restaurant-admin photo API');
+  assertIncludes(tenantGalleryClient, 'updateCategory', 'Tenant gallery client supports category edits');
+  assertIncludes(tenantGalleryClient, 'updatePhoto', 'Tenant gallery client supports photo edits');
+  assertIncludes(tenantGalleryClient, "method: 'PUT'", 'Tenant gallery client calls PUT APIs');
+  assertIncludes(tenantGalleryClient, 'window.confirm', 'Tenant gallery client confirms destructive deletes');
+  assertIncludes(tenantGalleryClient, 'SUPPORT access is read-only', 'Tenant gallery client support read-only state');
+
+  for (const [apiPath, source] of apiSources) {
+    assertIncludes(source, 'requireRestaurantStaffAccess', `${apiPath} uses restaurant staff auth`);
+    assertIncludes(source, 'staff.restaurantId', `${apiPath} scopes queries by restaurantId`);
+    assertIncludes(source, 'restaurantSlug', `${apiPath} validates restaurantSlug`);
+    assertNotIncludes(source, 'requireAdmin', `${apiPath} must not use platform requireAdmin`);
+    assertNotIncludes(source, 'getAdminFromRequest', `${apiPath} must not use platform admin session`);
+    assertNotIncludes(source, 'prisma.adminUser', `${apiPath} must not touch AdminUser`);
+    assertNotIncludes(source, 'prisma.gatewayLead', `${apiPath} must not touch GatewayLead`);
+    assertNotIncludes(source, 'stripe', `${apiPath} must not add billing/payment logic`);
+    assertNotIncludes(source, 'sendMail', `${apiPath} must not send email`);
+    assertNotIncludes(source, 'sendWhatsApp', `${apiPath} must not send WhatsApp`);
+  }
+
+  assertIncludes(allTenantApiSource, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant item/category/photo APIs reject cross-tenant id access');
+  assertIncludes(allTenantApiSource, '{ write: true }', 'Tenant write operations require OWNER/MANAGER');
+  assertIncludes(allTenantApiSource, 'prisma.menuCategory.create', 'Tenant menu API creates categories');
+  assertIncludes(allTenantApiSource, 'prisma.menuItem.create', 'Tenant menu API creates items');
+  assertIncludes(allTenantApiSource, 'prisma.galleryCategory.create', 'Tenant gallery API creates categories');
+  assertIncludes(allTenantApiSource, 'prisma.photo.create', 'Tenant gallery API creates photos');
+  assertNotIncludes(allTenantApiSource, 'restaurantId: undefined', 'Tenant APIs must not write unscoped restaurantId');
+
+  assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/menu/page.jsx')), 'Demo admin menu page should remain present');
+  assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/gallery/page.jsx')), 'Demo admin gallery page should remain present');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant menu/gallery batch should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant menu/gallery batch should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant menu/gallery batch should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
+
+  assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
+  assertIncludes(readme, 'Restaurant staff access now includes tenant-scoped menu/gallery management; orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 51 updated tenant staff access note');
+  assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
+  assertIncludes(readme, 'Orders, reservations, settings, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 51 future modules note');
+  assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -3102,6 +3224,7 @@ const checks = [
   checkTenantSafeProfileSettingsSchema,
   checkTenantStarterContentProvisioning,
   checkRestaurantStaffAuthSchemaBoundary,
+  checkTenantMenuGalleryAdmin,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
