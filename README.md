@@ -163,6 +163,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
 - Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.
+- Tenant menu/gallery admin added.
+- Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
+- OWNER and MANAGER can write; SUPPORT is read-only.
+- Orders, reservations, settings, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
 
 ## Feature Modules Foundation
 

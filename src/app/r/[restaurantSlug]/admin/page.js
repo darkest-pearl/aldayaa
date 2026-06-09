@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getRestaurantStaffFromRequest } from '../../../../lib/restaurant-staff-auth';
+import TenantAdminNav from './TenantAdminNav';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Restaurant Staff Admin' };
@@ -13,17 +14,40 @@ export default async function TenantRestaurantAdminPage({ params }) {
   }
 
   return (
-    <main className="min-h-[60vh] px-4 py-10">
-      <section className="mx-auto max-w-5xl rounded-lg border border-white/10 bg-white p-6 text-neutral-950 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Restaurant staff access is active</p>
-        <h1 className="mt-2 text-3xl font-semibold">Tenant admin foundation</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-600">
-          You are signed in as {staff.email} for {staff.restaurantSlug} with {staff.role} access.
-          Operational tools are not enabled yet.
-        </p>
-        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-          This dashboard verifies restaurant-scoped authentication only. Menu, gallery, orders, settings,
-          inventory, recipes, billing, and messaging tools remain future tenant admin work.
+    <main className="min-h-screen bg-neutral-100 text-neutral-950">
+      <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
+      <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
+          <span className="font-semibold">Restaurant staff access is active.</span> Operational tools are not enabled yet beyond tenant-scoped menu and gallery management.
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Menu management</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Manage categories, dishes, pricing, availability, recommendations, signature items, and image URLs for this tenant only.
+          </p>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/menu`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open menu
+          </a>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Gallery management</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Manage gallery categories and photo metadata for this tenant. Upload storage remains a future enhancement.
+          </p>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/gallery`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open gallery
+          </a>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
+          Orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>
