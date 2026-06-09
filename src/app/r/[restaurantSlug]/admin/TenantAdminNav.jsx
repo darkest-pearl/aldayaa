@@ -1,12 +1,13 @@
 import Link from 'next/link';
 
-const futureModules = ['Orders', 'Reservations', 'Settings', 'Inventory', 'Billing'];
+const futureModules = ['Orders', 'Reservations', 'Inventory', 'Recipes', 'Staff management', 'Billing', 'Domains'];
 
 export default function TenantAdminNav({ restaurantSlug, active = 'overview', staff }) {
   const links = [
     { key: 'overview', label: 'Overview', href: `/r/${restaurantSlug}/admin` },
     { key: 'menu', label: 'Menu', href: `/r/${restaurantSlug}/admin/menu` },
     { key: 'gallery', label: 'Gallery', href: `/r/${restaurantSlug}/admin/gallery` },
+    { key: 'settings', label: 'Settings', href: `/r/${restaurantSlug}/admin/settings` },
   ];
 
   return (
