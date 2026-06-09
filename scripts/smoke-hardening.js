@@ -1665,7 +1665,8 @@ function checkTenantStarterContentProvisioning() {
   assertIncludes(readme, 'Initialized tenants can now receive starter menu/gallery content.', 'README tenant starter content note');
   assertIncludes(readme, 'Starter content is platform-admin provisioned.', 'README tenant starter content platform action note');
   assertIncludes(readme, 'Tenant public menu/gallery pages read tenant-scoped content.', 'README tenant starter content public read note');
-  assertIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README tenant starter content boundaries note');
+  assertIncludes(readme, 'Ordering, billing, custom domains, and broader tenant staff management are still future work.', 'README tenant starter content boundaries note');
+  assertNotIncludes(readme, 'Ordering/admin users/billing/custom domains are still future work.', 'README stale tenant starter content boundaries note');
 }
 
 function checkRestaurantStaffAuthSchemaBoundary() {

@@ -155,7 +155,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Initialized tenants can now receive starter menu/gallery content.
 - Starter content is platform-admin provisioned.
 - Tenant public menu/gallery pages read tenant-scoped content.
-- Ordering/admin users/billing/custom domains are still future work.
+- Ordering, billing, custom domains, and broader tenant staff management are still future work.
 - Restaurant staff auth schema boundary added.
 - RestaurantUser is separate from platform AdminUser.
 - Tenant first-owner provisioning and restaurant staff login added.
