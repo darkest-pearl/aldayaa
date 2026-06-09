@@ -10,6 +10,10 @@ export function isRestaurantStaffWriteRole(role) {
   return RESTAURANT_STAFF_WRITE_ROLES.includes(role);
 }
 
+export function isRestaurantStaffOwnerRole(role) {
+  return role === RESTAURANT_STAFF_ROLES.OWNER;
+}
+
 export async function requireRestaurantStaffAccess(request, restaurantSlug, options = {}) {
   const staff = await getRestaurantStaffFromRequest(request);
   const cleanSlug = typeof restaurantSlug === 'string' ? restaurantSlug.trim() : '';
@@ -69,6 +73,18 @@ export async function requireRestaurantStaffAccess(request, restaurantSlug, opti
   }
 
   return currentSession;
+}
+
+export async function requireRestaurantStaffOwnerAccess(request, restaurantSlug) {
+  const staff = await requireRestaurantStaffAccess(request, restaurantSlug);
+
+  if (!isRestaurantStaffOwnerRole(staff.role)) {
+    const error = new Error('OWNER access is required');
+    error.code = 'FORBIDDEN';
+    throw error;
+  }
+
+  return staff;
 }
 
 function isValidCurrentRestaurantStaffRole(role) {

@@ -18,7 +18,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, and settings management are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, and staff management are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -46,7 +46,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
             Open gallery
           </a>
         </div>
-        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm md:col-span-2">
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
           <h2 className="mt-2 text-xl font-semibold">Profile and settings</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
@@ -59,8 +59,21 @@ export default async function TenantRestaurantAdminPage({ params }) {
             Open settings
           </a>
         </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Staff management</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            OWNER users can create, update, deactivate, and manually reset passwords for RestaurantUser records in this tenant only.
+          </p>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/staff`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open staff
+          </a>
+        </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Orders, reservations, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Orders, reservations, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>
