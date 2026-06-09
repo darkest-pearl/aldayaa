@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { getAdminFromRequest } from '../../../../lib/auth';
 import { FEATURE_KEYS } from '../../../../lib/features';
 import { prisma } from '../../../../lib/prisma';
@@ -16,6 +17,11 @@ import {
   RESTAURANT_STATUSES,
   validateRestaurantSlug,
 } from '../../../../lib/restaurants';
+import {
+  RESTAURANT_STAFF_ROLES,
+  hashRestaurantStaffPassword,
+  normalizeRestaurantStaffEmail,
+} from '../../../../lib/restaurant-staff-auth';
 
 function cleanRequiredField(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -46,6 +52,17 @@ function redirectWithInitialization(message) {
 function redirectWithProvisioned(message) {
   redirect(`/platform-admin/client-restaurants?provisioned=${encodeURIComponent(message)}`);
 }
+
+function redirectWithOwner(message) {
+  redirect(`/platform-admin/client-restaurants?owner=${encodeURIComponent(message)}`);
+}
+
+const ownerAccessSchema = z.object({
+  restaurantId: z.string().min(1),
+  name: z.string().trim().optional(),
+  email: z.string().email(),
+  password: z.string().min(10),
+});
 
 const STARTER_MENU_CATEGORIES = Object.freeze([
   { name: 'House Starters', description: 'Simple opening plates for the starter menu.', sortOrder: 10 },
@@ -351,4 +368,88 @@ export async function provisionRestaurantStarterContent(formData) {
   }
 
   redirectWithProvisioned(`${restaurant.slug} provisioned`);
+}
+
+export async function createTenantOwnerAccess(formData) {
+  const admin = await getAdminFromRequest(cookies());
+
+  if (!admin || admin.role !== 'ADMIN') {
+    redirectWithError('Only platform ADMIN users can create tenant owner access.');
+  }
+
+  const parsed = ownerAccessSchema.safeParse({
+    restaurantId: cleanRequiredField(formData.get('restaurantId')),
+    name: cleanOptionalField(formData.get('name')) || undefined,
+    email: normalizeRestaurantStaffEmail(formData.get('email')),
+    password: cleanRequiredField(formData.get('password')),
+  });
+
+  if (!parsed.success) {
+    redirectWithError('Owner name, valid email, and a temporary password of at least 10 characters are required.');
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: parsed.data.restaurantId },
+  });
+
+  if (!restaurant) {
+    redirectWithError('Restaurant was not found.');
+  }
+
+  if (restaurant.slug === DEMO_RESTAURANT_SLUG) {
+    redirectWithError('Tenant owner access does not modify Demo Restaurant data.');
+  }
+
+  const [existingProfile, existingSettings] = await Promise.all([
+    prisma.restaurantProfile.findUnique({
+      where: { restaurantId: restaurant.id },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+    }),
+  ]);
+
+  if (!existingProfile || !existingSettings) {
+    redirectWithError('Initialize profile/settings before creating tenant owner access.');
+  }
+
+  const existingOwnerCount = await prisma.restaurantUser.count({
+    where: {
+      restaurantId: restaurant.id,
+      role: RESTAURANT_STAFF_ROLES.OWNER,
+    },
+  });
+
+  if (existingOwnerCount > 0) {
+    redirectWithError('This restaurant already has an OWNER account.');
+  }
+
+  const existingStaffUser = await prisma.restaurantUser.findUnique({
+    where: {
+      restaurantId_email: {
+        restaurantId: restaurant.id,
+        email: parsed.data.email,
+      },
+    },
+  });
+
+  if (existingStaffUser) {
+    redirectWithError('A staff user with this email already exists for this restaurant.');
+  }
+
+  const passwordHash = await hashRestaurantStaffPassword(parsed.data.password);
+
+  await prisma.restaurantUser.create({
+    data: {
+      restaurantId: restaurant.id,
+      name: parsed.data.name || null,
+      email: parsed.data.email,
+      passwordHash,
+      role: RESTAURANT_STAFF_ROLES.OWNER,
+      isActive: true,
+    },
+  });
+
+  revalidatePath('/platform-admin/client-restaurants');
+  redirectWithOwner(`${restaurant.slug} owner access created`);
 }

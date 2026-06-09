@@ -164,6 +164,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - RestaurantUser is separate from platform AdminUser.
 - Restaurant staff sessions must not use the platform admin cookie or access `/platform-admin`.
 - Tenant admin creation and login/session wiring remain future work.
+- Tenant first-owner provisioning and restaurant staff login added.
+- Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
+- Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
+- Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.
 
 ## Feature Modules Foundation
 
@@ -231,6 +235,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 
 - Rotate leaked credentials immediately if this repo history contained secrets.
 - Use a strong `ADMIN_JWT_SECRET` with at least 32 random characters.
+- Use a separate strong `RESTAURANT_STAFF_JWT_SECRET` for restaurant staff sessions.
 - Use a PostgreSQL `DATABASE_URL`.
 - Run `npx prisma generate` and either `npx prisma db push` or your migration workflow before deployment.
 - Configure WhatsApp only through environment variables.

@@ -6,6 +6,7 @@ import {
 } from '../../../../lib/restaurants';
 import {
   createClientRestaurant,
+  createTenantOwnerAccess,
   initializeRestaurantBasics,
   provisionRestaurantStarterContent,
 } from './actions';
@@ -27,7 +28,13 @@ async function getClientRestaurants() {
             settings: true,
             menuItems: true,
             photos: true,
+            restaurantUsers: true,
           },
+        },
+        restaurantUsers: {
+          where: { role: 'OWNER' },
+          select: { id: true, email: true, name: true, isActive: true },
+          orderBy: { createdAt: 'asc' },
         },
       },
       orderBy: [
@@ -42,6 +49,9 @@ async function getClientRestaurants() {
       hasSettings: restaurant._count?.settings > 0,
       hasStarterMenu: restaurant._count?.menuItems > 0,
       hasStarterGallery: restaurant._count?.photos > 0,
+      tenantOwnerCount: restaurant.restaurantUsers?.length || 0,
+      tenantOwner: restaurant.restaurantUsers?.[0] || null,
+      tenantStaffCount: restaurant._count?.restaurantUsers || 0,
     }));
   } catch (error) {
     console.error('Failed to load client restaurant registry', error);
@@ -217,6 +227,8 @@ function StarterContentControls({ restaurant }) {
 }
 
 function TenantAdminAccessStatus({ restaurant }) {
+  const isInitialized = restaurant.hasProfile && restaurant.hasSettings;
+
   if (restaurant.slug === DEMO_RESTAURANT_SLUG) {
     return (
       <p className="text-sm leading-6 text-neutral-600">
@@ -225,15 +237,74 @@ function TenantAdminAccessStatus({ restaurant }) {
     );
   }
 
+  if (!isInitialized) {
+    return (
+      <p className="text-sm leading-6 text-amber-900">
+        Initialize profile/settings before creating tenant owner access.
+      </p>
+    );
+  }
+
+  if (restaurant.tenantOwnerCount > 0) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-emerald-800">
+          OWNER access is active for {restaurant.tenantOwner?.email}.
+        </p>
+        <Link
+          href={`/r/${restaurant.slug}/admin/login`}
+          className="inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 transition hover:border-emerald-300"
+        >
+          Tenant admin login
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <p className="text-sm font-semibold text-amber-900">
-        Schema boundary added; tenant admin creation is still pending.
+        Schema boundary added; tenant admin creation is ready for first OWNER access.
       </p>
       <p className="max-w-3xl text-sm leading-6 text-neutral-600">
-        Does not create tenant admin access yet. RestaurantUser is separate from platform AdminUser, and a future
-        login/session batch must keep restaurant staff out of platform-admin.
+        Creates restaurant-scoped admin access only. Does not send email, enable billing, or create ordering setup.
       </p>
+      <form action={createTenantOwnerAccess} className="grid gap-3">
+        <input type="hidden" name="restaurantId" value={restaurant.id} />
+        <label className="grid gap-1 text-xs font-semibold text-neutral-800">
+          Owner name
+          <input
+            name="name"
+            placeholder="Owner name"
+            className="rounded-md border border-amber-200 px-3 py-2 text-sm font-normal text-neutral-900 outline-none transition focus:border-emerald-700"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-neutral-800">
+          Owner email
+          <input
+            name="email"
+            type="email"
+            required
+            className="rounded-md border border-amber-200 px-3 py-2 text-sm font-normal text-neutral-900 outline-none transition focus:border-emerald-700"
+          />
+        </label>
+        <label className="grid gap-1 text-xs font-semibold text-neutral-800">
+          Temporary password
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={10}
+            className="rounded-md border border-amber-200 px-3 py-2 text-sm font-normal text-neutral-900 outline-none transition focus:border-emerald-700"
+          />
+        </label>
+        <button
+          type="submit"
+          className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#18362f]"
+        >
+          Create first owner access
+        </button>
+      </form>
     </div>
   );
 }
@@ -418,6 +489,9 @@ function RestaurantCard({ restaurant }) {
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <SetupPill ready={false}>Admin access blocked</SetupPill>
+              <SetupPill ready={restaurant.tenantOwnerCount > 0}>
+                OWNER {restaurant.tenantOwnerCount > 0 ? 'created' : 'missing'}
+              </SetupPill>
             </div>
           </div>
           <div className="lg:max-w-md">
@@ -448,6 +522,7 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
   const created = typeof searchParams.created === 'string' ? searchParams.created : null;
   const initialized = typeof searchParams.initialized === 'string' ? searchParams.initialized : null;
   const provisioned = typeof searchParams.provisioned === 'string' ? searchParams.provisioned : null;
+  const owner = typeof searchParams.owner === 'string' ? searchParams.owner : null;
 
   return (
     <div className="space-y-6">
@@ -475,6 +550,12 @@ export default async function ClientRestaurantsRegistryPage({ searchParams = {} 
       {provisioned ? (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
           Restaurant starter content status updated: {provisioned}
+        </p>
+      ) : null}
+
+      {owner ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+          Restaurant owner access status updated: {owner}
         </p>
       ) : null}
 
