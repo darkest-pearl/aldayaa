@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, and tenant public order support actions; assisted ordering, payments, refunds, kitchen automation, inventory consumption, recipes, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, kitchen automation, inventory consumption, recipes, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -200,6 +200,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Tenant public order tracking and cancellation are scoped by restaurantSlug, reference, and phone.
 - Demo order tracking/cancellation remains demo-scoped at `/api/orders/track` and `/api/orders/cancel`.
 - Payments, refunds, messaging, inventory consumption, recipe consumption, billing, domains, and CRM remain future work.
+- Tenant public reservation support actions added.
+- Tenant public reservation lookup and cancellation are scoped by restaurantSlug, reference, and phone.
+- Demo reservation cancellation remains demo-scoped at `/api/reservations/cancel`.
+- Payments, refunds, messaging, inventory consumption, recipe consumption, billing, domains, CRM, and advanced guest automation remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 

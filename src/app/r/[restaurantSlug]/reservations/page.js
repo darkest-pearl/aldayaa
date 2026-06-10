@@ -23,7 +23,7 @@ export default async function TenantReservationsPage({ params }) {
         restaurantName={context.profile.restaurantName}
         whatsappNumber={context.profile.whatsappNumber}
         whatsappLink={context.profile.whatsappLink}
-        showCancellation={context.isDemoRestaurant}
+        showCancellation={true}
       />
     </Section>
   );

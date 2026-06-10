@@ -11,6 +11,8 @@ export default function ReservationForm({
   whatsappLink = strings.whatsappLink,
   showCancellation = true,
 }) {
+  const isTenantReservationSupport = Boolean(restaurantSlug && restaurantSlug !== "demo-restaurant");
+  const supportActionsEnabled = showCancellation || isTenantReservationSupport;
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -24,7 +26,12 @@ export default function ReservationForm({
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [reservationReference, setReservationReference] = useState(null);
+  const [showTrackModal, setShowTrackModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [trackForm, setTrackForm] = useState({ reference: "", phone: "" });
+  const [trackStatus, setTrackStatus] = useState(null);
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackLoading, setTrackLoading] = useState(false);
   const [cancelForm, setCancelForm] = useState({ reference: "", phone: "" });
   const [cancelStatus, setCancelStatus] = useState(null);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -81,6 +88,51 @@ export default function ReservationForm({
     }
   };
 
+  const submitLookup = async (e) => {
+    e.preventDefault();
+    setTrackStatus(null);
+    setTrackResult(null);
+
+    if (!trackForm.reference.trim() || !trackForm.phone.trim()) {
+      setTrackStatus({
+        type: "error",
+        message: "Please enter your reservation reference and phone number.",
+      });
+      return;
+    }
+
+    setTrackLoading(true);
+    try {
+      const res = await fetch("/api/reservations/tenant-track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantSlug, reference: trackForm.reference.trim(), phone: trackForm.phone.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTrackResult(data.data?.reservation || null);
+        setTrackStatus({
+          type: "success",
+          message: "Reservation found.",
+        });
+      } else {
+        setTrackStatus({
+          type: "error",
+          message: data.error || "Unable to look up reservation.",
+        });
+      }
+    } catch (error) {
+      setTrackStatus({
+        type: "error",
+        message: "Unable to look up reservation.",
+      });
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
   const submitCancellation = async (e) => {
     e.preventDefault();
     setCancelStatus(null);
@@ -94,13 +146,17 @@ export default function ReservationForm({
 
     setCancelLoading(true);
     try {
-      const res = await fetch("/api/reservations/cancel", {
+      const res = await fetch(isTenantReservationSupport ? "/api/reservations/tenant-cancel" : "/api/reservations/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reference: cancelForm.reference.trim(),
-          phone: cancelForm.phone.trim(),
-        }),
+        body: JSON.stringify(
+          isTenantReservationSupport
+            ? { restaurantSlug, reference: cancelForm.reference.trim(), phone: cancelForm.phone.trim() }
+            : {
+                reference: cancelForm.reference.trim(),
+                phone: cancelForm.phone.trim(),
+              }
+        ),
       });
       const data = await res.json();
       if (data.success) {
@@ -296,25 +352,128 @@ export default function ReservationForm({
         >
           WhatsApp {whatsappNumber}
         </a>
-        <p className="text-xs text-neutral-500">
-          {showCancellation ? (
+        <div className="space-y-1 text-xs text-neutral-500">
+          {supportActionsEnabled ? (
             <>
-              Need to cancel a reservation?{' '}
-              <button
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-                className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
-              >
-                Click here
-              </button>
-              .
+              {isTenantReservationSupport && (
+                <p>
+                  Need to look up a reservation?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowTrackModal(true);
+                      setTrackStatus(null);
+                      setTrackResult(null);
+                    }}
+                    className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
+                  >
+                    Look up here
+                  </button>
+                  .
+                </p>
+              )}
+              <p>
+                Need to cancel a reservation?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCancelModal(true);
+                    setCancelStatus(null);
+                  }}
+                  className="underline-offset-4 hover:underline text-neutral-600 hover:text-primary transition-colors"
+                >
+                  Click here
+                </button>
+                .
+              </p>
             </>
           ) : (
             'Cancellation support will be handled directly by the restaurant.'
           )}
-        </p>
+        </div>
       </div>
-      {showCancellation && showCancelModal && (
+      {isTenantReservationSupport && showTrackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white/95 shadow-lifted p-6">
+            <button
+              type="button"
+              onClick={() => setShowTrackModal(false)}
+              className="absolute right-4 top-4 text-neutral-500 hover:text-secondary"
+              aria-label="Close"
+            >
+              Ã—
+            </button>
+            <div className="space-y-1 mb-4">
+              <h2 className="text-lg md:text-xl font-semibold text-secondary">Look up your reservation</h2>
+              <p className="text-sm text-neutral-600">
+                Enter your reservation reference and phone number to view the current status.
+              </p>
+            </div>
+            <form className="space-y-4" onSubmit={submitLookup}>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-secondary">Reservation reference</label>
+                <input
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
+                  placeholder="e.g. c123abc456"
+                  value={trackForm.reference}
+                  onChange={(e) =>
+                    setTrackForm({ ...trackForm, reference: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-secondary">Phone number</label>
+                <input
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm bg-white focus:border-primary focus:outline-none"
+                  placeholder="Used for verification"
+                  value={trackForm.phone}
+                  onChange={(e) =>
+                    setTrackForm({ ...trackForm, phone: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  disabled={trackLoading}
+                  className="flex-1 justify-center"
+                >
+                  {trackLoading ? "Looking up..." : "Look Up Reservation"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowTrackModal(false)}
+                  className="px-4 py-2 text-sm font-semibold text-neutral-600 hover:text-neutral-900"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
+            {trackStatus && (
+              <div
+                className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+                  trackStatus.type === "success"
+                    ? "border-green-100 bg-green-50 text-green-700"
+                    : "border-red-100 bg-red-50 text-red-700"
+                }`}
+              >
+                {trackStatus.message}
+              </div>
+            )}
+            {trackResult && (
+              <div className="mt-3 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-left text-sm text-neutral-700">
+                <p className="font-semibold text-secondary">{trackResult.name || "Reservation"}</p>
+                <p className="mt-1">Status: {trackResult.status}</p>
+                <p>Date: {trackResult.date} at {trackResult.time}</p>
+                <p>Party size: {trackResult.partySize}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {supportActionsEnabled && showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="relative w-full max-w-md rounded-2xl border border-neutral-200/80 bg-white/95 shadow-lifted p-6">
             <button
