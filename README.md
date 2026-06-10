@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, and reservations management; orders, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, and table management foundation; orders, tenant table ordering activation, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -181,6 +181,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Public tenant reservation creation is available at `/r/[restaurantSlug]/reservations` for initialized, non-archived tenants.
 - Demo reservation behavior remains available at `/public/reservations` and `/r/demo-restaurant/reservations`.
 - No reservation deletion, ordering activation, payment workflow, email sending, or WhatsApp sending was added.
+- Tenant table management foundation added.
+- Restaurant staff can create, edit, and deactivate tenant-scoped tables under `/r/[restaurantSlug]/admin/tables`.
+- OWNER and MANAGER can write table records; SUPPORT remains read-only.
+- This prepares QR/table management but does not activate tenant ordering or tenant order writes.
+- Demo table behavior remains available at `/public/table/[slug]` and `/r/demo-restaurant/table/[slug]`.
+- No order creation, ordering activation, inventory, recipe, payment, billing, domain, email, WhatsApp, or provisioning logic was added.
 
 ## Feature Modules Foundation
 

@@ -10,6 +10,7 @@ export default function TenantAdminNav({ restaurantSlug, active = 'overview', st
     { key: 'settings', label: 'Settings', href: `/r/${restaurantSlug}/admin/settings` },
     { key: 'staff', label: 'Staff', href: `/r/${restaurantSlug}/admin/staff` },
     { key: 'reservations', label: 'Reservations', href: `/r/${restaurantSlug}/admin/reservations` },
+    { key: 'tables', label: 'Tables', href: `/r/${restaurantSlug}/admin/tables` },
   ];
 
   return (
