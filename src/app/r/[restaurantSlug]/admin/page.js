@@ -89,7 +89,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
           <h2 className="mt-2 text-xl font-semibold">Tables</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Create and manage table labels, zones, seats, active state, and QR token references for this tenant only. This does not activate tenant table ordering.
+            Create and manage table labels, zones, seats, active state, QR token references, and tenant QR order links for this tenant only.
           </p>
           <a
             href={`/r/${params.restaurantSlug}/admin/tables`}
@@ -112,7 +112,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
           </a>
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Tenant table ordering, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Assisted ordering, payments, kitchen automation, inventory consumption, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>

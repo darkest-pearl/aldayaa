@@ -19,12 +19,19 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-function normalizeTenantTable(table) {
+function buildTenantTableOrderUrl(table, restaurantSlug) {
+  const tokenQuery = table.qrToken ? `?token=${encodeURIComponent(table.qrToken)}` : '';
+  return table.isActive && table.slug
+    ? `/r/${encodeURIComponent(restaurantSlug)}/table/${encodeURIComponent(table.slug)}${tokenQuery}`
+    : '';
+}
+
+function normalizeTenantTable(table, restaurantSlug) {
   const normalized = normalizeTable(table);
   return {
     ...normalized,
     qrToken: normalized.qrToken,
-    orderUrl: '',
+    orderUrl: buildTenantTableOrderUrl(normalized, restaurantSlug),
   };
 }
 
@@ -69,7 +76,7 @@ export async function PUT(request, { params }) {
     });
     if (!table) return failure('Table not found', 404);
 
-    return success({ table: normalizeTenantTable(table) });
+    return success({ table: normalizeTenantTable(table, parsed.data.restaurantSlug) });
   } catch (error) {
     return handleApiError(error);
   }
@@ -91,7 +98,7 @@ export async function DELETE(request, { params }) {
     });
     if (!table) return failure('Table not found', 404);
 
-    return success({ table: normalizeTenantTable(table) });
+    return success({ table: normalizeTenantTable(table, restaurantSlug) });
   } catch (error) {
     return handleApiError(error);
   }

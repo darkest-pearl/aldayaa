@@ -23,7 +23,7 @@ export default async function TenantTablesAdminPage({ params }) {
           <h2 className="mt-1 text-2xl font-semibold">Tables</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
             Create and manage table labels, zones, seats, active state, and QR token references for {params.restaurantSlug}.
-            This prepares QR/table setup but does not activate tenant table ordering or create orders.
+            Active table links route customers into tenant-scoped table ordering when ONLINE_ORDERING and TABLE_QR_ORDERING are enabled.
           </p>
         </div>
         <TenantTablesClient restaurantSlug={params.restaurantSlug} staffRole={staff.role} />

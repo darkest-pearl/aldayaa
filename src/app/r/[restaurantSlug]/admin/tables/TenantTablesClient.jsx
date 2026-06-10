@@ -136,10 +136,21 @@ export default function TenantTablesClient({ restaurantSlug, staffRole }) {
     if (!table.qrToken) return;
     try {
       await navigator.clipboard.writeText(table.qrToken);
-      setCopiedId(table.id);
+      setCopiedId(`${table.id}:token`);
       window.setTimeout(() => setCopiedId(''), 1400);
     } catch (copyError) {
       setError('Unable to copy token. Please copy it manually.');
+    }
+  }
+
+  async function copyOrderUrl(table) {
+    if (!table.orderUrl) return;
+    try {
+      await navigator.clipboard.writeText(table.orderUrl);
+      setCopiedId(`${table.id}:url`);
+      window.setTimeout(() => setCopiedId(''), 1400);
+    } catch (copyError) {
+      setError('Unable to copy order URL. Please copy it manually.');
     }
   }
 
@@ -154,7 +165,7 @@ export default function TenantTablesClient({ restaurantSlug, staffRole }) {
         </div>
       ) : null}
       <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-        This does not activate tenant table ordering. Orders, payments, inventory, recipes, messaging, billing, and domains remain separate future work.
+        Tenant table QR ordering is active when ONLINE_ORDERING and TABLE_QR_ORDERING are enabled. Payments, inventory, recipes, messaging, billing, and domains remain separate future work.
       </div>
 
       <section className={writable ? 'grid gap-4 lg:grid-cols-[minmax(0,0.85fr),minmax(0,1.15fr)]' : 'grid gap-4'}>
@@ -233,7 +244,7 @@ export default function TenantTablesClient({ restaurantSlug, staffRole }) {
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">Restaurant tables</h2>
-              <p className="mt-1 text-sm text-neutral-600">Manage tenant table records without creating orders or enabling table ordering.</p>
+              <p className="mt-1 text-sm text-neutral-600">Manage tenant table records and QR order URLs.</p>
             </div>
             <button
               type="button"
@@ -262,6 +273,25 @@ export default function TenantTablesClient({ restaurantSlug, staffRole }) {
                       <p>Updated: {formatDate(table.updatedAt)}</p>
                     </div>
                     {table.notes ? <p className="mt-2 rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-700">{table.notes}</p> : null}
+                    <div className="mt-2 rounded-md bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
+                      <p className="font-semibold text-neutral-900">QR order URL</p>
+                      {table.orderUrl ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <a href={table.orderUrl} className="break-all font-mono underline underline-offset-2">
+                            {table.orderUrl}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => copyOrderUrl(table)}
+                            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs font-semibold text-neutral-700"
+                          >
+                            {copiedId === `${table.id}:url` ? 'Copied' : 'Copy URL'}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-neutral-500">QR order URL is unavailable while this table is inactive.</p>
+                      )}
+                    </div>
                     <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
                       <span className="break-all font-mono">{table.qrToken}</span>
                       <button
@@ -269,7 +299,7 @@ export default function TenantTablesClient({ restaurantSlug, staffRole }) {
                         onClick={() => copyToken(table)}
                         className="rounded-md border border-neutral-200 px-2 py-1 text-xs font-semibold text-neutral-700"
                       >
-                        {copiedId === table.id ? 'Copied' : 'Copy token'}
+                        {copiedId === `${table.id}:token` ? 'Copied' : 'Copy token'}
                       </button>
                     </div>
                   </div>
