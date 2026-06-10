@@ -4,7 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Button from "./Button";
 import MenuItemImage from "./MenuItemImage";
 
-export default function OrderClient({ categories, table = null }) {
+export default function OrderClient({
+  categories,
+  table = null,
+  restaurantSlug = null,
+  enableReadyNotification = true,
+  showOrderSupportActions = true,
+}) {
   const isTableOrder = Boolean(table?.slug && table?.tableToken);
   const defaultDeliveryType = isTableOrder ? "PICKUP" : "DELIVERY";
   const createEmptyForm = () => ({
@@ -92,6 +98,7 @@ export default function OrderClient({ categories, table = null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          ...(restaurantSlug ? { restaurantSlug } : {}),
           ...(isTableOrder ? { tableSlug: table.slug, tableToken: table.tableToken } : {}),
           items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
           paidOnline: false,
@@ -195,6 +202,7 @@ export default function OrderClient({ categories, table = null }) {
   return (
     <>
       <div className="flex flex-col gap-4 md:gap-6 lg:gap-8">
+        {showOrderSupportActions && (
         <div className="space-y-1 text-xs text-neutral-600">
           <p>
             Need to track your order?{" "}
@@ -212,6 +220,7 @@ export default function OrderClient({ categories, table = null }) {
           </p>
           
         </div>
+        )}
         <div className="grid gap-5 md:gap-6 md:grid-cols-2 md:items-start lg:grid-cols-[2fr,1fr]">
           {/* LEFT: MENU */}
           <div className="space-y-5 md:space-y-6">
@@ -437,7 +446,7 @@ export default function OrderClient({ categories, table = null }) {
               )}
 
               {/* PICKUP WhatsApp checkbox */}
-              {!isTableOrder && form.deliveryType === "PICKUP" && (
+              {!isTableOrder && enableReadyNotification && form.deliveryType === "PICKUP" && (
                 <div className="rounded-xl border border-neutral-200/80 p-3 space-y-2 bg-white/90 shadow-sm">
                   <label className="flex items-center gap-2 text-sm font-semibold text-secondary">
                     <input
@@ -478,6 +487,7 @@ export default function OrderClient({ categories, table = null }) {
                 {loading ? "Placing order..." : isTableOrder ? "Send table order" : "Checkout"}
               </Button>
             </form>
+            {showOrderSupportActions && (
             <div className="space-y-1 text-xs text-neutral-600">
             <p>
             Want to cancel your order?{" "}
@@ -494,6 +504,7 @@ export default function OrderClient({ categories, table = null }) {
               </button>
             </p>
             </div>
+            )}
           </div>
         </div>
       </div>

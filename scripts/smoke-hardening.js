@@ -1144,8 +1144,8 @@ function checkPublicDemoWriteTenantScoping() {
 
   assertIncludes(orderPost, 'withDemoRestaurantWhere({ slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true })', 'Public order table lookup tenant filter');
   assertIncludes(orderPost, 'withDemoRestaurantWhere({ id: { in: itemIds } })', 'Public order menu item lookup tenant filter');
-  assertIncludes(orderPost, 'data: withDemoRestaurantData({', 'Public order create writes demo restaurantId');
-  assertIncludes(orderPost, 'create: orderItems.map((item) => withDemoRestaurantData(item))', 'Public order item create writes demo restaurantId');
+  assertIncludes(orderPost, 'data: orderContext.isDemoRestaurant ? withDemoRestaurantData(orderData) : orderData', 'Public order create preserves demo restaurantId branch');
+  assertIncludes(orderPost, 'orderItems.map((item) => withDemoRestaurantData(item))', 'Public order item create writes demo restaurantId');
   assertIncludes(orderPost, 'orderSource: ORDER_SOURCES.CUSTOMER', 'Public order source preserved');
   assertIncludes(orderPost, 'reference = generateReference()', 'Public order reference generation preserved');
   assertIncludes(orderPost, 'notifyWhenReady', 'Public order notification preference logic preserved');
@@ -1281,8 +1281,8 @@ function checkTenantPublicRouteAlias() {
   assertIncludes(publicGallery, 'withDemoRestaurantWhere()', 'Tenant alias public gallery category scoped read');
   assertIncludes(publicGallery, 'where: getDemoRestaurantFilter()', 'Tenant alias public gallery photo scoped read');
   assertIncludes(publicTable, 'withDemoRestaurantWhere({ slug })', 'Tenant alias public table scoped read');
-  assertIncludes(orderPost, 'data: withDemoRestaurantData({', 'Tenant alias order write keeps restaurantId stamping');
-  assertIncludes(orderPost, 'create: orderItems.map((item) => withDemoRestaurantData(item))', 'Tenant alias order item write keeps restaurantId stamping');
+  assertIncludes(orderPost, 'data: orderContext.isDemoRestaurant ? withDemoRestaurantData(orderData) : orderData', 'Tenant alias order write keeps restaurantId stamping');
+  assertIncludes(orderPost, 'orderItems.map((item) => withDemoRestaurantData(item))', 'Tenant alias order item write keeps restaurantId stamping');
   assertIncludes(reservationPost, '? withDemoRestaurantData(reservationData)', 'Tenant alias reservation write keeps demo restaurantId stamping');
 
   for (const publicRoutePath of [
@@ -1650,8 +1650,8 @@ function checkTenantStarterContentProvisioning() {
   assertIncludes(tenantMenu, 'getTenantRelationWhere(context)', 'Tenant starter content public menu tenant item read');
   assertIncludes(tenantGallery, 'getTenantContentWhere(context)', 'Tenant starter content public gallery tenant category read');
   assertIncludes(tenantGallery, 'getTenantRelationWhere(context)', 'Tenant starter content public gallery tenant photo read');
-  assertIncludes(tenantOrder, 'ordering is not available yet', 'Tenant starter content non-demo order remains unavailable');
-  assertIncludes(tenantOrder, 'tenant-aware checkout APIs are still a later platform step', 'Tenant starter content non-demo order safety copy');
+  assertIncludes(tenantOrder, 'ordering is not available yet', 'Tenant starter content non-demo order has unavailable state');
+  assertIncludes(tenantOrder, 'Online ordering must be enabled for this tenant before checkout can accept orders.', 'Tenant starter content non-demo order feature-gated copy');
 
   assert(!fs.existsSync(path.join(root, 'src/app/api/provisioning')), 'Tenant starter content should not add provisioning API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant starter content should not add billing API route');
@@ -1815,7 +1815,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -1823,12 +1823,13 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(blocker, 'Batch 54 adds tenant-scoped reservation viewing, status management, and public tenant reservation creation.', 'Tenant admin doc Batch 54 update');
   assertIncludes(blocker, 'Batch 55 adds tenant-scoped table management for table labels, zones, seats, active state, and QR token references without activating tenant table ordering.', 'Tenant admin doc Batch 55 update');
   assertIncludes(blocker, 'Batch 56 adds tenant-scoped order reads and status management without activating public tenant ordering.', 'Tenant admin doc Batch 56 update');
+  assertIncludes(blocker, 'Batch 57 activates tenant-safe public order creation for initialized, non-archived tenants when ONLINE_ORDERING is enabled.', 'Tenant admin doc Batch 57 update');
   assertIncludes(blocker, 'Batch 49 adds a separate RestaurantUser model.', 'Tenant admin blocker RestaurantUser schema update');
   assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
   assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
   assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
-  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, and order status management foundation.', 'Tenant admin enabled modules note');
-  assertIncludes(blocker, 'Public tenant ordering activation, tenant order creation, inventory, recipes, staff invitations, audit logging, self-service password reset flows, billing, domains, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
+  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, and public tenant order creation when enabled.', 'Tenant admin enabled modules note');
+  assertIncludes(blocker, 'Tenant table ordering activation, inventory, recipes, staff invitations, audit logging, self-service password reset flows, billing, domains, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
   assertNotIncludes(blocker, 'Restaurant staff login is authentication-only for now.', 'Tenant admin doc stale auth-only wording');
   assertNotIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin doc stale module future wording');
   assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
@@ -1968,7 +1969,7 @@ function checkTenantMenuGalleryAdmin() {
   assertIncludes(tenantAdmin, 'Open menu', 'Tenant admin dashboard links to menu');
   assertIncludes(tenantAdmin, 'Open gallery', 'Tenant admin dashboard links to gallery');
   assertIncludes(tenantAdmin, 'Open settings', 'Tenant admin dashboard links to settings');
-  assertIncludes(tenantAdmin, 'Public tenant ordering activation, tenant order creation, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
+  assertIncludes(tenantAdmin, 'Tenant table ordering, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
   assertIncludes(tenantMenuPage, 'getRestaurantStaffFromRequest', 'Tenant menu page verifies staff session');
   assertIncludes(tenantMenuPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant menu page enforces slug boundary');
   assertIncludes(tenantGalleryPage, 'getRestaurantStaffFromRequest', 'Tenant gallery page verifies staff session');
@@ -2017,9 +2018,9 @@ function checkTenantMenuGalleryAdmin() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
 
   assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, and order status management foundation; public tenant order creation, tenant ordering activation, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 56 updated tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, and public tenant order creation when ONLINE_ORDERING is enabled; tenant table ordering, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 updated tenant staff access note');
   assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
-  assertIncludes(readme, 'Tenant order creation, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 56 future modules note');
+  assertIncludes(readme, 'Inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 future modules note');
   assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
   assertNotIncludes(readme, 'orders, reservations, settings, inventory, recipes, staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README stale settings future work note');
 }
@@ -2100,7 +2101,7 @@ function checkTenantProfileSettingsAdmin() {
   assertIncludes(readme, 'Tenant profile/settings admin added.', 'README Batch 52 note');
   assertIncludes(readme, 'Restaurant staff can manage tenant-scoped public profile metadata, contact links, brand colors, display hours, and cancellation settings under `/r/[restaurantSlug]/admin/settings`.', 'README Batch 52 scope note');
   assertIncludes(readme, 'OWNER and MANAGER can update profile/settings; SUPPORT remains read-only.', 'README Batch 52 role note');
-  assertIncludes(readme, 'Feature/module activation, tenant ordering activation, tenant order creation, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 56 future boundary note');
+  assertIncludes(readme, 'Feature/module activation beyond online ordering, tenant table ordering, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 future boundary note');
   assertNotIncludes(readme, 'orders, reservations, settings, inventory, recipes', 'README should not say settings remain future work after Batch 52');
 
   assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/settings/page.jsx')), 'Demo admin settings page should remain present');
@@ -2316,7 +2317,7 @@ function checkTenantReservationsManagement() {
   assertIncludes(readme, 'OWNER and MANAGER can update reservation status; SUPPORT remains read-only.', 'README Batch 54 reservations role note');
   assertIncludes(readme, 'Public tenant reservation creation is available at `/r/[restaurantSlug]/reservations` for initialized, non-archived tenants.', 'README Batch 54 public tenant reservations note');
   assertIncludes(readme, 'Demo reservation behavior remains available at `/public/reservations` and `/r/demo-restaurant/reservations`.', 'README Batch 54 demo reservation preservation note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, and order status management foundation; public tenant order creation, tenant ordering activation, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 56 tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, and public tenant order creation when ONLINE_ORDERING is enabled; tenant table ordering, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 tenant staff access note');
   assertNotIncludes(readme, 'orders, reservations, inventory', 'README should not say reservations remain future work after Batch 54');
 
   assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/reservations/page.jsx')), 'Demo admin reservations page should remain present');
@@ -2504,7 +2505,7 @@ function checkTenantOrderApiBoundaryFoundation() {
   assertIncludes(tenantOrdersClient, 'SUPPORT access is read-only', 'Tenant orders client support read-only state');
   assertIncludes(tenantOrdersClient, 'OWNER or MANAGER access is required', 'Tenant orders client write role copy');
   assertIncludes(tenantOrdersClient, 'No orders found', 'Tenant orders client empty state');
-  assertIncludes(tenantOrdersClient, 'public tenant ordering remains disabled', 'Tenant orders client public ordering boundary copy');
+  assertIncludes(tenantOrdersClient, 'public tenant ordering creates orders only when ONLINE_ORDERING is enabled', 'Tenant orders client public ordering boundary copy');
   assertIncludes(tenantNav, "label: 'Orders'", 'Tenant admin navigation includes Orders');
   assertIncludes(tenantNav, "href: `/r/${restaurantSlug}/admin/orders`", 'Tenant admin navigation orders route');
   assertIncludes(tenantAdmin, 'Open orders', 'Tenant admin dashboard links to orders');
@@ -2513,18 +2514,44 @@ function checkTenantOrderApiBoundaryFoundation() {
   assertNotIncludes(orderUiSource, '/platform-admin', 'Tenant orders UI must not link to platform admin');
 
   assertIncludes(tenantOrderPage, 'if (context.isDemoRestaurant)', 'Tenant order page preserves demo behavior');
-  assertIncludes(tenantOrderPage, '<PublicOrderPage', 'Tenant order page renders public order page only for demo');
-  assertIncludes(tenantOrderPage, 'Online ordering is not available yet for this restaurant.', 'Tenant order page keeps non-demo ordering disabled');
+  assertIncludes(tenantOrderPage, '<PublicOrderPage', 'Tenant order page renders public order page for demo');
+  assertIncludes(tenantOrderPage, 'isFeatureEnabled(context.profile.enabledFeatures, FEATURE_KEYS.ONLINE_ORDERING)', 'Tenant order page requires ONLINE_ORDERING');
+  assertIncludes(tenantOrderPage, '<OrderClient', 'Tenant order page renders tenant order client when enabled');
+  assertIncludes(tenantOrderPage, 'restaurantSlug={context.restaurant.slug}', 'Tenant order page passes restaurantSlug to order client');
+  assertIncludes(tenantOrderPage, 'Table ordering is not available yet for this restaurant.', 'Tenant order page rejects non-demo table context');
+  assertIncludes(tenantOrderPage, 'Online ordering is not available yet for this restaurant.', 'Tenant order page keeps unavailable state');
   assertIncludes(publicOrderRoute, 'withDemoRestaurantData', 'Public order API preserves demo restaurant writes');
   assertIncludes(publicOrderRoute, 'withDemoRestaurantWhere', 'Public order API preserves demo restaurant reads');
-  assertNotIncludes(publicOrderPost, 'restaurantSlug', 'Public order POST should not accept non-demo tenant slug yet');
+  assertIncludes(publicOrderPost, 'resolveOrderCreationContext(parsed.data.restaurantSlug)', 'Public order POST resolves tenant context');
+  assertIncludes(publicOrderRoute, 'restaurantSlug: z.string().trim().optional().nullable()', 'Public order POST accepts optional restaurantSlug');
+  assertIncludes(publicOrderRoute, "restaurant.status === 'ARCHIVED'", 'Public order POST rejects archived tenants');
+  assertIncludes(publicOrderRoute, 'Restaurant online ordering is not initialized yet', 'Public order POST rejects uninitialized tenants');
+  assertIncludes(publicOrderRoute, 'FEATURE_KEYS.ONLINE_ORDERING', 'Public order POST requires online ordering feature');
+  assertIncludes(publicOrderPost, 'Tenant table ordering is not available yet', 'Public order POST rejects non-demo table context');
+  assertIncludes(publicOrderPost, 'restaurantId: orderContext.restaurantId', 'Public order POST writes resolved tenant restaurantId');
+  assertIncludes(publicOrderPost, 'where: orderContext.isDemoRestaurant', 'Public order POST keeps demo/tenant menu lookup branch');
+  assertIncludes(publicOrderPost, 'id: { in: itemIds }, restaurantId: orderContext.restaurantId', 'Public order POST scopes tenant menu items by restaurantId');
+  assertIncludes(publicOrderPost, 'orderItems.map((item) => ({', 'Public order POST maps nested tenant order items');
+  assertIncludes(publicOrderPost, '...item, restaurantId: orderContext.restaurantId', 'Public order POST stamps nested order items');
+  assertIncludes(publicOrderPost, 'item.quantity', 'Public order POST preserves quantity validation data flow');
+  assertNotIncludes(publicOrderPost, 'requireAdmin', 'Public order POST must not use platform admin auth');
+  assertNotIncludes(publicOrderPost, 'sendWhatsAppMessage', 'Public order POST must not send WhatsApp');
+  assertNotIncludes(publicOrderPost, 'sendMail', 'Public order POST must not send email');
+  assertNotIncludes(publicOrderPost, 'inventoryMovement', 'Public order POST must not consume inventory');
+  assertNotIncludes(publicOrderPost, 'OrderRecipeConsumption', 'Public order POST must not apply recipe consumption');
+  assertNotIncludes(publicOrderPost, 'stripe', 'Public order POST must not add payment logic');
   assertNotIncludes(publicOrderPost, 'getTenantRestaurantContext', 'Public order POST should not resolve non-demo tenant context yet');
-  assertNotIncludes(publicOrderPost, 'resolveOrderCreationContext', 'Public order POST should not add tenant order creation yet');
+  const orderClient = read('src/components/OrderClient.jsx');
+  assertIncludes(orderClient, 'restaurantSlug = null', 'Order client supports optional restaurantSlug');
+  assertIncludes(orderClient, 'restaurantSlug ? { restaurantSlug } : {}', 'Order client sends tenant restaurantSlug only when present');
 
   assertIncludes(readme, 'Tenant order API boundary foundation added.', 'README Batch 56 note');
   assertIncludes(readme, 'Restaurant staff can view tenant-scoped orders and update order status under `/r/[restaurantSlug]/admin/orders`.', 'README Batch 56 order admin scope note');
   assertIncludes(readme, 'OWNER and MANAGER can update order status; SUPPORT remains read-only.', 'README Batch 56 order role note');
-  assertIncludes(readme, 'Public tenant order creation remains disabled for non-demo tenants.', 'README Batch 56 public tenant ordering boundary note');
+  assertIncludes(readme, 'Tenant public order creation activation added.', 'README Batch 57 note');
+  assertIncludes(readme, 'Initialized, non-archived non-demo tenants can accept public orders at `/r/[restaurantSlug]/order` when ONLINE_ORDERING is enabled.', 'README Batch 57 public tenant ordering note');
+  assertIncludes(readme, 'Orders and order items are stamped with the tenant restaurantId.', 'README Batch 57 restaurantId write note');
+  assertIncludes(readme, 'Tenant table ordering remains disabled for non-demo tenants.', 'README Batch 57 table ordering boundary note');
   assertIncludes(readme, 'Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.', 'README Batch 56 demo order preservation note');
 
   assert(fs.existsSync(path.join(root, 'src/app/admin/(protected)/orders/page.jsx')), 'Demo admin orders page should remain present');
@@ -2532,7 +2559,7 @@ function checkTenantOrderApiBoundaryFoundation() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant orders batch should not add payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant orders batch should not add email API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant orders batch should not add WhatsApp API route');
-  assert(!migrationDirs.some((migrationDir) => /order.boundary|tenant.order|order.admin/i.test(migrationDir)), 'Batch 56 should not add a Prisma migration');
+  assert(!migrationDirs.some((migrationDir) => /order.boundary|tenant.order|order.admin|public.order/i.test(migrationDir)), 'Batch 57 should not add a Prisma migration');
 }
 
 function checkGatewayLeadAdminManagement() {
