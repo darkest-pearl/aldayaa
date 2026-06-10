@@ -23,7 +23,7 @@ export default async function TenantOrdersAdminPage({ params }) {
           <h2 className="mt-1 text-2xl font-semibold">Orders</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
             View tenant orders and update status for {params.restaurantSlug}. This is a read/status management foundation:
-            public tenant ordering remains disabled, and no payments, messaging, or inventory workflow is triggered.
+            public tenant ordering creates orders only when ONLINE_ORDERING is enabled, and no payments, messaging, or inventory workflow is triggered.
           </p>
         </div>
         <TenantOrdersClient restaurantSlug={params.restaurantSlug} staffRole={staff.role} />

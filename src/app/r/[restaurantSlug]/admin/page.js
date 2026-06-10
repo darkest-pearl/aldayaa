@@ -102,7 +102,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
           <h2 className="mt-2 text-xl font-semibold">Orders</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            View tenant orders and update order status for this restaurant. This is a read/status management foundation and does not activate public tenant ordering.
+            View tenant orders and update order status for this restaurant. This is a read/status management foundation; public tenant ordering creates orders only when ONLINE_ORDERING is enabled.
           </p>
           <a
             href={`/r/${params.restaurantSlug}/admin/orders`}
@@ -112,7 +112,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
           </a>
         </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Public tenant ordering activation, tenant order creation, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Tenant table ordering, inventory, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>

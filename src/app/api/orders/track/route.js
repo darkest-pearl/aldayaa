@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { prisma } from '../../../../lib/prisma';
 import { success, failure } from '../../../../lib/api-response';
+import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +11,9 @@ export async function GET(request) {
     return failure('Reference is required', 400);
   }
 
-  const order = await prisma.order.findUnique({ where: { reference } });
+  const order = await prisma.order.findFirst({
+    where: withDemoRestaurantWhere({ reference }),
+  });
 
   if (!order) {
     return failure('Order not found', 404);

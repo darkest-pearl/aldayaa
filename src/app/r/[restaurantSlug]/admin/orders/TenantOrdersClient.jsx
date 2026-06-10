@@ -159,7 +159,7 @@ export default function TenantOrdersClient({ restaurantSlug, staffRole }) {
         </div>
       ) : null}
       <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-        This is status management only: public tenant ordering remains disabled, and no inventory, recipe, payment, email, or WhatsApp workflow is triggered.
+        This is status management only: public tenant ordering creates orders only when ONLINE_ORDERING is enabled, and no inventory, recipe, payment, email, or WhatsApp workflow is triggered.
       </div>
 
       <section className="grid gap-3 md:grid-cols-5">

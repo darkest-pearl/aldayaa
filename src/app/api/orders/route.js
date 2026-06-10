@@ -7,7 +7,7 @@ import { FEATURE_KEYS, isFeatureEnabled } from '../../../lib/features';
 import { generateReference } from "../../../lib/reference";
 import { getRestaurantProfile } from '../../../lib/restaurant-profile';
 import { sendWhatsAppMessage } from "../../../lib/whatsapp";
-import { withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
+import { DEMO_RESTAURANT_SLUG, withDemoRestaurantData, withDemoRestaurantWhere } from '../../../lib/restaurants';
 import {
   ORDER_CONTEXTS,
   ORDER_SOURCES,
@@ -31,6 +31,7 @@ const orderSchema = z.object({
   items: z.array(itemSchema).min(1),
   paidOnline: z.boolean().optional(),
   notifyWhenReady: z.boolean().optional(),
+  restaurantSlug: z.string().trim().optional().nullable(),
   tableSlug: z.string().trim().min(1).max(80).optional().nullable(),
   table: z.string().trim().min(1).max(80).optional().nullable(),
   tableToken: z.string().trim().min(8).max(200).optional().nullable(),
@@ -49,6 +50,62 @@ function getRequestedTableSlug(orderData) {
 
 function getRequestedTableToken(orderData) {
   return typeof orderData.tableToken === 'string' ? orderData.tableToken.trim() : '';
+}
+
+function normalizeOrderRestaurantSlug(value) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+async function resolveOrderCreationContext(restaurantSlug) {
+  const normalizedSlug = normalizeOrderRestaurantSlug(restaurantSlug);
+
+  if (!normalizedSlug || normalizedSlug === DEMO_RESTAURANT_SLUG) {
+    return {
+      isDemoRestaurant: true,
+      restaurantId: DEMO_RESTAURANT_SLUG,
+      profile: await getRestaurantProfile(),
+    };
+  }
+
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug: normalizedSlug },
+    select: { id: true, slug: true, status: true },
+  });
+
+  if (!restaurant || restaurant.status === 'ARCHIVED') {
+    return {
+      error: failure('Restaurant online ordering is not available', 404),
+    };
+  }
+
+  const [profile, settings] = await Promise.all([
+    prisma.restaurantProfile.findUnique({
+      where: { restaurantId: restaurant.id },
+      select: { id: true, enabledFeatures: true },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: restaurant.id },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!profile || !settings) {
+    return {
+      error: failure('Restaurant online ordering is not initialized yet', 404),
+    };
+  }
+
+  if (!isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.ONLINE_ORDERING)) {
+    return {
+      error: failure('Online ordering is not available for this restaurant', 400),
+    };
+  }
+
+  return {
+    isDemoRestaurant: false,
+    restaurantId: restaurant.id,
+    profile,
+  };
 }
 
 /* ----------------------------- GET (Admin Only) ----------------------------- */
@@ -94,17 +151,23 @@ export async function POST(request) {
       return failure("Invalid order data", 400, { details: parsed.error.flatten() });
     }
 
+    const orderContext = await resolveOrderCreationContext(parsed.data.restaurantSlug);
+    if (orderContext.error) return orderContext.error;
+
     const requestedTableSlug = getRequestedTableSlug(parsed.data);
     const requestedTableToken = getRequestedTableToken(parsed.data);
     let tableContext = null;
 
     if (requestedTableSlug) {
+      if (!orderContext.isDemoRestaurant) {
+        return failure('Tenant table ordering is not available yet', 400);
+      }
+
       if (!requestedTableToken) {
         return failure('Table ordering is not available for this table', 400);
       }
 
-      const profile = await getRestaurantProfile();
-      if (!isFeatureEnabled(profile.enabledFeatures, FEATURE_KEYS.TABLE_QR_ORDERING)) {
+      if (!isFeatureEnabled(orderContext.profile.enabledFeatures, FEATURE_KEYS.TABLE_QR_ORDERING)) {
         return failure('Table ordering is not available', 400);
       }
 
@@ -128,7 +191,9 @@ export async function POST(request) {
 
     const itemIds = [...new Set(parsed.data.items.map((item) => item.id))];
     const menuItems = await prisma.menuItem.findMany({
-      where: withDemoRestaurantWhere({ id: { in: itemIds } }),
+      where: orderContext.isDemoRestaurant
+        ? withDemoRestaurantWhere({ id: { in: itemIds } })
+        : { id: { in: itemIds }, restaurantId: orderContext.restaurantId },
       select: { id: true, name: true, price: true, isAvailable: true },
     });
     const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
@@ -160,32 +225,39 @@ export async function POST(request) {
 
     // generate UNIQUE reference
     const reference = generateReference();
+    const paidOnline = orderContext.isDemoRestaurant ? Boolean(parsed.data.paidOnline) : false;
+    const orderNotifyWhenReady = orderContext.isDemoRestaurant && !hasTableContext ? notifyWhenReady : false;
+
+    const orderData = {
+      restaurantId: orderContext.restaurantId,
+      reference, // important!
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      deliveryType: parsed.data.deliveryType,
+      address: hasTableContext
+        ? null
+        : parsed.data.deliveryType === "DELIVERY"
+          ? parsed.data.address.trim()
+          : null,
+      notes: parsed.data.notes || null,
+      paidOnline,
+      notifyWhenReady: orderNotifyWhenReady,
+      totalPrice,
+      tableId: tableContext?.id || null,
+      tableLabel: tableContext?.label || null,
+      tableSlug: tableContext?.slug || null,
+      orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD,
+      orderSource: ORDER_SOURCES.CUSTOMER,
+      items: {
+        create: orderContext.isDemoRestaurant
+          ? orderItems.map((item) => withDemoRestaurantData(item))
+          : orderItems.map((item) => ({ ...item, restaurantId: orderContext.restaurantId })),
+      },
+    };
 
     // create order
     const order = await prisma.order.create({
-      data: withDemoRestaurantData({
-        reference, // important!
-        name: parsed.data.name,
-        phone: parsed.data.phone,
-        deliveryType: parsed.data.deliveryType,
-        address: hasTableContext
-          ? null
-          : parsed.data.deliveryType === "DELIVERY"
-            ? parsed.data.address.trim()
-            : null,
-        notes: parsed.data.notes || null,
-        paidOnline: Boolean(parsed.data.paidOnline),
-        notifyWhenReady: hasTableContext ? false : notifyWhenReady,
-        totalPrice,
-        tableId: tableContext?.id || null,
-        tableLabel: tableContext?.label || null,
-        tableSlug: tableContext?.slug || null,
-        orderContext: tableContext ? ORDER_CONTEXTS.TABLE : ORDER_CONTEXTS.STANDARD,
-        orderSource: ORDER_SOURCES.CUSTOMER,
-        items: {
-          create: orderItems.map((item) => withDemoRestaurantData(item)),
-        },
-      }),
+      data: orderContext.isDemoRestaurant ? withDemoRestaurantData(orderData) : orderData,
       include: { items: true },
     });
 
