@@ -19,6 +19,15 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+function normalizeTenantTable(table) {
+  const normalized = normalizeTable(table);
+  return {
+    ...normalized,
+    qrToken: normalized.qrToken,
+    orderUrl: '',
+  };
+}
+
 export async function PUT(request, { params }) {
   try {
     const body = await request.json();
@@ -60,7 +69,7 @@ export async function PUT(request, { params }) {
     });
     if (!table) return failure('Table not found', 404);
 
-    return success({ table: normalizeTable(table) });
+    return success({ table: normalizeTenantTable(table) });
   } catch (error) {
     return handleApiError(error);
   }
@@ -82,7 +91,7 @@ export async function DELETE(request, { params }) {
     });
     if (!table) return failure('Table not found', 404);
 
-    return success({ table: normalizeTable(table) });
+    return success({ table: normalizeTenantTable(table) });
   } catch (error) {
     return handleApiError(error);
   }

@@ -2364,11 +2364,18 @@ function checkTenantTableManagementFoundation() {
   assertIncludes(collectionRoute, 'generateUniqueSlug', 'Tenant tables POST generates a table slug');
   assertIncludes(collectionRoute, 'generateUniqueQrToken', 'Tenant tables POST generates a QR token');
   assertIncludes(collectionRoute, 'Table label already exists for this restaurant', 'Tenant tables POST prevents duplicate tenant labels');
+  assertIncludes(collectionRoute, 'function normalizeTenantTable(table)', 'Tenant tables collection API uses tenant-safe serializer');
+  assertIncludes(collectionRoute, 'qrToken: normalized.qrToken', 'Tenant tables collection API keeps QR token reference');
+  assertIncludes(collectionRoute, "orderUrl: ''", 'Tenant tables collection API suppresses demo order URL');
   assertIncludes(itemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant tables item route scopes mutations by restaurantId');
   assertIncludes(itemRoute, 'prisma.restaurantTable.updateMany', 'Tenant tables item mutation is tenant-scoped');
   assertIncludes(itemRoute, 'updated.count !== 1', 'Tenant tables item route checks scoped update count');
   assertIncludes(itemRoute, 'const table = await prisma.restaurantTable.findFirst', 'Tenant tables item route reads updated table with tenant scope');
   assertIncludes(itemRoute, 'data: { isActive: false }', 'Tenant tables deactivate uses inactive state');
+  assertIncludes(itemRoute, 'function normalizeTenantTable(table)', 'Tenant tables item API uses tenant-safe serializer');
+  assertIncludes(itemRoute, 'qrToken: normalized.qrToken', 'Tenant tables item API keeps QR token reference');
+  assertIncludes(itemRoute, "orderUrl: ''", 'Tenant tables item API suppresses demo order URL');
+  assertNotIncludes(tableApiSource, '/public/table', 'Tenant tables APIs must not expose demo public table orderUrl');
   assertNotIncludes(itemRoute, 'prisma.restaurantTable.update({', 'Tenant tables PUT must not update by id only');
   assertNotIncludes(tableApiSource, 'prisma.restaurantTable.delete', 'Tenant tables APIs must not hard delete tables');
   assertNotIncludes(tableApiSource, 'prisma.order', 'Tenant tables APIs must not create or update orders');

@@ -23,6 +23,15 @@ const tableSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+function normalizeTenantTable(table) {
+  const normalized = normalizeTable(table);
+  return {
+    ...normalized,
+    qrToken: normalized.qrToken,
+    orderUrl: '',
+  };
+}
+
 async function generateUniqueSlug(label) {
   const baseSlug = generateTableSlug(label);
   let slug = baseSlug;
@@ -59,7 +68,7 @@ export async function GET(request) {
     });
 
     return success({
-      tables: tables.map((table) => normalizeTable(table)),
+      tables: tables.map((table) => normalizeTenantTable(table)),
       staffRole: staff.role,
     });
   } catch (error) {
@@ -95,7 +104,7 @@ export async function POST(request) {
       },
     });
 
-    return success({ table: normalizeTable(table) });
+    return success({ table: normalizeTenantTable(table) });
   } catch (error) {
     return handleApiError(error);
   }
