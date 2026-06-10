@@ -2529,6 +2529,12 @@ function checkTenantOrderApiBoundaryFoundation() {
   assertIncludes(publicOrderRoute, 'FEATURE_KEYS.ONLINE_ORDERING', 'Public order POST requires online ordering feature');
   assertIncludes(publicOrderPost, 'Tenant table ordering is not available yet', 'Public order POST rejects non-demo table context');
   assertIncludes(publicOrderPost, 'restaurantId: orderContext.restaurantId', 'Public order POST writes resolved tenant restaurantId');
+  assertIncludes(publicOrderPost, 'const paidOnline = orderContext.isDemoRestaurant ? Boolean(parsed.data.paidOnline) : false;', 'Public order POST forces non-demo tenant paidOnline false');
+  assertIncludes(publicOrderPost, 'const orderNotifyWhenReady = orderContext.isDemoRestaurant && !hasTableContext ? notifyWhenReady : false;', 'Public order POST forces non-demo tenant notifyWhenReady false');
+  assertIncludes(publicOrderPost, 'paidOnline,', 'Public order POST uses sanitized paidOnline value');
+  assertIncludes(publicOrderPost, 'notifyWhenReady: orderNotifyWhenReady', 'Public order POST uses sanitized notifyWhenReady value');
+  assertIncludes(publicOrderPost, 'Boolean(parsed.data.paidOnline)', 'Public order POST preserves demo paidOnline path');
+  assertIncludes(publicOrderPost, '? notifyWhenReady : false', 'Public order POST preserves demo notifyWhenReady path');
   assertIncludes(publicOrderPost, 'where: orderContext.isDemoRestaurant', 'Public order POST keeps demo/tenant menu lookup branch');
   assertIncludes(publicOrderPost, 'id: { in: itemIds }, restaurantId: orderContext.restaurantId', 'Public order POST scopes tenant menu items by restaurantId');
   assertIncludes(publicOrderPost, 'orderItems.map((item) => ({', 'Public order POST maps nested tenant order items');

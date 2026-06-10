@@ -225,6 +225,8 @@ export async function POST(request) {
 
     // generate UNIQUE reference
     const reference = generateReference();
+    const paidOnline = orderContext.isDemoRestaurant ? Boolean(parsed.data.paidOnline) : false;
+    const orderNotifyWhenReady = orderContext.isDemoRestaurant && !hasTableContext ? notifyWhenReady : false;
 
     const orderData = {
       restaurantId: orderContext.restaurantId,
@@ -238,8 +240,8 @@ export async function POST(request) {
           ? parsed.data.address.trim()
           : null,
       notes: parsed.data.notes || null,
-      paidOnline: Boolean(parsed.data.paidOnline),
-      notifyWhenReady: hasTableContext ? false : notifyWhenReady,
+      paidOnline,
+      notifyWhenReady: orderNotifyWhenReady,
       totalPrice,
       tableId: tableContext?.id || null,
       tableLabel: tableContext?.label || null,
