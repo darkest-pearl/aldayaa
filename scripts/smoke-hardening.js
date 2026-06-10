@@ -2430,6 +2430,8 @@ function checkTenantOrderApiBoundaryFoundation() {
   const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
   const publicOrderRoute = read('src/app/api/orders/route.js');
   const publicOrderPost = getExportedFunctionSource(publicOrderRoute, 'POST');
+  const publicOrderTrackRoute = read('src/app/api/orders/track/route.js');
+  const publicOrderCancelRoute = read('src/app/api/orders/cancel/route.js');
   const tenantOrderPage = read('src/app/r/[restaurantSlug]/order/page.js');
   const publicDemoOrderPagePath = path.join(root, 'src/app/public/order/page.js');
   const tenantOrderPagePath = path.join(root, 'src/app/r/[restaurantSlug]/order/page.js');
@@ -2518,6 +2520,7 @@ function checkTenantOrderApiBoundaryFoundation() {
   assertIncludes(tenantOrderPage, 'isFeatureEnabled(context.profile.enabledFeatures, FEATURE_KEYS.ONLINE_ORDERING)', 'Tenant order page requires ONLINE_ORDERING');
   assertIncludes(tenantOrderPage, '<OrderClient', 'Tenant order page renders tenant order client when enabled');
   assertIncludes(tenantOrderPage, 'restaurantSlug={context.restaurant.slug}', 'Tenant order page passes restaurantSlug to order client');
+  assertIncludes(tenantOrderPage, 'showOrderSupportActions={false}', 'Tenant order page keeps support actions hidden');
   assertIncludes(tenantOrderPage, 'Table ordering is not available yet for this restaurant.', 'Tenant order page rejects non-demo table context');
   assertIncludes(tenantOrderPage, 'Online ordering is not available yet for this restaurant.', 'Tenant order page keeps unavailable state');
   assertIncludes(publicOrderRoute, 'withDemoRestaurantData', 'Public order API preserves demo restaurant writes');
@@ -2540,6 +2543,15 @@ function checkTenantOrderApiBoundaryFoundation() {
   assertIncludes(publicOrderPost, 'orderItems.map((item) => ({', 'Public order POST maps nested tenant order items');
   assertIncludes(publicOrderPost, '...item, restaurantId: orderContext.restaurantId', 'Public order POST stamps nested order items');
   assertIncludes(publicOrderPost, 'item.quantity', 'Public order POST preserves quantity validation data flow');
+  assertIncludes(publicOrderTrackRoute, 'withDemoRestaurantWhere({ reference })', 'Public order track lookup is demo-scoped');
+  assertIncludes(publicOrderTrackRoute, 'prisma.order.findFirst', 'Public order track should not use global unique reference lookup');
+  assertNotIncludes(publicOrderTrackRoute, 'findUnique({ where: { reference } })', 'Public order track must not lookup global reference');
+  assertIncludes(publicOrderCancelRoute, 'withDemoRestaurantWhere({ reference: id })', 'Public order cancel lookup is demo-scoped');
+  assertIncludes(publicOrderCancelRoute, 'prisma.order.findFirst', 'Public order cancel should not use global unique reference lookup');
+  assertNotIncludes(publicOrderCancelRoute, 'findUnique({\n      where: { reference: id },\n    })', 'Public order cancel must not lookup global reference');
+  assertIncludes(publicOrderCancelRoute, 'prisma.order.updateMany', 'Public order cancel mutation is demo-scoped');
+  assertIncludes(publicOrderCancelRoute, 'withDemoRestaurantWhere({ id: order.id })', 'Public order cancel mutation uses demo restaurant scope');
+  assertIncludes(publicOrderCancelRoute, 'updated.count !== 1', 'Public order cancel checks scoped mutation count');
   assertNotIncludes(publicOrderPost, 'requireAdmin', 'Public order POST must not use platform admin auth');
   assertNotIncludes(publicOrderPost, 'sendWhatsAppMessage', 'Public order POST must not send WhatsApp');
   assertNotIncludes(publicOrderPost, 'sendMail', 'Public order POST must not send email');

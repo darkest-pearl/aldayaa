@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { getRestaurantSettings } from '../../../../lib/restaurant-settings';
 import { success, failure } from '../../../../lib/api-response';
+import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const cancelSchema = z.object({ id: z.string().min(3) });
 
@@ -17,9 +18,8 @@ export async function POST(request) {
 
     const { id } = parsed.data;
 
-    // Find order by reference (assuming DB column is `reference`)
-    const order = await prisma.order.findUnique({
-      where: { reference: id },
+    const order = await prisma.order.findFirst({
+      where: withDemoRestaurantWhere({ reference: id }),
     });
 
     if (!order) return failure('Order not found', 404);
@@ -35,10 +35,12 @@ export async function POST(request) {
       return failure('Order already in progress', 400);
     if (minutesSincePlaced > 30) return failure('Orders can only be canceled within 30 minutes', 400);
 
-    await prisma.order.update({
-      where: { id: order.id },
+    const updated = await prisma.order.updateMany({
+      where: withDemoRestaurantWhere({ id: order.id }),
       data: { status: 'CANCELLED' },
     });
+
+    if (updated.count !== 1) return failure('Order not found', 404);
 
     const data = { cancelled: true };
     if (settings.cancellationFee > 0) {
