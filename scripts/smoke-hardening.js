@@ -1808,8 +1808,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(middleware, 'COOKIE_NAME = "aldayaa_admin";\nconst JWT_SECRET', 'Middleware should not rely on weak platform fallback secret');
   assertIncludes(middleware, 'matcher: ["/admin/:path*", "/api/admin/:path*", "/r/:restaurantSlug/admin/:path*"]', 'Middleware matcher includes tenant admin');
 
-  assertIncludes(tenantAdmin, 'getRestaurantStaffFromRequest', 'Tenant admin page verifies staff session');
-  assertIncludes(tenantAdmin, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant admin page enforces slug boundary');
+  assertIncludes(tenantAdmin, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Tenant admin page verifies DB-backed staff session');
   assertIncludes(tenantAdmin, "redirect(`/r/${params.restaurantSlug}/admin/login`)", 'Tenant admin page redirects unauthenticated staff');
   assertIncludes(tenantAdminLayout, 'bg-neutral-950', 'Tenant admin layout minimal shell styling');
   assertIncludes(tenantAdmin, 'Restaurant staff access is active', 'Tenant admin minimal dashboard copy');
@@ -2759,6 +2758,10 @@ function checkTenantKitchenQueueOperations() {
   assertIncludes(collectionRoute, 'orderContextFilter', 'Tenant kitchen GET supports order context filter');
   assertIncludes(collectionRoute, 'getKitchenQueueCounters', 'Tenant kitchen GET returns lightweight counters');
   assertIncludes(collectionRoute, 'normalizeTenantOrders', 'Tenant kitchen GET returns normalized orders');
+  assertIncludes(tenantAdmin, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Tenant admin overview uses DB-backed staff access before kitchen counters');
+  assertIncludes(tenantAdmin, 'redirect(`/r/${params.restaurantSlug}/admin/login`)', 'Tenant admin overview redirects failed staff validation');
+  assertIncludes(tenantAdmin, 'const kitchenOrders = await prisma.order.findMany', 'Tenant admin overview reads kitchen counter orders');
+  assertIncludes(tenantAdmin, 'restaurantId: staff.restaurantId', 'Tenant admin overview kitchen counters scope by restaurantId');
 
   assertIncludes(itemRoute, 'prisma.$transaction', 'Tenant kitchen PUT uses transaction');
   assertIncludes(itemRoute, 'tx.order.findFirst', 'Tenant kitchen PUT reads by scoped order lookup');
@@ -2791,8 +2794,8 @@ function checkTenantKitchenQueueOperations() {
     assertIncludes(kitchenApiSource, 'restaurantId: staff.restaurantId', 'Tenant kitchen status history writes must include restaurantId');
   }
 
-  assertIncludes(tenantKitchenPage, 'getRestaurantStaffFromRequest', 'Tenant kitchen page verifies staff session');
-  assertIncludes(tenantKitchenPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant kitchen page enforces slug boundary');
+  assertIncludes(tenantKitchenPage, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Tenant kitchen page uses DB-backed staff access');
+  assertIncludes(tenantKitchenPage, 'redirect(`/r/${params.restaurantSlug}/admin/login`)', 'Tenant kitchen page redirects failed staff validation');
   assertIncludes(tenantKitchenPage, '<TenantKitchenClient', 'Tenant kitchen page renders client');
   assertIncludes(tenantKitchenClient, '/api/restaurant-admin/kitchen', 'Tenant kitchen client uses kitchen API');
   assertIncludes(tenantKitchenClient, "'PUT'", 'Tenant kitchen client updates status via PUT');

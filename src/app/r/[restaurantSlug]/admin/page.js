@@ -2,16 +2,18 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ORDER_CONTEXTS, ORDER_STATUSES } from '../../../../lib/order-status';
 import { prisma } from '../../../../lib/prisma';
-import { getRestaurantStaffFromRequest } from '../../../../lib/restaurant-staff-auth';
+import { requireRestaurantStaffAccess } from '../../../../lib/restaurant-staff-access';
 import TenantAdminNav from './TenantAdminNav';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Restaurant Staff Admin' };
 
 export default async function TenantRestaurantAdminPage({ params }) {
-  const staff = await getRestaurantStaffFromRequest(cookies());
+  let staff;
 
-  if (!staff || staff.restaurantSlug !== params.restaurantSlug) {
+  try {
+    staff = await requireRestaurantStaffAccess(cookies(), params.restaurantSlug);
+  } catch (error) {
     redirect(`/r/${params.restaurantSlug}/admin/login`);
   }
 

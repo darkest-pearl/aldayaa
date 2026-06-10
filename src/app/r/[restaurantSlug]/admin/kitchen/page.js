@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getRestaurantStaffFromRequest } from '../../../../../lib/restaurant-staff-auth';
+import { requireRestaurantStaffAccess } from '../../../../../lib/restaurant-staff-access';
 import TenantAdminNav from '../TenantAdminNav';
 import TenantKitchenClient from './TenantKitchenClient';
 
@@ -8,9 +8,11 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Tenant Kitchen Queue' };
 
 export default async function TenantKitchenAdminPage({ params }) {
-  const staff = await getRestaurantStaffFromRequest(cookies());
+  let staff;
 
-  if (!staff || staff.restaurantSlug !== params.restaurantSlug) {
+  try {
+    staff = await requireRestaurantStaffAccess(cookies(), params.restaurantSlug);
+  } catch (error) {
     redirect(`/r/${params.restaurantSlug}/admin/login`);
   }
 
