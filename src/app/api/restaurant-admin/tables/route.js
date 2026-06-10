@@ -23,12 +23,19 @@ const tableSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-function normalizeTenantTable(table) {
+function buildTenantTableOrderUrl(table, restaurantSlug) {
+  const tokenQuery = table.qrToken ? `?token=${encodeURIComponent(table.qrToken)}` : '';
+  return table.isActive && table.slug
+    ? `/r/${encodeURIComponent(restaurantSlug)}/table/${encodeURIComponent(table.slug)}${tokenQuery}`
+    : '';
+}
+
+function normalizeTenantTable(table, restaurantSlug) {
   const normalized = normalizeTable(table);
   return {
     ...normalized,
     qrToken: normalized.qrToken,
-    orderUrl: '',
+    orderUrl: buildTenantTableOrderUrl(normalized, restaurantSlug),
   };
 }
 
@@ -68,7 +75,7 @@ export async function GET(request) {
     });
 
     return success({
-      tables: tables.map((table) => normalizeTenantTable(table)),
+      tables: tables.map((table) => normalizeTenantTable(table, restaurantSlug)),
       staffRole: staff.role,
     });
   } catch (error) {
@@ -104,7 +111,7 @@ export async function POST(request) {
       },
     });
 
-    return success({ table: normalizeTenantTable(table) });
+    return success({ table: normalizeTenantTable(table, parsed.data.restaurantSlug) });
   } catch (error) {
     return handleApiError(error);
   }

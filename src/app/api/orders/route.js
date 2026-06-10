@@ -159,10 +159,6 @@ export async function POST(request) {
     let tableContext = null;
 
     if (requestedTableSlug) {
-      if (!orderContext.isDemoRestaurant) {
-        return failure('Tenant table ordering is not available yet', 400);
-      }
-
       if (!requestedTableToken) {
         return failure('Table ordering is not available for this table', 400);
       }
@@ -172,7 +168,9 @@ export async function POST(request) {
       }
 
       tableContext = await prisma.restaurantTable.findFirst({
-        where: withDemoRestaurantWhere({ slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true }),
+        where: orderContext.isDemoRestaurant
+          ? withDemoRestaurantWhere({ slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true })
+          : { restaurantId: orderContext.restaurantId, slug: requestedTableSlug, qrToken: requestedTableToken, isActive: true },
         select: { id: true, label: true, slug: true },
       });
 
