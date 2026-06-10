@@ -401,7 +401,7 @@ export default function ReservationForm({
               className="absolute right-4 top-4 text-neutral-500 hover:text-secondary"
               aria-label="Close"
             >
-              Ã—
+              ×
             </button>
             <div className="space-y-1 mb-4">
               <h2 className="text-lg md:text-xl font-semibold text-secondary">Look up your reservation</h2>

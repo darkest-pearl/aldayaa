@@ -2299,6 +2299,8 @@ function checkTenantReservationsManagement() {
   assertIncludes(publicReservationForm, 'restaurantSlug = null', 'Reservation form supports optional restaurantSlug');
   assertIncludes(publicReservationForm, 'restaurantSlug ? { ...form, restaurantSlug } : form', 'Reservation form sends tenant slug when present');
   assertIncludes(publicReservationForm, 'isTenantReservationSupport', 'Reservation form distinguishes tenant support actions');
+  assertNotIncludes(publicReservationForm, 'Ã—', 'Reservation form close button mojibake');
+  assertNotIncludes(publicReservationForm, 'Ã', 'Reservation form mojibake marker');
   assertIncludes(publicReservationForm, '/api/reservations/tenant-track', 'Reservation form uses tenant track endpoint');
   assertIncludes(publicReservationForm, '/api/reservations/tenant-cancel', 'Reservation form uses tenant cancel endpoint');
   assertIncludes(publicReservationForm, 'restaurantSlug, reference: trackForm.reference.trim(), phone: trackForm.phone.trim()', 'Reservation form sends tenant track scope');
