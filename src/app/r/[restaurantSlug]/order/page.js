@@ -104,7 +104,7 @@ export default async function TenantOrderPage({ params, searchParams = {} }) {
           table={table}
           restaurantSlug={context.restaurant.slug}
           enableReadyNotification={false}
-          showOrderSupportActions={false}
+          showOrderSupportActions={true}
         />
       )}
     </Section>

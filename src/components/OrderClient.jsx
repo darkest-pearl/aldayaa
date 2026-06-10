@@ -12,6 +12,7 @@ export default function OrderClient({
   showOrderSupportActions = true,
 }) {
   const isTableOrder = Boolean(table?.slug && table?.tableToken);
+  const isTenantOrderSupport = Boolean(restaurantSlug);
   const defaultDeliveryType = isTableOrder ? "PICKUP" : "DELIVERY";
   const createEmptyForm = () => ({
     name: "",
@@ -30,7 +31,9 @@ export default function OrderClient({
   const [showTrackModal, setShowTrackModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [trackRef, setTrackRef] = useState("");
+  const [trackPhone, setTrackPhone] = useState("");
   const [cancelRef, setCancelRef] = useState("");
+  const [cancelPhone, setCancelPhone] = useState("");
   const [trackResult, setTrackResult] = useState(null);
   const [trackError, setTrackError] = useState("");
   const [trackLoading, setTrackLoading] = useState(false);
@@ -146,10 +149,20 @@ export default function OrderClient({
       setTrackError("Please enter a valid reference number.");
       return;
     }
+    if (isTenantOrderSupport && trackPhone.trim().length < 4) {
+      setTrackError("Please enter the phone number used for this order.");
+      return;
+    }
 
     setTrackLoading(true);
     try {
-      const res = await fetch(`/api/orders/track?reference=${encodeURIComponent(trimmed)}`);
+      const res = isTenantOrderSupport
+        ? await fetch("/api/orders/tenant-track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ restaurantSlug, reference: trimmed, phone: trackPhone.trim() }),
+          })
+        : await fetch(`/api/orders/track?reference=${encodeURIComponent(trimmed)}`);
       const data = await res.json();
       if (!data?.success) {
         setTrackError(data?.error || "Unable to find order.");
@@ -175,13 +188,21 @@ export default function OrderClient({
       setCancelError("Please enter a valid reference number.");
       return;
     }
+    if (isTenantOrderSupport && cancelPhone.trim().length < 4) {
+      setCancelError("Please enter the phone number used for this order.");
+      return;
+    }
 
     setCancelLoading(true);
     try {
-      const res = await fetch("/api/orders/cancel", {
+      const res = await fetch(isTenantOrderSupport ? "/api/orders/tenant-cancel" : "/api/orders/cancel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: trimmed }),
+        body: JSON.stringify(
+          isTenantOrderSupport
+            ? { restaurantSlug, reference: trimmed, phone: cancelPhone.trim() }
+            : { id: trimmed }
+        ),
       });
       const data = await res.json();
 
@@ -616,7 +637,9 @@ export default function OrderClient({
           </div>
 
             <p className="mb-3 text-sm text-white/80">
-            Enter your reference number to check the latest status.
+            {isTenantOrderSupport
+              ? "Enter your reference number and phone number to check the latest status."
+              : "Enter your reference number to check the latest status."}
           </p>
 
           <form className="space-y-3 text-sm" onSubmit={handleTrack}>
@@ -626,6 +649,14 @@ export default function OrderClient({
               value={trackRef}
               onChange={(e) => setTrackRef(e.target.value)}
             />
+            {isTenantOrderSupport && (
+              <input
+                className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Phone number used for the order"
+                value={trackPhone}
+                onChange={(e) => setTrackPhone(e.target.value)}
+              />
+            )}
 
             {trackResult && (
               <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/90 p-3 space-y-2 text-sm text-emerald-900 shadow-sm">
@@ -641,6 +672,12 @@ export default function OrderClient({
                     <span className="font-semibold">{trackResult.deliveryType}</span>
                   </div>
               )}
+                {trackResult.tableLabel && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Table</span>
+                    <span className="font-semibold">{trackResult.tableLabel}</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between text-sm">
                   <span>Placed on</span>
@@ -696,7 +733,9 @@ export default function OrderClient({
           </div>
 
           <p className="mb-3 text-sm text-white/80">
-            Enter your reference number below to request a cancellation.
+            {isTenantOrderSupport
+              ? "Enter your reference number and phone number below to request a cancellation."
+              : "Enter your reference number below to request a cancellation."}
           </p>
 
           <form className="space-y-3 text-sm" onSubmit={handleCancel}>
@@ -706,6 +745,14 @@ export default function OrderClient({
               value={cancelRef}
               onChange={(e) => setCancelRef(e.target.value)}
             />
+            {isTenantOrderSupport && (
+              <input
+                className="w-full rounded-lg border border-neutral-200/80 bg-white/90 px-3 py-3 text-neutral-900 placeholder:text-neutral-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder="Phone number used for the order"
+                value={cancelPhone}
+                onChange={(e) => setCancelPhone(e.target.value)}
+              />
+            )}
 
             {cancelError && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 shadow-sm">
