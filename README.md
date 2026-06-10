@@ -162,15 +162,15 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, and table management foundation; orders, tenant table ordering activation, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, and order status management foundation; public tenant order creation, tenant ordering activation, inventory, recipes, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
-- Orders, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Tenant order creation, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant profile/settings admin added.
 - Restaurant staff can manage tenant-scoped public profile metadata, contact links, brand colors, display hours, and cancellation settings under `/r/[restaurantSlug]/admin/settings`.
 - OWNER and MANAGER can update profile/settings; SUPPORT remains read-only.
-- Feature/module activation, ordering activation, orders, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Feature/module activation, tenant ordering activation, tenant order creation, inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant staff management foundation added.
 - OWNER users can create, edit, deactivate, and manually reset passwords for RestaurantUser records under `/r/[restaurantSlug]/admin/staff`.
 - Staff management is scoped to the current restaurant; MANAGER and SUPPORT are read-only for staff records.
@@ -187,6 +187,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - This prepares QR/table management but does not activate tenant ordering or tenant order writes.
 - Demo table behavior remains available at `/public/table/[slug]` and `/r/demo-restaurant/table/[slug]`.
 - No order creation, ordering activation, inventory, recipe, payment, billing, domain, email, WhatsApp, or provisioning logic was added.
+- Tenant order API boundary foundation added.
+- Restaurant staff can view tenant-scoped orders and update order status under `/r/[restaurantSlug]/admin/orders`.
+- OWNER and MANAGER can update order status; SUPPORT remains read-only.
+- Public tenant order creation remains disabled for non-demo tenants.
+- Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
+- No tenant order creation, order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
 ## Feature Modules Foundation
 
