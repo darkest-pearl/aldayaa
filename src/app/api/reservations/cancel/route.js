@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { z } from 'zod';
 import { prisma } from '../../../../lib/prisma';
 import { success, failure } from '../../../../lib/api-response';
+import { withDemoRestaurantWhere } from '../../../../lib/restaurants';
 
 const cancelSchema = z.object({
   reference: z.string().trim().min(3),
@@ -57,7 +58,9 @@ export async function POST(request) {
 
     const { reference, phone } = parsed.data;
 
-    const reservation = await prisma.reservation.findUnique({ where: { reference } });
+    const reservation = await prisma.reservation.findFirst({
+      where: withDemoRestaurantWhere({ reference }),
+    });
 
     if (!reservation) return failure('Reservation not found', 404);
 
@@ -74,10 +77,12 @@ export async function POST(request) {
       return failure('Past reservations cannot be cancelled', 400);
     }
 
-    await prisma.reservation.update({
-      where: { id: reservation.id },
+    const updated = await prisma.reservation.updateMany({
+      where: withDemoRestaurantWhere({ id: reservation.id }),
       data: { status: 'CANCELLED' },
     });
+
+    if (updated.count !== 1) return failure('Reservation not found', 404);
 
     return success({ cancelled: true });
   } catch (error) {
