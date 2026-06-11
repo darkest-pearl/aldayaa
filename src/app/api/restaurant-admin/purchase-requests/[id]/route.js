@@ -120,12 +120,25 @@ export async function PUT(request, { params }) {
       if (cleanSupplierId(parsed.data.supplierId) && !supplierId) return failure('Supplier not found', 404);
     }
 
+    const updateWhere = { id: params.id, restaurantId: staff.restaurantId };
+    if (requestedStatus !== undefined) {
+      updateWhere.status = { not: PURCHASE_REQUEST_STATUSES.RECEIVED };
+    }
+
     const updated = await prisma.purchaseRequest.updateMany({
-      where: { id: params.id, restaurantId: staff.restaurantId },
+      where: updateWhere,
       data: buildUpdateData(parsed.data, supplierId, requestedStatus),
     });
 
     if (updated.count !== 1) {
+      const current = await prisma.purchaseRequest.findFirst({
+        where: { id: params.id, restaurantId: staff.restaurantId },
+        select: { status: true },
+      });
+      if (current?.status === PURCHASE_REQUEST_STATUSES.RECEIVED && requestedStatus !== undefined) {
+        return failure('Received purchase requests cannot change status', 409);
+      }
+
       return failure('Purchase request not found', 404);
     }
 

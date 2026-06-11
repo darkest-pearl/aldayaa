@@ -3369,6 +3369,8 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   assertIncludes(requestRoute, 'restaurantId: staff.restaurantId', 'Tenant purchase request create stamps restaurantId');
   assertIncludes(requestRoute, 'lines: {', 'Tenant purchase request creates line items');
   assertIncludes(requestRoute, 'createdByAdminEmail: staff.email', 'Tenant purchase request records staff email');
+  assertIncludes(requestRoute, 'createStatus === PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase request POST rejects direct received creation');
+  assertIncludes(requestRoute, 'Use the receive stock action to mark a purchase request as received', 'Tenant purchase request POST directs users to receive action');
   assertIncludes(requestItemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant purchase request item route scopes by restaurantId');
   assertIncludes(requestItemRoute, 'where: { id: supplierId, restaurantId, isActive: true }', 'Tenant purchase request update validates supplier ownership');
   assertIncludes(requestItemRoute, 'prisma.purchaseRequest.updateMany', 'Tenant purchase request status/details use scoped updateMany');
@@ -3377,6 +3379,10 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   assertIncludes(requestItemRoute, 'Use the receive stock action to mark a purchase request as received', 'Tenant purchase request generic PUT directs users to receive action');
   assertIncludes(requestItemRoute, 'existing.status === PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase request generic PUT detects received existing requests');
   assertIncludes(requestItemRoute, 'Received purchase requests cannot change status', 'Tenant purchase request generic PUT rejects status changes away from received');
+  assertIncludes(requestItemRoute, 'const updateWhere = { id: params.id, restaurantId: staff.restaurantId }', 'Tenant purchase request generic PUT builds scoped update where');
+  assertIncludes(requestItemRoute, 'updateWhere.status = { not: PURCHASE_REQUEST_STATUSES.RECEIVED }', 'Tenant purchase request generic PUT write guards status changes against received rows');
+  assertIncludes(requestItemRoute, 'const current = await prisma.purchaseRequest.findFirst', 'Tenant purchase request generic PUT re-reads failed scoped updates');
+  assertIncludes(requestItemRoute, 'current?.status === PURCHASE_REQUEST_STATUSES.RECEIVED && requestedStatus !== undefined', 'Tenant purchase request generic PUT reports received race clearly');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequest.update({', 'Tenant purchase request APIs must not mutate by id only');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequest.delete', 'Tenant purchase request APIs must not hard delete');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequestLine.delete', 'Tenant purchase request line APIs must not hard delete lines');
