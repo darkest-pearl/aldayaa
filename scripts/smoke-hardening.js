@@ -2867,6 +2867,16 @@ function checkTenantInventoryManagementFoundation() {
   assertIncludes(itemRoute, 'prisma.inventoryItem.updateMany', 'Tenant inventory item update/deactivate uses scoped updateMany');
   assertIncludes(itemRoute, 'updated.count !== 1', 'Tenant inventory item route checks scoped update count');
   assertIncludes(itemRoute, 'const item = await prisma.inventoryItem.findFirst', 'Tenant inventory item route reads updated item with tenant scope');
+  assertIncludes(itemsRoute, 'where: { sku: data.sku, restaurantId: staff.restaurantId }', 'Tenant inventory create SKU check is tenant-scoped');
+  assertIncludes(itemRoute, 'sku: data.sku', 'Tenant inventory update SKU check includes SKU');
+  assertIncludes(itemRoute, 'restaurantId: staff.restaurantId', 'Tenant inventory update SKU check includes restaurantId');
+  assertIncludes(itemRoute, 'NOT: { id: params.id }', 'Tenant inventory update SKU check excludes current item');
+  assertIncludes(itemsRoute, 'isPrismaUniqueConstraintError(error)', 'Tenant inventory create handles global SKU unique constraint safely');
+  assertIncludes(itemRoute, 'isPrismaUniqueConstraintError(error)', 'Tenant inventory update handles global SKU unique constraint safely');
+  assertIncludes(itemsRoute, 'Inventory SKU is unavailable', 'Tenant inventory create unique constraint response is generic');
+  assertIncludes(itemRoute, 'Inventory SKU is unavailable', 'Tenant inventory update unique constraint response is generic');
+  assertNotIncludes(itemsRoute, 'findUnique({\n        where: { sku: data.sku }', 'Tenant inventory create must not use global SKU findUnique');
+  assertNotIncludes(itemRoute, 'findUnique({\n        where: { sku: data.sku }', 'Tenant inventory update must not use global SKU findUnique');
   assertNotIncludes(itemRoute, 'prisma.inventoryItem.update({', 'Tenant inventory item route must not update by id only');
   assertNotIncludes(inventoryApiSource, 'prisma.inventoryItem.delete', 'Tenant inventory APIs must not hard delete inventory items');
   assertNotIncludes(inventoryApiSource, 'prisma.inventoryMovement.delete', 'Tenant inventory APIs must not hard delete inventory movements');

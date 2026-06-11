@@ -51,6 +51,10 @@ function matchesLowStockFilter(item, lowStock) {
   return getInventoryStockStatus(item) !== INVENTORY_STOCK_STATUSES.OK;
 }
 
+function isPrismaUniqueConstraintError(error) {
+  return error?.code === 'P2002';
+}
+
 export async function GET(request) {
   try {
     const restaurantSlug = getRestaurantSlugFromRequest(request);
@@ -102,19 +106,27 @@ export async function POST(request) {
     const data = buildInventoryItemData(parsed.data);
 
     if (data.sku) {
-      const existingSku = await prisma.inventoryItem.findUnique({
-        where: { sku: data.sku },
+      const existingSku = await prisma.inventoryItem.findFirst({
+        where: { sku: data.sku, restaurantId: staff.restaurantId },
         select: { id: true },
       });
       if (existingSku) return failure('Inventory SKU is already in use', 409);
     }
 
-    const item = await prisma.inventoryItem.create({
-      data: {
-        ...data,
-        restaurantId: staff.restaurantId,
-      },
-    });
+    let item;
+    try {
+      item = await prisma.inventoryItem.create({
+        data: {
+          ...data,
+          restaurantId: staff.restaurantId,
+        },
+      });
+    } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        return failure('Inventory SKU is unavailable', 409);
+      }
+      throw error;
+    }
 
     return success({ item: normalizeInventoryItem(item) });
   } catch (error) {

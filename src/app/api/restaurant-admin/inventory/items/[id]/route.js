@@ -48,6 +48,10 @@ async function readTenantItem(id, restaurantId) {
   return item;
 }
 
+function isPrismaUniqueConstraintError(error) {
+  return error?.code === 'P2002';
+}
+
 export async function PUT(request, { params }) {
   try {
     const body = await request.json();
@@ -62,17 +66,29 @@ export async function PUT(request, { params }) {
 
     const data = buildUpdateData(parsed.data);
     if (data.sku && data.sku !== existing.sku) {
-      const existingSku = await prisma.inventoryItem.findUnique({
-        where: { sku: data.sku },
+      const existingSku = await prisma.inventoryItem.findFirst({
+        where: {
+          sku: data.sku,
+          restaurantId: staff.restaurantId,
+          NOT: { id: params.id },
+        },
         select: { id: true },
       });
       if (existingSku) return failure('Inventory SKU is already in use', 409);
     }
 
-    const updated = await prisma.inventoryItem.updateMany({
-      where: { id: params.id, restaurantId: staff.restaurantId },
-      data,
-    });
+    let updated;
+    try {
+      updated = await prisma.inventoryItem.updateMany({
+        where: { id: params.id, restaurantId: staff.restaurantId },
+        data,
+      });
+    } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        return failure('Inventory SKU is unavailable', 409);
+      }
+      throw error;
+    }
 
     if (updated.count !== 1) {
       return failure('Inventory item not found', 404);
