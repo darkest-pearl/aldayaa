@@ -31,6 +31,9 @@ model Restaurant {
   inventoryMovements InventoryMovement[]
   menuItemIngredients MenuItemIngredient[]
   orderRecipeConsumptions OrderRecipeConsumption[]
+  suppliers          Supplier[]
+  purchaseRequests   PurchaseRequest[]
+  purchaseRequestLines PurchaseRequestLine[]
   restaurantUsers   RestaurantUser[]
 }
 
@@ -291,6 +294,7 @@ model InventoryItem {
   restaurant        Restaurant?          @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
   movements         InventoryMovement[]
   recipeIngredients MenuItemIngredient[]
+  purchaseRequestLines PurchaseRequestLine[]
 
   @@index([restaurantId])
   @@index([name])
@@ -336,6 +340,69 @@ model InventoryMovement {
   @@index([restaurantId])
   @@index([type])
   @@index([createdAt])
+}
+
+model Supplier {
+  id              String            @id @default(cuid())
+  name            String
+  contactName     String?
+  phone           String?
+  email           String?
+  whatsapp        String?
+  address         String?
+  notes           String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  restaurantId    String?
+  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  purchaseRequests PurchaseRequest[]
+
+  @@index([restaurantId])
+  @@index([isActive])
+  @@index([name])
+}
+
+model PurchaseRequest {
+  id                  String                @id @default(cuid())
+  reference           String                @unique
+  status              String                @default("DRAFT")
+  notes               String?
+  expectedDate        DateTime?
+  createdByAdminId    String?
+  createdByAdminEmail String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  restaurantId        String?
+  restaurant          Restaurant?           @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  supplierId          String?
+  supplier            Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  lines               PurchaseRequestLine[]
+
+  @@index([restaurantId])
+  @@index([supplierId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model PurchaseRequestLine {
+  id                String          @id @default(cuid())
+  purchaseRequestId String
+  purchaseRequest   PurchaseRequest @relation(fields: [purchaseRequestId], references: [id], onDelete: Cascade)
+  inventoryItemId   String
+  inventoryItem     InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+  itemName          String
+  unit              String
+  quantity          Float
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  restaurantId      String?
+  restaurant        Restaurant?     @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
+  @@index([purchaseRequestId])
+  @@index([inventoryItemId])
 }
 
 model Announcement {

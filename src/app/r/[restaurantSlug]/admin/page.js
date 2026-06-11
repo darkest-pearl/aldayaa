@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { INVENTORY_STOCK_STATUSES, getInventoryStockStatus } from '../../../../lib/inventory';
 import { ORDER_CONTEXTS, ORDER_STATUSES } from '../../../../lib/order-status';
 import { prisma } from '../../../../lib/prisma';
+import { PURCHASE_REQUEST_STATUSES } from '../../../../lib/purchase-requests';
 import { requireRestaurantStaffAccess } from '../../../../lib/restaurant-staff-access';
 import { getMenuItemIngredientCount } from '../../../../lib/recipes';
 import TenantAdminNav from './TenantAdminNav';
@@ -19,7 +20,14 @@ export default async function TenantRestaurantAdminPage({ params }) {
     redirect(`/r/${params.restaurantSlug}/admin/login`);
   }
 
-  const [kitchenOrders, inventoryItems, recentMovementCount, recipeMenuItems] = await Promise.all([
+  const [
+    kitchenOrders,
+    inventoryItems,
+    recentMovementCount,
+    recipeMenuItems,
+    activeSupplierCount,
+    purchaseRequests,
+  ] = await Promise.all([
     prisma.order.findMany({
       where: {
         restaurantId: staff.restaurantId,
@@ -60,6 +68,13 @@ export default async function TenantRestaurantAdminPage({ params }) {
         },
       },
     }),
+    prisma.supplier.count({
+      where: { restaurantId: staff.restaurantId, isActive: true },
+    }),
+    prisma.purchaseRequest.findMany({
+      where: { restaurantId: staff.restaurantId },
+      select: { status: true },
+    }),
   ]);
 
   const kitchenCounters = kitchenOrders.reduce(
@@ -98,13 +113,20 @@ export default async function TenantRestaurantAdminPage({ params }) {
       )
     ).length,
   };
+  const purchaseRequestCounters = {
+    activeSuppliers: activeSupplierCount,
+    totalRequests: purchaseRequests.length,
+    openRequests: purchaseRequests.filter((request) =>
+      ![PURCHASE_REQUEST_STATUSES.RECEIVED, PURCHASE_REQUEST_STATUSES.CANCELLED].includes(request.status)
+    ).length,
+  };
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-950">
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, and recipe linkage are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, and manual purchase requests are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -282,8 +304,48 @@ export default async function TenantRestaurantAdminPage({ params }) {
             Open recipes
           </a>
         </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Suppliers</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Manage vendor contact records for this tenant. Supplier records are internal references only; nothing is sent automatically.
+          </p>
+          <div className="mt-4 rounded-md bg-neutral-50 px-3 py-2 text-sm">
+            <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Active suppliers</span>
+            <span className="text-lg font-semibold">{purchaseRequestCounters.activeSuppliers}</span>
+          </div>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/suppliers`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open suppliers
+          </a>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Purchase requests</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Review low-stock inventory and create manual purchase request drafts with scoped line items. Stock is not changed by requests.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Requests</span>
+              <span className="text-lg font-semibold">{purchaseRequestCounters.totalRequests}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Open</span>
+              <span className="text-lg font-semibold">{purchaseRequestCounters.openRequests}</span>
+            </div>
+          </div>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/purchase-requests`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open purchase requests
+          </a>
+        </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Assisted ordering, payments, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Assisted ordering, automatic vendor sending, invoices, payments, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>

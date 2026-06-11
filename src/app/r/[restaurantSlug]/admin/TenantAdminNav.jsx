@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-const futureModules = ['Assisted ordering', 'Advanced staff workflows', 'Billing', 'Domains'];
+const futureModules = ['Assisted ordering', 'Vendor sending automation', 'Billing', 'Domains'];
 
 export default function TenantAdminNav({ restaurantSlug, active = 'overview', staff }) {
   const links = [
@@ -15,6 +15,8 @@ export default function TenantAdminNav({ restaurantSlug, active = 'overview', st
     { key: 'kitchen', label: 'Kitchen', href: `/r/${restaurantSlug}/admin/kitchen` },
     { key: 'inventory', label: 'Inventory', href: `/r/${restaurantSlug}/admin/inventory` },
     { key: 'recipes', label: 'Recipes', href: `/r/${restaurantSlug}/admin/recipes` },
+    { key: 'suppliers', label: 'Suppliers', href: `/r/${restaurantSlug}/admin/suppliers` },
+    { key: 'purchase-requests', label: 'Purchase Requests', href: `/r/${restaurantSlug}/admin/purchase-requests` },
   ];
 
   return (
@@ -25,7 +27,7 @@ export default function TenantAdminNav({ restaurantSlug, active = 'overview', st
           <h1 className="mt-1 text-2xl font-semibold">{restaurantSlug}</h1>
           {staff ? (
             <p className="mt-1 text-sm text-white/65">
-              {staff.email} · {staff.role}
+              {staff.email} - {staff.role}
             </p>
           ) : null}
         </div>
