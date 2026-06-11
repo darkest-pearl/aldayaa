@@ -354,8 +354,8 @@ model Supplier {
   isActive        Boolean           @default(true)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  restaurantId    String?
-  restaurant      Restaurant?       @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  restaurantId    String
+  restaurant      Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
   purchaseRequests PurchaseRequest[]
 
   @@index([restaurantId])
@@ -365,7 +365,7 @@ model Supplier {
 
 model PurchaseRequest {
   id                  String                @id @default(cuid())
-  reference           String                @unique
+  reference           String
   status              String                @default("DRAFT")
   notes               String?
   expectedDate        DateTime?
@@ -373,12 +373,13 @@ model PurchaseRequest {
   createdByAdminEmail String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  restaurantId        String?
-  restaurant          Restaurant?           @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  restaurantId        String
+  restaurant          Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
   supplierId          String?
   supplier            Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   lines               PurchaseRequestLine[]
 
+  @@unique([restaurantId, reference])
   @@index([restaurantId])
   @@index([supplierId])
   @@index([status])
@@ -397,8 +398,8 @@ model PurchaseRequestLine {
   notes             String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
-  restaurantId      String?
-  restaurant        Restaurant?     @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  restaurantId      String
+  restaurant        Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
 
   @@index([restaurantId])
   @@index([purchaseRequestId])

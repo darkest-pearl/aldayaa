@@ -3309,6 +3309,9 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   const purchaseApiSource = `${requestRoute}\n${requestItemRoute}`;
   const batch66ApiSource = `${supplierApiSource}\n${purchaseApiSource}`;
   const batch66UiSource = `${suppliersPage}\n${suppliersClient}\n${requestsPage}\n${requestsClient}\n${tenantNav}\n${tenantAdmin}`;
+  const supplierModel = getModelBlock(schema, 'Supplier');
+  const purchaseRequestModel = getModelBlock(schema, 'PurchaseRequest');
+  const purchaseRequestLineModel = getModelBlock(schema, 'PurchaseRequestLine');
 
   assertIncludes(schema, 'model Supplier', 'Supplier Prisma model');
   assertIncludes(schema, 'model PurchaseRequest', 'PurchaseRequest Prisma model');
@@ -3316,12 +3319,34 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   assert(/suppliers\s+Supplier\[\]/.test(schema), 'Restaurant supplier relation');
   assert(/purchaseRequests\s+PurchaseRequest\[\]/.test(schema), 'Restaurant purchase request relation');
   assert(/purchaseRequestLines\s+PurchaseRequestLine\[\]/.test(schema), 'Purchase request line relations');
+  assertIncludes(supplierModel, 'restaurantId    String', 'Supplier required restaurantId field');
+  assertIncludes(supplierModel, 'restaurant      Restaurant', 'Supplier required restaurant relation');
+  assertIncludes(supplierModel, 'onDelete: Restrict', 'Supplier restaurant FK restricts deletes');
+  assertIncludes(purchaseRequestModel, 'restaurantId        String', 'PurchaseRequest required restaurantId field');
+  assertIncludes(purchaseRequestModel, 'restaurant          Restaurant', 'PurchaseRequest required restaurant relation');
+  assertIncludes(purchaseRequestModel, 'onDelete: Restrict', 'PurchaseRequest restaurant FK restricts deletes');
+  assertIncludes(purchaseRequestLineModel, 'restaurantId      String', 'PurchaseRequestLine required restaurantId field');
+  assertIncludes(purchaseRequestLineModel, 'restaurant        Restaurant', 'PurchaseRequestLine required restaurant relation');
+  assertIncludes(purchaseRequestLineModel, 'onDelete: Restrict', 'PurchaseRequestLine restaurant FK restricts deletes');
+  assert(!/restaurantId\s+String\?/.test(supplierModel), 'Supplier restaurantId must not be nullable');
+  assert(!/restaurantId\s+String\?/.test(purchaseRequestModel), 'PurchaseRequest restaurantId must not be nullable');
+  assert(!/restaurantId\s+String\?/.test(purchaseRequestLineModel), 'PurchaseRequestLine restaurantId must not be nullable');
+  assert(!/restaurant\s+Restaurant\?/.test(supplierModel), 'Supplier restaurant relation must not be nullable');
+  assert(!/restaurant\s+Restaurant\?/.test(purchaseRequestModel), 'PurchaseRequest restaurant relation must not be nullable');
+  assert(!/restaurant\s+Restaurant\?/.test(purchaseRequestLineModel), 'PurchaseRequestLine restaurant relation must not be nullable');
+  assertIncludes(purchaseRequestModel, 'reference           String', 'PurchaseRequest reference field');
+  assertIncludes(purchaseRequestModel, '@@unique([restaurantId, reference])', 'PurchaseRequest tenant-scoped reference unique constraint');
+  assertNotIncludes(purchaseRequestModel, 'reference           String                @unique', 'PurchaseRequest must not use global reference uniqueness');
   assertIncludes(schema, '@@index([restaurantId])', 'Batch 66 models include restaurantId indexes');
   assertIncludes(migration, 'CREATE TABLE "Supplier"', 'Supplier migration table');
   assertIncludes(migration, 'CREATE TABLE "PurchaseRequest"', 'PurchaseRequest migration table');
   assertIncludes(migration, 'CREATE TABLE "PurchaseRequestLine"', 'PurchaseRequestLine migration table');
-  assertIncludes(migration, 'PurchaseRequest_reference_key', 'PurchaseRequest migration reference unique index');
+  assert((migration.match(/"restaurantId" TEXT NOT NULL/g) || []).length >= 3, 'Batch 66 migration must require restaurantId columns');
+  assertNotIncludes(migration, '"restaurantId" TEXT,', 'Batch 66 migration restaurantId columns must not be nullable');
+  assertIncludes(migration, 'CREATE UNIQUE INDEX "PurchaseRequest_restaurantId_reference_key" ON "PurchaseRequest"("restaurantId", "reference");', 'PurchaseRequest migration tenant-scoped reference unique index');
+  assertNotIncludes(migration, 'CREATE UNIQUE INDEX "PurchaseRequest_reference_key" ON "PurchaseRequest"("reference");', 'PurchaseRequest migration must not use global reference unique index');
   assertIncludes(migration, 'Supplier_restaurantId_fkey', 'Supplier migration restaurant FK');
+  assertIncludes(migration, 'FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;', 'Batch 66 migration restaurant FKs restrict deletes');
   assertIncludes(migration, 'PurchaseRequestLine_inventoryItemId_fkey', 'PurchaseRequestLine migration inventory item FK');
 
   assertIncludes(supplierRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant supplier GET uses restaurant staff auth');
