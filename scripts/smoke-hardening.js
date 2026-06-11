@@ -3373,6 +3373,10 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   assertIncludes(requestItemRoute, 'where: { id: supplierId, restaurantId, isActive: true }', 'Tenant purchase request update validates supplier ownership');
   assertIncludes(requestItemRoute, 'prisma.purchaseRequest.updateMany', 'Tenant purchase request status/details use scoped updateMany');
   assertIncludes(requestItemRoute, 'updated.count !== 1', 'Tenant purchase request updates check scoped update count');
+  assertIncludes(requestItemRoute, 'requestedStatus === PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase request generic PUT rejects direct received status');
+  assertIncludes(requestItemRoute, 'Use the receive stock action to mark a purchase request as received', 'Tenant purchase request generic PUT directs users to receive action');
+  assertIncludes(requestItemRoute, 'existing.status === PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase request generic PUT detects received existing requests');
+  assertIncludes(requestItemRoute, 'Received purchase requests cannot change status', 'Tenant purchase request generic PUT rejects status changes away from received');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequest.update({', 'Tenant purchase request APIs must not mutate by id only');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequest.delete', 'Tenant purchase request APIs must not hard delete');
   assertNotIncludes(purchaseApiSource, 'prisma.purchaseRequestLine.delete', 'Tenant purchase request line APIs must not hard delete lines');
@@ -3445,17 +3449,20 @@ function checkTenantPurchaseReceivingStockIntake() {
   assert(fs.existsSync(requestsClientPath), 'Tenant purchase requests admin client is missing for receiving UX');
 
   const receiveRoute = read('src/app/api/restaurant-admin/purchase-requests/[id]/receive/route.js');
+  const requestRoute = read('src/app/api/restaurant-admin/purchase-requests/route.js');
+  const requestItemRoute = read('src/app/api/restaurant-admin/purchase-requests/[id]/route.js');
   const requestsPage = read('src/app/r/[restaurantSlug]/admin/purchase-requests/page.js');
   const requestsClient = read('src/app/r/[restaurantSlug]/admin/purchase-requests/TenantPurchaseRequestsClient.jsx');
   const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
   const receiveUiSource = `${requestsPage}\n${requestsClient}\n${tenantAdmin}`;
+  const purchaseRequestApiSource = `${requestRoute}\n${requestItemRoute}\n${receiveRoute}`;
 
   assertIncludes(receiveRoute, 'const receivePurchaseRequestSchema = z.object', 'Tenant receive API validates restaurantSlug payload');
   assertIncludes(receiveRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant receive API requires OWNER/MANAGER');
   assertIncludes(receiveRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant receive API scopes request by restaurantId');
   assertIncludes(receiveRoute, 'lines: {', 'Tenant receive API includes purchase request lines');
-  assertIncludes(receiveRoute, 'where: { restaurantId: staff.restaurantId }', 'Tenant receive API scopes included lines by restaurantId');
-  assertIncludes(receiveRoute, 'purchaseRequest.lines.some((line) => line.restaurantId !== staff.restaurantId)', 'Tenant receive API validates line tenant ownership');
+  assertNotIncludes(receiveRoute, 'lines: {\n            where: { restaurantId: staff.restaurantId }', 'Tenant receive API must not filter lines before tenant ownership validation');
+  assertIncludes(receiveRoute, 'purchaseRequest.lines.every((line) => line.restaurantId === staff.restaurantId)', 'Tenant receive API validates every line tenant ownership');
   assertIncludes(receiveRoute, 'PURCHASE_REQUEST_STATUSES.CANCELLED', 'Tenant receive API rejects cancelled purchase requests');
   assertIncludes(receiveRoute, 'PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant receive API rejects already received purchase requests');
   assertIncludes(receiveRoute, 'purchaseRequest.lines.length === 0', 'Tenant receive API rejects requests without lines');
@@ -3474,6 +3481,7 @@ function checkTenantPurchaseReceivingStockIntake() {
   assertIncludes(receiveRoute, 'tx.purchaseRequest.updateMany', 'Tenant receive API marks request received with scoped updateMany');
   assertIncludes(receiveRoute, 'status: PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant receive API updates request status to received');
   assertIncludes(receiveRoute, 'requestUpdated.count !== 1', 'Tenant receive API checks scoped request update count');
+  assert((purchaseRequestApiSource.match(/data:\s*{\s*status:\s*PURCHASE_REQUEST_STATUSES\.RECEIVED/g) || []).length === 1, 'Tenant receive API must be the only purchase request API path that writes RECEIVED status');
   assertIncludes(receiveRoute, 'normalizePurchaseRequest(receivedPurchaseRequest)', 'Tenant receive API returns normalized request');
   assertIncludes(receiveRoute, 'normalizeInventoryMovement', 'Tenant receive API returns normalized movement data');
   assertIncludes(receiveRoute, 'normalizeInventoryItem', 'Tenant receive API returns normalized updated inventory data');
@@ -3493,7 +3501,10 @@ function checkTenantPurchaseReceivingStockIntake() {
   assertNotIncludes(receiveRoute, 'analytics', 'Tenant receive API must not add analytics logic');
 
   assertIncludes(requestsClient, 'const [receivingId, setReceivingId]', 'Tenant purchase requests UI tracks receiving state');
+  assertIncludes(requestsClient, 'const transitionStatusOptions = statusOptions.filter((status) => status.value !== PURCHASE_REQUEST_STATUSES.RECEIVED)', 'Tenant purchase requests UI removes received from normal status transitions');
+  assert((requestsClient.match(/transitionStatusOptions\.map/g) || []).length >= 2, 'Tenant purchase requests UI uses transition options for create/edit and status dropdowns');
   assertIncludes(requestsClient, 'function canReceiveRequest(request)', 'Tenant purchase requests UI gates receive action');
+  assertIncludes(requestsClient, 'function canEditRequest(request)', 'Tenant purchase requests UI gates edits for received requests');
   assertIncludes(requestsClient, 'request.status !== PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase requests UI hides receive for received requests');
   assertIncludes(requestsClient, 'request.status !== PURCHASE_REQUEST_STATUSES.CANCELLED', 'Tenant purchase requests UI hides receive for cancelled requests');
   assertIncludes(requestsClient, 'async function receiveRequest(request)', 'Tenant purchase requests UI calls receive API');

@@ -63,7 +63,7 @@ function validatePurchaseRequestForReceiving(purchaseRequest, staff) {
     throw new TenantPurchaseReceiveError('Purchase request has no line items to receive', 400);
   }
 
-  if (purchaseRequest.lines.some((line) => line.restaurantId !== staff.restaurantId)) {
+  if (!purchaseRequest.lines.every((line) => line.restaurantId === staff.restaurantId)) {
     throw new TenantPurchaseReceiveError('Purchase request lines are not available for this tenant', 400);
   }
 
@@ -89,7 +89,6 @@ export async function POST(request, { params }) {
         include: {
           supplier: true,
           lines: {
-            where: { restaurantId: staff.restaurantId },
             orderBy: { createdAt: 'asc' },
             include: { inventoryItem: true },
           },
@@ -176,7 +175,6 @@ export async function POST(request, { params }) {
         include: {
           supplier: true,
           lines: {
-            where: { restaurantId: staff.restaurantId },
             orderBy: { createdAt: 'asc' },
             include: { inventoryItem: true },
           },

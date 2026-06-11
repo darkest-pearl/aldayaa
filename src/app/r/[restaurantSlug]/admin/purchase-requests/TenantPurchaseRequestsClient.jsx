@@ -9,6 +9,7 @@ import {
 
 const inputClass = 'rounded-md border border-neutral-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-700 disabled:bg-neutral-50 disabled:text-neutral-500';
 const statusOptions = getPurchaseRequestStatusOptions();
+const transitionStatusOptions = statusOptions.filter((status) => status.value !== PURCHASE_REQUEST_STATUSES.RECEIVED);
 
 const emptyRequestForm = {
   supplierId: '',
@@ -201,6 +202,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
   }
 
   function startEdit(request) {
+    if (!canEditRequest(request)) return;
     setEditingId(request.id);
     setForm({
       supplierId: request.supplierId || '',
@@ -226,6 +228,10 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
       request.status !== PURCHASE_REQUEST_STATUSES.CANCELLED &&
       request.lines?.length
     );
+  }
+
+  function canEditRequest(request) {
+    return Boolean(writable && request.status !== PURCHASE_REQUEST_STATUSES.RECEIVED);
   }
 
   async function submitRequest(event) {
@@ -258,7 +264,12 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
   }
 
   async function updateStatus(request, status) {
-    if (!writable || request.status === status) return;
+    if (
+      !writable ||
+      request.status === status ||
+      request.status === PURCHASE_REQUEST_STATUSES.RECEIVED ||
+      status === PURCHASE_REQUEST_STATUSES.RECEIVED
+    ) return;
     setError('');
     setSuccessMessage('');
     try {
@@ -285,6 +296,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
         body: JSON.stringify({ restaurantSlug }),
       });
       setSuccessMessage(`Stock received for ${request.reference}. Inventory increased and inventory movements were recorded.`);
+      if (editingId === request.id) resetForm();
       await load(false);
     } catch (requestError) {
       setError(requestError.message);
@@ -341,7 +353,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
                 </select>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <select className={inputClass} disabled={saving} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
-                    {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                    {transitionStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                   </select>
                   <input className={inputClass} type="date" disabled={saving} value={form.expectedDate} onChange={(event) => updateForm('expectedDate', event.target.value)} />
                 </div>
@@ -460,12 +472,16 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
                           Stock received
                         </span>
                       ) : null}
-                      <button type="button" onClick={() => startEdit(request)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
-                        Edit
-                      </button>
-                      <select className={inputClass} value={request.status} disabled={receivingId === request.id} onChange={(event) => updateStatus(request, event.target.value)}>
-                        {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
+                      {canEditRequest(request) ? (
+                        <>
+                          <button type="button" onClick={() => startEdit(request)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
+                            Edit
+                          </button>
+                          <select className={inputClass} value={request.status} disabled={receivingId === request.id} onChange={(event) => updateStatus(request, event.target.value)}>
+                            {transitionStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                          </select>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
