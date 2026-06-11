@@ -80,6 +80,7 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
   const [successMessage, setSuccessMessage] = useState('');
   const [recipePreview, setRecipePreview] = useState(null);
   const [previewLoadingId, setPreviewLoadingId] = useState('');
+  const [applyingConsumption, setApplyingConsumption] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [contextFilter, setContextFilter] = useState('ALL');
 
@@ -127,11 +128,34 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
     try {
       const params = new URLSearchParams({ restaurantSlug, orderId: order.id });
       const data = await apiRequest(`/api/restaurant-admin/recipes/preview?${params.toString()}`);
-      setRecipePreview(data);
+      setRecipePreview({ ...data, orderId: order.id });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
       setPreviewLoadingId('');
+    }
+  }
+
+  async function applyRecipeConsumption() {
+    if (!writable || !recipePreview?.canApply) return;
+    const reference = recipePreview.order?.reference || 'this order';
+    if (!window.confirm(`Apply recipe consumption for ${reference}? This manually deducts inventory and records scoped movements.`)) return;
+
+    setApplyingConsumption(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      const data = await apiRequest('/api/restaurant-admin/recipes/apply', {
+        method: 'POST',
+        body: JSON.stringify({ restaurantSlug, orderId: recipePreview.orderId }),
+      });
+      setSuccessMessage(`Recipe consumption applied for order ${data.order?.reference || reference}.`);
+      await load(false);
+      await loadRecipePreview({ id: recipePreview.orderId });
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setApplyingConsumption(false);
     }
   }
 
@@ -165,6 +189,9 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
               <p className="mt-1 text-sm text-neutral-600">
                 Preview only; no stock is deducted and no inventory movement is created.
               </p>
+              <p className="mt-1 text-sm text-neutral-600">
+                This manually deducts inventory and records scoped movements only when OWNER or MANAGER staff choose Apply consumption.
+              </p>
             </div>
             <button
               type="button"
@@ -173,6 +200,41 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
             >
               Close preview
             </button>
+          </div>
+
+          {recipePreview.alreadyApplied ? (
+            <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              Recipe consumption has already been applied for this order.
+            </div>
+          ) : null}
+
+          {(recipePreview.blockingReasons || []).length ? (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">Blocking reasons</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {recipePreview.blockingReasons.map((reason) => <li key={reason}>{reason}</li>)}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="mt-4 rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+            {writable && recipePreview.canApply ? (
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <p>This manually deducts inventory and records scoped movements.</p>
+                <button
+                  type="button"
+                  onClick={applyRecipeConsumption}
+                  disabled={applyingConsumption}
+                  className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {applyingConsumption ? 'Applying...' : 'Apply consumption'}
+                </button>
+              </div>
+            ) : !writable ? (
+              <p>SUPPORT can view this preview, but OWNER or MANAGER access is required to apply consumption.</p>
+            ) : (
+              <p>Resolve the blocking reasons before applying recipe consumption.</p>
+            )}
           </div>
 
           {recipePreview.consumption?.hasMissingMappings ? (

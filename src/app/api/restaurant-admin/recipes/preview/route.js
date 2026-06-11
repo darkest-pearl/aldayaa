@@ -4,9 +4,12 @@ import { failure, handleApiError, success } from '../../../../../lib/api-respons
 import { prisma } from '../../../../../lib/prisma';
 import {
   getRestaurantSlugFromRequest,
+  isRestaurantStaffWriteRole,
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
 import { calculateRecipeConsumptionForOrder } from '../../../../../lib/recipes';
+
+const APPLIED_CONSUMPTION_STATUS = 'APPLIED';
 
 function getOrderIdFromRequest(request) {
   const { searchParams } = new URL(request.url);
@@ -38,6 +41,60 @@ function normalizePreviewOrder(order = {}) {
     tableLabel: order.tableLabel || null,
     tableSlug: order.tableSlug || null,
   };
+}
+
+function toNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function getConsumptionLines(consumption = {}) {
+  return (consumption.lines || []).filter((line) => !line.missingMapping && line.inventoryItemId);
+}
+
+function getRequiredByInventoryItemId(consumptionLines = []) {
+  const requiredByInventoryItemId = new Map();
+
+  for (const line of consumptionLines) {
+    requiredByInventoryItemId.set(
+      line.inventoryItemId,
+      toNumber(requiredByInventoryItemId.get(line.inventoryItemId)) + toNumber(line.totalRequiredQuantity),
+    );
+  }
+
+  return requiredByInventoryItemId;
+}
+
+function getBlockingReasons(consumption, inventoryById, alreadyApplied) {
+  const blockingReasons = [];
+
+  if (alreadyApplied) {
+    blockingReasons.push('Recipe consumption has already been applied for this order.');
+  }
+
+  if (consumption.hasMissingMappings) {
+    blockingReasons.push('Recipe mappings are incomplete for this order.');
+  }
+
+  const consumptionLines = getConsumptionLines(consumption);
+  if (!consumptionLines.length && !consumption.hasMissingMappings) {
+    blockingReasons.push('No recipe consumption lines are available for this order.');
+  }
+
+  const requiredByInventoryItemId = getRequiredByInventoryItemId(consumptionLines);
+  for (const [inventoryItemId, requiredQuantity] of requiredByInventoryItemId.entries()) {
+    const item = inventoryById.get(inventoryItemId);
+    if (!item || item.isActive === false) {
+      blockingReasons.push('Inventory item is not available for recipe consumption.');
+      continue;
+    }
+
+    if (toNumber(item.currentStock) < toNumber(requiredQuantity)) {
+      blockingReasons.push('Recipe consumption cannot reduce stock below zero.');
+    }
+  }
+
+  return [...new Set(blockingReasons)];
 }
 
 export async function GET(request) {
@@ -97,17 +154,29 @@ export async function GET(request) {
       }),
     };
     const rawConsumption = calculateRecipeConsumptionForOrder(orderWithRecipeIngredients);
+    const alreadyApplied = Boolean(await prisma.orderRecipeConsumption.findFirst({
+      where: { restaurantId: staff.restaurantId, orderId: order.id, status: APPLIED_CONSUMPTION_STATUS },
+      select: { id: true },
+    }));
+    const blockingReasons = getBlockingReasons(rawConsumption, inventoryById, alreadyApplied);
+    const canApply = isRestaurantStaffWriteRole(staff.role) && blockingReasons.length === 0;
     const consumption = {
       reference: rawConsumption.reference,
       lines: rawConsumption.lines,
       missingMappings: rawConsumption.missingMappings,
       hasMissingMappings: rawConsumption.hasMissingMappings,
       totalLines: rawConsumption.totalLines,
+      alreadyApplied,
+      canApply,
+      blockingReasons,
     };
 
     return success({
       order: normalizePreviewOrder(order),
       consumption,
+      alreadyApplied,
+      canApply,
+      blockingReasons,
       staffRole: staff.role,
     });
   } catch (error) {
