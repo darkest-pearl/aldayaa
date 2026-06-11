@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -211,20 +211,25 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Tenant inventory management foundation added.
 - Restaurant staff can manage tenant-scoped inventory items and manual stock movements under `/r/[restaurantSlug]/admin/inventory`.
 - OWNER and MANAGER can create, update, deactivate, and adjust inventory; SUPPORT remains read-only.
-- Automatic recipe depletion, order inventory consumption, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
+- Automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
 - Tenant recipe and ingredient linkage foundation added.
 - Restaurant staff can map tenant menu items to tenant inventory ingredients under `/r/[restaurantSlug]/admin/recipes`.
 - OWNER and MANAGER can create, update, and remove recipe ingredient links; SUPPORT remains read-only.
 - Estimated recipe cost and linked ingredient stock visibility are informational only.
-- Automatic recipe depletion, order inventory consumption, inventory movement creation from recipes, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
+- Automatic recipe depletion, order inventory consumption, inventory movement creation from recipes, automatic supplier sending, invoice automation, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
 - Tenant recipe consumption preview added.
 - Restaurant staff can open read-only ingredient requirements from the tenant kitchen queue.
 - Preview shows required quantities, missing recipe mappings, current stock, and low/out-of-stock flags.
-- No inventory stock mutation, inventory movement creation, automatic depletion, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, or WhatsApp automation was added.
+- No inventory stock mutation, inventory movement creation, automatic depletion, automatic supplier sending, invoice automation, payments, billing, domains, CRM, payroll, analytics, email, or WhatsApp automation was added.
 - Tenant manual recipe consumption apply added.
 - OWNER and MANAGER staff can manually apply recipe consumption from the tenant kitchen preview.
 - Manual apply creates scoped stock decrements, inventory movements, and order recipe consumption records.
-- Automatic consumption on order creation/status changes, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
+- Automatic consumption on order creation/status changes, automatic supplier sending, invoice automation, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
+- Tenant supplier and purchase request foundation added.
+- Restaurant staff can manage tenant-scoped supplier records and manual purchase requests under `/r/[restaurantSlug]/admin/suppliers` and `/r/[restaurantSlug]/admin/purchase-requests`.
+- OWNER and MANAGER can create, update, deactivate, and change request status; SUPPORT remains read-only.
+- Purchase request lines validate tenant inventory item ownership, and supplier links validate tenant supplier ownership.
+- Purchase requests do not mutate inventory stock, create inventory movements, send email/WhatsApp messages, create invoices, process payments, trigger billing/domain/CRM automation, or auto-generate replenishment.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
@@ -272,9 +277,9 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Inventory foundation added.
 - This module is disabled by default for operations setup.
 - ADMIN/MANAGER users can create stock items and record manual stock movements when the module is enabled; SUPPORT users can view inventory data.
-- No recipe consumption, no automatic stock deduction, and no supplier request automation has been added yet.
+- No automatic stock deduction or automatic supplier request generation has been added yet.
 - Inventory low-stock UX and filters added.
-- Still no recipe consumption, automatic deduction, or supplier automation has been added.
+- Still no automatic deduction or automatic supplier sending has been added.
 - Inventory unit/category polish added.
 - No recipe consumption or automatic deduction has been added.
 
@@ -282,13 +287,13 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 
 - Recipe ingredient mapping foundation added.
 - ADMIN/MANAGER users can map menu items to inventory items when the recipe consumption module is enabled; SUPPORT users can view mappings.
-- No automatic inventory deduction, no supplier automation, and no costing analytics have been added yet.
+- No automatic inventory deduction, no automatic supplier sending, and no costing analytics have been added yet.
 - Recipe mapping UX and coverage summary added.
-- No automatic deduction, no supplier automation, and no costing analytics have been added yet.
+- No automatic deduction, no automatic supplier sending, and no costing analytics have been added yet.
 - Recipe consumption dry-run added.
-- No automatic stock deduction, no inventory movement creation, and no supplier automation has been added yet.
+- No automatic stock deduction, no inventory movement creation, and no automatic supplier sending has been added yet.
 - Manual recipe consumption application added.
-- Deduction is manual/admin-triggered only; there is no automatic deduction on status change and no supplier automation.
+- Deduction is manual/admin-triggered only; there is no automatic deduction on status change and no automatic supplier sending.
 
 ## Production Notes
 
