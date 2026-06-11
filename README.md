@@ -221,6 +221,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Restaurant staff can open read-only ingredient requirements from the tenant kitchen queue.
 - Preview shows required quantities, missing recipe mappings, current stock, and low/out-of-stock flags.
 - No inventory stock mutation, inventory movement creation, automatic depletion, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, or WhatsApp automation was added.
+- Tenant manual recipe consumption apply added.
+- OWNER and MANAGER staff can manually apply recipe consumption from the tenant kitchen preview.
+- Manual apply creates scoped stock decrements, inventory movements, and order recipe consumption records.
+- Automatic consumption on order creation/status changes, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 

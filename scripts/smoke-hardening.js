@@ -1819,7 +1819,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -1831,12 +1831,13 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(blocker, 'Batch 58 activates tenant-safe table QR ordering for initialized, non-archived tenants when ONLINE_ORDERING and TABLE_QR_ORDERING are enabled.', 'Tenant admin doc Batch 58 update');
   assertIncludes(blocker, 'Batch 59 adds tenant-scoped public order tracking and cancellation using restaurantSlug, reference, and phone.', 'Tenant admin doc Batch 59 update');
   assertIncludes(blocker, 'Batch 60 adds tenant-scoped public reservation lookup and cancellation using restaurantSlug, reference, and phone.', 'Tenant admin doc Batch 60 update');
+  assertIncludes(blocker, 'Batch 65 adds OWNER/MANAGER-only manual recipe consumption apply from the tenant kitchen preview.', 'Tenant admin doc Batch 65 update');
   assertIncludes(blocker, 'Batch 49 adds a separate RestaurantUser model.', 'Tenant admin blocker RestaurantUser schema update');
   assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
   assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
   assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
   assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, public tenant order creation when enabled, tenant table QR ordering when enabled, tenant public order support actions, and tenant public reservation support actions.', 'Tenant admin enabled modules note');
-  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion, order inventory consumption, supplier ordering, invoices, staff invitations, audit logging, self-service password reset flows, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
+  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion on order creation/status changes, supplier ordering, invoices, staff invitations, audit logging, self-service password reset flows, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
   assertNotIncludes(blocker, 'Restaurant staff login is authentication-only for now.', 'Tenant admin doc stale auth-only wording');
   assertNotIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin doc stale module future wording');
   assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
@@ -2799,7 +2800,7 @@ function checkTenantKitchenQueueOperations() {
   assertIncludes(tenantKitchenPage, '<TenantKitchenClient', 'Tenant kitchen page renders client');
   assertIncludes(tenantKitchenClient, '/api/restaurant-admin/kitchen', 'Tenant kitchen client uses kitchen API');
   assertIncludes(tenantKitchenClient, "'PUT'", 'Tenant kitchen client updates status via PUT');
-  assertNotIncludes(tenantKitchenClient, "'POST'", 'Tenant kitchen client must not create orders');
+  assertNotIncludes(tenantKitchenClient, '/api/orders', 'Tenant kitchen client must not call public order creation APIs');
   assertNotIncludes(tenantKitchenClient, "'DELETE'", 'Tenant kitchen client must not delete orders');
   assertIncludes(tenantKitchenClient, 'SUPPORT access is read-only', 'Tenant kitchen client support read-only state');
   assertIncludes(tenantKitchenClient, 'OWNER or MANAGER access is required', 'Tenant kitchen client write role copy');
@@ -3102,11 +3103,14 @@ function checkTenantRecipeConsumptionPreview() {
   assertIncludes(previewRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant recipe preview API uses restaurant staff auth');
   assertIncludes(previewRoute, 'const orderId = getOrderIdFromRequest(request)', 'Tenant recipe preview API accepts orderId');
   assertIncludes(previewRoute, 'where: { id: orderId, restaurantId: staff.restaurantId }', 'Tenant recipe preview order lookup scopes by restaurantId');
-  assertIncludes(previewRoute, 'items: {\n          where: { restaurantId: staff.restaurantId }', 'Tenant recipe preview order items are scoped by restaurantId');
+  assertIncludes(previewRoute, 'items: {', 'Tenant recipe preview includes order items');
+  assertIncludes(previewRoute, 'where: { restaurantId: staff.restaurantId },', 'Tenant recipe preview order items are scoped by restaurantId');
   assertIncludes(previewRoute, 'prisma.menuItemIngredient.findMany', 'Tenant recipe preview loads recipe ingredients');
-  assertIncludes(previewRoute, 'restaurantId: staff.restaurantId,\n            menuItemId: { in: menuItemIds }', 'Tenant recipe preview ingredient lookup scopes by restaurantId');
+  assertIncludes(previewRoute, 'restaurantId: staff.restaurantId,', 'Tenant recipe preview ingredient lookup scopes by restaurantId');
+  assertIncludes(previewRoute, 'menuItemId: { in: menuItemIds },', 'Tenant recipe preview ingredient lookup filters menu item ids');
   assertIncludes(previewRoute, 'prisma.inventoryItem.findMany', 'Tenant recipe preview loads inventory items separately');
-  assertIncludes(previewRoute, 'id: { in: inventoryItemIds },\n            restaurantId: staff.restaurantId', 'Tenant recipe preview inventory lookup scopes by restaurantId');
+  assertIncludes(previewRoute, 'id: { in: inventoryItemIds },', 'Tenant recipe preview inventory lookup filters ids');
+  assertIncludes(previewRoute, 'restaurantId: staff.restaurantId', 'Tenant recipe preview inventory lookup scopes by restaurantId');
   assertIncludes(previewRoute, 'calculateRecipeConsumptionForOrder(orderWithRecipeIngredients)', 'Tenant recipe preview reuses recipe helper');
   assertIncludes(previewRoute, 'normalizePreviewOrder(order)', 'Tenant recipe preview normalizes safe order fields');
   assertIncludes(previewRoute, 'reference: order.reference', 'Tenant recipe preview returns order reference');
@@ -3158,6 +3162,111 @@ function checkTenantRecipeConsumptionPreview() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant recipe preview batch should not add email API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant recipe preview batch should not add WhatsApp API route');
   assert(!migrationDirs.some((migrationDir) => /tenant.recipe.preview|recipe.consumption.preview|batch.64/i.test(migrationDir)), 'Batch 64 should not add a Prisma migration');
+}
+
+function checkTenantManualRecipeConsumptionApply() {
+  const readme = read('README.md');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
+  const applyRoutePath = path.join(root, 'src/app/api/restaurant-admin/recipes/apply/route.js');
+  const previewRoutePath = path.join(root, 'src/app/api/restaurant-admin/recipes/preview/route.js');
+  const kitchenClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/kitchen/TenantKitchenClient.jsx');
+
+  assert(fs.existsSync(applyRoutePath), 'Tenant recipe consumption apply API route is missing');
+  assert(fs.existsSync(previewRoutePath), 'Tenant recipe preview API route is missing for apply state');
+  assert(fs.existsSync(kitchenClientPath), 'Tenant kitchen client is missing for recipe apply UI');
+
+  const applyRoute = read('src/app/api/restaurant-admin/recipes/apply/route.js');
+  const previewRoute = read('src/app/api/restaurant-admin/recipes/preview/route.js');
+  const kitchenClient = read('src/app/r/[restaurantSlug]/admin/kitchen/TenantKitchenClient.jsx');
+  const publicOrderRoute = read('src/app/api/orders/route.js');
+  const tenantOrderRoute = read('src/app/api/restaurant-admin/orders/[id]/route.js');
+  const tenantKitchenRoute = read('src/app/api/restaurant-admin/kitchen/[id]/route.js');
+
+  assertIncludes(applyRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant recipe apply requires OWNER/MANAGER staff auth');
+  assertIncludes(applyRoute, 'where: { id: parsed.data.orderId, restaurantId: staff.restaurantId }', 'Tenant recipe apply order lookup scopes by restaurantId');
+  assertIncludes(applyRoute, 'where: { restaurantId: staff.restaurantId, orderId: order.id, status: APPLIED_CONSUMPTION_STATUS }', 'Tenant recipe apply already-applied guard is scoped');
+  assertIncludes(applyRoute, 'Recipe consumption has already been applied for this order', 'Tenant recipe apply duplicate error');
+  assertIncludes(applyRoute, 'prisma.$transaction(async (tx)', 'Tenant recipe apply uses a Prisma transaction');
+  assertIncludes(applyRoute, 'tx.menuItemIngredient.findMany', 'Tenant recipe apply loads recipe mappings in transaction');
+  assertIncludes(applyRoute, 'restaurantId: staff.restaurantId,', 'Tenant recipe apply recipe lookup scopes by restaurantId');
+  assertIncludes(applyRoute, 'menuItemId: { in: menuItemIds },', 'Tenant recipe apply recipe lookup filters menu item ids');
+  assertIncludes(applyRoute, 'tx.inventoryItem.findMany', 'Tenant recipe apply loads inventory items in transaction');
+  assertIncludes(applyRoute, 'id: { in: inventoryItemIds },', 'Tenant recipe apply inventory lookup filters ids');
+  assertIncludes(applyRoute, 'restaurantId: staff.restaurantId', 'Tenant recipe apply inventory lookup scopes by restaurantId');
+  assertIncludes(applyRoute, 'Recipe mappings are incomplete for this order', 'Tenant recipe apply missing mapping guard');
+  assertIncludes(applyRoute, 'Inventory item is not available for recipe consumption', 'Tenant recipe apply inactive/missing inventory guard');
+  assertIncludes(applyRoute, 'Recipe consumption cannot reduce stock below zero', 'Tenant recipe apply insufficient stock guard');
+  assertIncludes(applyRoute, 'tx.inventoryItem.updateMany', 'Tenant recipe apply stock decrement uses updateMany');
+  assertIncludes(applyRoute, 'id: inventoryItemId,', 'Tenant recipe apply stock update filters inventory item id');
+  assertIncludes(applyRoute, 'restaurantId: staff.restaurantId,', 'Tenant recipe apply stock update is restaurant-scoped');
+  assertIncludes(applyRoute, 'isActive: true,', 'Tenant recipe apply stock update requires active inventory');
+  assertIncludes(applyRoute, 'currentStock: { gte: requiredQuantity },', 'Tenant recipe apply stock update prevents negative stock');
+  assertIncludes(applyRoute, 'data: { currentStock: { decrement: requiredQuantity } }', 'Tenant recipe apply decrements stock atomically');
+  assertIncludes(applyRoute, 'updated.count !== 1', 'Tenant recipe apply checks every scoped stock update count');
+  assertIncludes(applyRoute, 'tx.inventoryMovement.create', 'Tenant recipe apply creates inventory movements');
+  assertIncludes(applyRoute, 'restaurantId: staff.restaurantId', 'Tenant recipe apply stamps restaurantId');
+  assertIncludes(applyRoute, 'createdByAdminId: staff.id', 'Tenant recipe apply stamps staff id');
+  assertIncludes(applyRoute, 'createdByAdminEmail: staff.email', 'Tenant recipe apply stamps staff email');
+  assertIncludes(applyRoute, 'source: ORDER_RECIPE_CONSUMPTION_SOURCE', 'Tenant recipe apply movement source marker');
+  assertIncludes(applyRoute, 'tx.orderRecipeConsumption.create', 'Tenant recipe apply creates OrderRecipeConsumption record');
+  assertIncludes(applyRoute, 'orderId: order.id,', 'Tenant recipe apply consumption record links order');
+  assertIncludes(applyRoute, 'status: APPLIED_CONSUMPTION_STATUS,', 'Tenant recipe apply consumption record marks applied status');
+  assertIncludes(applyRoute, 'restaurantId: staff.restaurantId,', 'Tenant recipe apply consumption record is scoped');
+  assertNotIncludes(applyRoute, 'inventoryItem.update({', 'Tenant recipe apply must not mutate inventory by id only');
+  assertNotIncludes(applyRoute, 'order.update({', 'Tenant recipe apply must not mutate orders');
+  assertNotIncludes(applyRoute, 'order.updateMany', 'Tenant recipe apply must not mutate orders');
+  assertNotIncludes(applyRoute, 'requireAdmin', 'Tenant recipe apply must not use platform requireAdmin');
+  assertNotIncludes(applyRoute, 'prisma.adminUser', 'Tenant recipe apply must not touch AdminUser');
+  assertNotIncludes(applyRoute, 'prisma.gatewayLead', 'Tenant recipe apply must not touch GatewayLead');
+
+  assertIncludes(previewRoute, 'alreadyApplied', 'Tenant recipe preview exposes already-applied state');
+  assertIncludes(previewRoute, 'canApply', 'Tenant recipe preview exposes apply eligibility');
+  assertIncludes(previewRoute, 'blockingReasons', 'Tenant recipe preview exposes blocking reasons');
+  assertNotIncludes(previewRoute, 'inventoryMovement.create', 'Tenant recipe preview remains read-only');
+  assertNotIncludes(previewRoute, 'inventoryItem.updateMany', 'Tenant recipe preview must not decrement stock');
+  assertNotIncludes(previewRoute, 'orderRecipeConsumption.create', 'Tenant recipe preview must not create apply records');
+
+  assertIncludes(kitchenClient, '/api/restaurant-admin/recipes/apply', 'Tenant kitchen client calls recipe apply API');
+  assertIncludes(kitchenClient, 'Apply consumption', 'Tenant kitchen client has apply action copy');
+  assertIncludes(kitchenClient, 'applyRecipeConsumption', 'Tenant kitchen client apply handler exists');
+  assertIncludes(kitchenClient, 'writable && recipePreview.canApply', 'Tenant kitchen apply UI is OWNER/MANAGER only');
+  assertIncludes(kitchenClient, 'SUPPORT can view this preview, but OWNER or MANAGER access is required to apply consumption.', 'Tenant kitchen SUPPORT apply restriction copy');
+  assertIncludes(kitchenClient, 'This manually deducts inventory and records scoped movements.', 'Tenant kitchen manual deduction copy');
+  assertIncludes(kitchenClient, 'Recipe consumption has already been applied', 'Tenant kitchen already-applied copy');
+  assertIncludes(kitchenClient, 'await load(false)', 'Tenant kitchen refreshes queue after apply');
+
+  assertNotIncludes(publicOrderRoute, 'orderRecipeConsumption.create', 'Public order creation must not auto-apply recipe consumption');
+  assertNotIncludes(publicOrderRoute, 'inventoryMovement.create', 'Public order creation must not create inventory movements');
+  assertNotIncludes(tenantOrderRoute, 'orderRecipeConsumption.create', 'Tenant order status update must not auto-apply recipe consumption');
+  assertNotIncludes(tenantOrderRoute, 'inventoryMovement.create', 'Tenant order status update must not create inventory movements');
+  assertNotIncludes(tenantKitchenRoute, 'orderRecipeConsumption.create', 'Tenant kitchen status update must not auto-apply recipe consumption');
+  assertNotIncludes(tenantKitchenRoute, 'inventoryMovement.create', 'Tenant kitchen status update must not create inventory movements');
+
+  assertIncludes(readme, 'Tenant manual recipe consumption apply added.', 'README Batch 65 note');
+  assertIncludes(readme, 'OWNER and MANAGER staff can manually apply recipe consumption from the tenant kitchen preview.', 'README Batch 65 role note');
+  assertIncludes(readme, 'Manual apply creates scoped stock decrements, inventory movements, and order recipe consumption records.', 'README Batch 65 data note');
+  assertIncludes(readme, 'Automatic consumption on order creation/status changes, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.', 'README Batch 65 boundary note');
+  assertIncludes(blocker, 'Batch 65 adds manual tenant recipe consumption apply from the kitchen preview.', 'Tenant admin doc Batch 65 note');
+  assertIncludes(blocker, 'Manual apply is OWNER/MANAGER-only, transactional, idempotent, and scoped by restaurantId.', 'Tenant admin doc Batch 65 scoping note');
+
+  const forbiddenAutomationSource = `${applyRoute}\n${previewRoute}\n${kitchenClient}`;
+  assertNotIncludes(forbiddenAutomationSource, 'supplier', 'Tenant recipe apply must not add supplier automation');
+  assertNotIncludes(forbiddenAutomationSource, 'invoice', 'Tenant recipe apply must not add invoice automation');
+  assertNotIncludes(forbiddenAutomationSource, 'stripe', 'Tenant recipe apply must not add payment logic');
+  assertNotIncludes(forbiddenAutomationSource, 'sendWhatsApp', 'Tenant recipe apply must not send WhatsApp');
+  assertNotIncludes(forbiddenAutomationSource, 'sendMail', 'Tenant recipe apply must not send email');
+  assertNotIncludes(forbiddenAutomationSource, 'billing', 'Tenant recipe apply must not add billing logic');
+  assertNotIncludes(forbiddenAutomationSource, 'domain', 'Tenant recipe apply must not add domain logic');
+  assertNotIncludes(forbiddenAutomationSource, 'crm', 'Tenant recipe apply must not add CRM logic');
+  assertNotIncludes(forbiddenAutomationSource, 'payroll', 'Tenant recipe apply must not add payroll logic');
+  assertNotIncludes(forbiddenAutomationSource, 'analytics', 'Tenant recipe apply must not add analytics logic');
+
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant recipe apply batch should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant recipe apply batch should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Tenant recipe apply batch should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant recipe apply batch should not add WhatsApp API route');
+  assert(!migrationDirs.some((migrationDir) => /tenant.recipe.apply|manual.recipe.consumption|batch.65/i.test(migrationDir)), 'Batch 65 should not add a Prisma migration');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -4383,6 +4492,7 @@ const checks = [
   checkTenantInventoryManagementFoundation,
   checkTenantRecipeIngredientLinkageFoundation,
   checkTenantRecipeConsumptionPreview,
+  checkTenantManualRecipeConsumptionApply,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
