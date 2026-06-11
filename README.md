@@ -162,15 +162,15 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, recipes, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
-- Inventory, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Inventory automation, automatic recipe depletion, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant profile/settings admin added.
 - Restaurant staff can manage tenant-scoped public profile metadata, contact links, brand colors, display hours, and cancellation settings under `/r/[restaurantSlug]/admin/settings`.
 - OWNER and MANAGER can update profile/settings; SUPPORT remains read-only.
-- Feature/module activation beyond online/table ordering, assisted ordering, payments, advanced kitchen automation, inventory consumption, recipes, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
+- Feature/module activation beyond online/table ordering, assisted ordering, payments, advanced kitchen automation, inventory consumption, automatic recipe depletion, broader staff management, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant staff management foundation added.
 - OWNER users can create, edit, deactivate, and manually reset passwords for RestaurantUser records under `/r/[restaurantSlug]/admin/staff`.
 - Staff management is scoped to the current restaurant; MANAGER and SUPPORT are read-only for staff records.
@@ -212,6 +212,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Restaurant staff can manage tenant-scoped inventory items and manual stock movements under `/r/[restaurantSlug]/admin/inventory`.
 - OWNER and MANAGER can create, update, deactivate, and adjust inventory; SUPPORT remains read-only.
 - Automatic recipe depletion, order inventory consumption, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
+- Tenant recipe and ingredient linkage foundation added.
+- Restaurant staff can map tenant menu items to tenant inventory ingredients under `/r/[restaurantSlug]/admin/recipes`.
+- OWNER and MANAGER can create, update, and remove recipe ingredient links; SUPPORT remains read-only.
+- Estimated recipe cost and linked ingredient stock visibility are informational only.
+- Automatic recipe depletion, order inventory consumption, inventory movement creation from recipes, supplier ordering, invoices, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
