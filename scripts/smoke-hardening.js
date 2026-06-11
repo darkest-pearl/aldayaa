@@ -1819,7 +1819,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -3432,6 +3432,99 @@ function checkTenantSupplierPurchaseRequestFoundation() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Batch 66 should not add WhatsApp API route');
 }
 
+function checkTenantPurchaseReceivingStockIntake() {
+  const readme = read('README.md');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const receiveRoutePath = path.join(root, 'src/app/api/restaurant-admin/purchase-requests/[id]/receive/route.js');
+  const requestsPagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/purchase-requests/page.js');
+  const requestsClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/purchase-requests/TenantPurchaseRequestsClient.jsx');
+  const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
+
+  assert(fs.existsSync(receiveRoutePath), 'Tenant purchase request receive API route is missing');
+  assert(fs.existsSync(requestsPagePath), 'Tenant purchase requests admin page is missing for receiving UX');
+  assert(fs.existsSync(requestsClientPath), 'Tenant purchase requests admin client is missing for receiving UX');
+
+  const receiveRoute = read('src/app/api/restaurant-admin/purchase-requests/[id]/receive/route.js');
+  const requestsPage = read('src/app/r/[restaurantSlug]/admin/purchase-requests/page.js');
+  const requestsClient = read('src/app/r/[restaurantSlug]/admin/purchase-requests/TenantPurchaseRequestsClient.jsx');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const receiveUiSource = `${requestsPage}\n${requestsClient}\n${tenantAdmin}`;
+
+  assertIncludes(receiveRoute, 'const receivePurchaseRequestSchema = z.object', 'Tenant receive API validates restaurantSlug payload');
+  assertIncludes(receiveRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant receive API requires OWNER/MANAGER');
+  assertIncludes(receiveRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant receive API scopes request by restaurantId');
+  assertIncludes(receiveRoute, 'lines: {', 'Tenant receive API includes purchase request lines');
+  assertIncludes(receiveRoute, 'where: { restaurantId: staff.restaurantId }', 'Tenant receive API scopes included lines by restaurantId');
+  assertIncludes(receiveRoute, 'purchaseRequest.lines.some((line) => line.restaurantId !== staff.restaurantId)', 'Tenant receive API validates line tenant ownership');
+  assertIncludes(receiveRoute, 'PURCHASE_REQUEST_STATUSES.CANCELLED', 'Tenant receive API rejects cancelled purchase requests');
+  assertIncludes(receiveRoute, 'PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant receive API rejects already received purchase requests');
+  assertIncludes(receiveRoute, 'purchaseRequest.lines.length === 0', 'Tenant receive API rejects requests without lines');
+  assertIncludes(receiveRoute, 'prisma.$transaction(async (tx) =>', 'Tenant receive API uses a Prisma transaction');
+  assertIncludes(receiveRoute, 'tx.inventoryItem.findMany', 'Tenant receive API validates inventory items before stock intake');
+  assertIncludes(receiveRoute, 'restaurantId: staff.restaurantId', 'Tenant receive API stamps tenant restaurantId');
+  assertIncludes(receiveRoute, 'tx.inventoryItem.updateMany', 'Tenant receive API mutates inventory with scoped updateMany');
+  assertIncludes(receiveRoute, 'currentStock: { increment: quantity }', 'Tenant receive API increments stock from received quantities');
+  assertIncludes(receiveRoute, 'updated.count !== 1', 'Tenant receive API checks scoped inventory update count');
+  assertIncludes(receiveRoute, 'tx.inventoryMovement.create', 'Tenant receive API creates inventory movements');
+  assertIncludes(receiveRoute, 'type: INVENTORY_MOVEMENT_TYPES.STOCK_IN', 'Tenant receive API uses stock-in movement type');
+  assertIncludes(receiveRoute, 'source: PURCHASE_REQUEST_RECEIVE_SOURCE', 'Tenant receive API records purchase receiving source');
+  assertIncludes(receiveRoute, 'Purchase request ${purchaseRequest.reference} received', 'Tenant receive API records purchase request reference in movement reason');
+  assertIncludes(receiveRoute, 'createdByAdminId: staff.id', 'Tenant receive API records staff id on movements');
+  assertIncludes(receiveRoute, 'createdByAdminEmail: staff.email', 'Tenant receive API records staff email on movements');
+  assertIncludes(receiveRoute, 'tx.purchaseRequest.updateMany', 'Tenant receive API marks request received with scoped updateMany');
+  assertIncludes(receiveRoute, 'status: PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant receive API updates request status to received');
+  assertIncludes(receiveRoute, 'requestUpdated.count !== 1', 'Tenant receive API checks scoped request update count');
+  assertIncludes(receiveRoute, 'normalizePurchaseRequest(receivedPurchaseRequest)', 'Tenant receive API returns normalized request');
+  assertIncludes(receiveRoute, 'normalizeInventoryMovement', 'Tenant receive API returns normalized movement data');
+  assertIncludes(receiveRoute, 'normalizeInventoryItem', 'Tenant receive API returns normalized updated inventory data');
+  assertNotIncludes(receiveRoute, 'prisma.inventoryItem.update({', 'Tenant receive API must not mutate inventory by id only');
+  assertNotIncludes(receiveRoute, 'tx.inventoryItem.update({', 'Tenant receive API must not mutate inventory by id only inside transaction');
+  assertNotIncludes(receiveRoute, 'prisma.purchaseRequest.update({', 'Tenant receive API must not mutate request by id only');
+  assertNotIncludes(receiveRoute, 'tx.purchaseRequest.update({', 'Tenant receive API must not mutate request by id only inside transaction');
+  assertNotIncludes(receiveRoute, 'prisma.inventoryMovement.create', 'Tenant receive API should create movements inside the transaction');
+  assertNotIncludes(receiveRoute, 'sendWhatsApp', 'Tenant receive API must not send WhatsApp');
+  assertNotIncludes(receiveRoute, 'sendMail', 'Tenant receive API must not send email');
+  assertNotIncludes(receiveRoute, 'nodemailer', 'Tenant receive API must not add email transport');
+  assertNotIncludes(receiveRoute, 'stripe', 'Tenant receive API must not add payment logic');
+  assertNotIncludes(receiveRoute, 'invoice', 'Tenant receive API must not add invoice logic');
+  assertNotIncludes(receiveRoute, 'billing', 'Tenant receive API must not add billing logic');
+  assertNotIncludes(receiveRoute, 'domain', 'Tenant receive API must not add domain logic');
+  assertNotIncludes(receiveRoute, 'crm', 'Tenant receive API must not add CRM logic');
+  assertNotIncludes(receiveRoute, 'analytics', 'Tenant receive API must not add analytics logic');
+
+  assertIncludes(requestsClient, 'const [receivingId, setReceivingId]', 'Tenant purchase requests UI tracks receiving state');
+  assertIncludes(requestsClient, 'function canReceiveRequest(request)', 'Tenant purchase requests UI gates receive action');
+  assertIncludes(requestsClient, 'request.status !== PURCHASE_REQUEST_STATUSES.RECEIVED', 'Tenant purchase requests UI hides receive for received requests');
+  assertIncludes(requestsClient, 'request.status !== PURCHASE_REQUEST_STATUSES.CANCELLED', 'Tenant purchase requests UI hides receive for cancelled requests');
+  assertIncludes(requestsClient, 'async function receiveRequest(request)', 'Tenant purchase requests UI calls receive API');
+  assertIncludes(requestsClient, 'window.confirm', 'Tenant purchase requests UI confirms receiving stock');
+  assertIncludes(requestsClient, '/receive', 'Tenant purchase requests UI posts to receive endpoint');
+  assertIncludes(requestsClient, "body: JSON.stringify({ restaurantSlug })", 'Tenant purchase requests UI sends restaurantSlug to receive API');
+  assertIncludes(requestsClient, 'await load(false)', 'Tenant purchase requests UI refreshes request and inventory data after receive');
+  assertIncludes(requestsClient, 'Receive stock', 'Tenant purchase requests UI exposes receive button');
+  assertIncludes(requestsClient, 'Stock received', 'Tenant purchase requests UI shows already received state');
+  assertIncludes(requestsClient, 'Receiving stock increases inventory and records inventory movements', 'Tenant purchase requests UI explains stock intake effect');
+  assertIncludes(requestsClient, 'No invoice, payment, supplier sending, email, or WhatsApp workflow is connected', 'Tenant purchase requests UI preserves automation boundary');
+  assertIncludes(requestsPage, 'Receiving uses full purchase request lines only', 'Tenant purchase requests page documents full receiving only');
+  assertIncludes(tenantAdmin, 'receivedRequests', 'Tenant admin dashboard includes received purchase request counter');
+  assertIncludes(tenantAdmin, 'Manual receiving increases stock and creates movement history', 'Tenant admin dashboard documents receiving effect');
+  assertNotIncludes(receiveUiSource, 'sendToVendor', 'Tenant purchase receiving UI must not add send-to-vendor action');
+
+  assertIncludes(readme, 'Tenant purchase receiving stock intake added.', 'README Batch 67 note');
+  assertIncludes(readme, 'OWNER and MANAGER can receive a full tenant purchase request, which increases scoped inventory stock and creates scoped stock-in inventory movements.', 'README Batch 67 receiving behavior');
+  assertIncludes(readme, 'Partial receiving remains future work because purchase request lines do not store received quantities yet.', 'README Batch 67 partial receiving boundary');
+  assertIncludes(readme, 'Receiving purchase requests does not create invoices, process payments, send supplier/email/WhatsApp messages, trigger billing/domain/CRM/payroll/analytics automation, or auto-generate replenishment.', 'README Batch 67 automation boundary');
+  assertIncludes(blocker, 'tenant purchase receiving stock intake resolved by Batch 67', 'Tenant admin doc Batch 67 status');
+  assertIncludes(blocker, 'Batch 67 adds OWNER/MANAGER-only full purchase request receiving that increments tenant inventory and creates tenant-scoped stock-in inventory movements.', 'Tenant admin doc Batch 67 behavior');
+  assertIncludes(blocker, 'Partial purchase receiving remains future work until purchase request lines track received quantities.', 'Tenant admin doc Batch 67 partial receiving boundary');
+
+  assert(!migrationDirs.some((migrationDir) => /purchase.receiv|tenant.purchase.receiv|batch.67/i.test(migrationDir)), 'Batch 67 should not add a Prisma migration');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Batch 67 should not add billing API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Batch 67 should not add payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/email')), 'Batch 67 should not add email API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Batch 67 should not add WhatsApp API route');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -4653,6 +4746,7 @@ const checks = [
   checkTenantRecipeConsumptionPreview,
   checkTenantManualRecipeConsumptionApply,
   checkTenantSupplierPurchaseRequestFoundation,
+  checkTenantPurchaseReceivingStockIntake,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,
