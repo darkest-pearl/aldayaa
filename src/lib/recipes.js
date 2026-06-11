@@ -113,6 +113,7 @@ export function normalizeRecipeConsumptionLine(line = {}) {
   const totalRequiredQuantity = toNumber(line.totalRequiredQuantity, recipeQuantity * orderQuantity);
   const missingMapping = Boolean(line.missingMapping);
   const inventoryItem = line.inventoryItem ? normalizeInventoryItem(line.inventoryItem) : null;
+  const stockStatus = inventoryItem?.stockStatus || line.stockStatus || null;
 
   return {
     menuItemId: line.menuItemId || null,
@@ -126,8 +127,10 @@ export function normalizeRecipeConsumptionLine(line = {}) {
     unit: normalizeRecipeIngredientUnit(line.unit || inventoryItem?.unit || ''),
     currentStock: inventoryItem?.currentStock ??
       (line.currentStock === null || line.currentStock === undefined ? null : toNumber(line.currentStock)),
-    stockStatus: inventoryItem?.stockStatus || line.stockStatus || null,
+    stockStatus,
     stockStatusLabel: inventoryItem?.stockStatusLabel || line.stockStatusLabel || null,
+    isLowStock: stockStatus === 'LOW_STOCK',
+    isOutOfStock: stockStatus === 'OUT_OF_STOCK',
     missingMapping,
   };
 }
