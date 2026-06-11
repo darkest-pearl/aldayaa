@@ -34,6 +34,8 @@ model Restaurant {
   suppliers          Supplier[]
   purchaseRequests   PurchaseRequest[]
   purchaseRequestLines PurchaseRequestLine[]
+  purchaseInvoices   PurchaseInvoice[]
+  purchaseInvoiceLines PurchaseInvoiceLine[]
   restaurantUsers   RestaurantUser[]
 }
 
@@ -295,6 +297,7 @@ model InventoryItem {
   movements         InventoryMovement[]
   recipeIngredients MenuItemIngredient[]
   purchaseRequestLines PurchaseRequestLine[]
+  purchaseInvoiceLines PurchaseInvoiceLine[]
 
   @@index([restaurantId])
   @@index([name])
@@ -357,6 +360,7 @@ model Supplier {
   restaurantId    String
   restaurant      Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
   purchaseRequests PurchaseRequest[]
+  purchaseInvoices PurchaseInvoice[]
 
   @@index([restaurantId])
   @@index([isActive])
@@ -378,6 +382,7 @@ model PurchaseRequest {
   supplierId          String?
   supplier            Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   lines               PurchaseRequestLine[]
+  purchaseInvoices PurchaseInvoice[]
 
   @@unique([restaurantId, reference])
   @@index([restaurantId])
@@ -403,6 +408,59 @@ model PurchaseRequestLine {
 
   @@index([restaurantId])
   @@index([purchaseRequestId])
+  @@index([inventoryItemId])
+}
+
+model PurchaseInvoice {
+  id                  String                @id @default(cuid())
+  invoiceNumber       String
+  status              String                @default("DRAFT")
+  invoiceDate         DateTime
+  dueDate             DateTime?
+  currency            String                @default("AED")
+  subtotal            Float                 @default(0)
+  taxAmount           Float                 @default(0)
+  totalAmount         Float                 @default(0)
+  notes               String?
+  createdByAdminId    String?
+  createdByAdminEmail String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  restaurantId        String
+  restaurant          Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  supplierId          String?
+  supplier            Supplier?             @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchaseRequestId   String?
+  purchaseRequest     PurchaseRequest?      @relation(fields: [purchaseRequestId], references: [id], onDelete: SetNull)
+  lines               PurchaseInvoiceLine[]
+
+  @@unique([restaurantId, invoiceNumber])
+  @@index([restaurantId])
+  @@index([supplierId])
+  @@index([purchaseRequestId])
+  @@index([status])
+  @@index([invoiceDate])
+}
+
+model PurchaseInvoiceLine {
+  id                String           @id @default(cuid())
+  purchaseInvoiceId String
+  purchaseInvoice   PurchaseInvoice  @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  description       String
+  quantity          Float
+  unit              String
+  unitCost          Float
+  lineTotal         Float
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  restaurantId      String
+  restaurant        Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  inventoryItemId   String?
+  inventoryItem     InventoryItem?   @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
+  @@index([purchaseInvoiceId])
   @@index([inventoryItemId])
 }
 

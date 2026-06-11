@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -235,6 +235,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - SUPPORT remains read-only for purchase receiving.
 - Partial receiving remains future work because purchase request lines do not store received quantities yet.
 - Receiving purchase requests does not create invoices, process payments, send supplier/email/WhatsApp messages, trigger billing/domain/CRM/payroll/analytics automation, or auto-generate replenishment.
+- Tenant purchase invoice recording foundation added.
+- Restaurant staff can record tenant-scoped supplier purchase invoices under `/r/[restaurantSlug]/admin/purchase-invoices`.
+- OWNER and MANAGER can create, update, and change purchase invoice status; SUPPORT remains read-only.
+- Purchase invoice lines validate tenant inventory item ownership when linked, and supplier/request links validate tenant ownership.
+- Purchase invoices do not mutate inventory stock, create inventory movements, create payments/refunds, send supplier/email/WhatsApp messages, or trigger billing/domain/CRM/payroll/accounting/tax/analytics automation.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
