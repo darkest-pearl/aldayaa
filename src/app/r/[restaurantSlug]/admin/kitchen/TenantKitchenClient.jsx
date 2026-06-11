@@ -49,6 +49,20 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function formatQuantity(value) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(Number(value || 0));
+}
+
+function getStockBadgeClass(line) {
+  if (line.isOutOfStock || line.stockStatus === 'OUT_OF_STOCK') {
+    return 'rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700';
+  }
+  if (line.isLowStock || line.stockStatus === 'LOW_STOCK') {
+    return 'rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800';
+  }
+  return 'rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700';
+}
+
 function buildKitchenQuery(restaurantSlug, statusFilter, contextFilter) {
   const params = new URLSearchParams({ restaurantSlug });
   if (statusFilter !== 'ALL') params.set('status', statusFilter);
@@ -64,6 +78,8 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
   const [savingId, setSavingId] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [recipePreview, setRecipePreview] = useState(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [contextFilter, setContextFilter] = useState('ALL');
 
@@ -105,6 +121,20 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
     }
   }
 
+  async function loadRecipePreview(order) {
+    setPreviewLoadingId(order.id);
+    setError('');
+    try {
+      const params = new URLSearchParams({ restaurantSlug, orderId: order.id });
+      const data = await apiRequest(`/api/restaurant-admin/recipes/preview?${params.toString()}`);
+      setRecipePreview(data);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setPreviewLoadingId('');
+    }
+  }
+
   const groupedOrders = useMemo(() => {
     return activeStatusOptions.reduce((groups, status) => {
       groups[status] = orders.filter((order) => order.status === status);
@@ -123,8 +153,73 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
         </div>
       ) : null}
       <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-        Active prep only. No payment, messaging, inventory, or recipe workflow is triggered.
+        Active prep only. Recipe previews are read-only; no stock is deducted and no payment, messaging, inventory, or recipe workflow is triggered.
       </div>
+
+      {recipePreview ? (
+        <section className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Recipe preview</p>
+              <h2 className="mt-1 text-lg font-semibold">Order {recipePreview.order?.reference}</h2>
+              <p className="mt-1 text-sm text-neutral-600">
+                Preview only; no stock is deducted and no inventory movement is created.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRecipePreview(null)}
+              className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700"
+            >
+              Close preview
+            </button>
+          </div>
+
+          {recipePreview.consumption?.hasMissingMappings ? (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <p className="font-semibold">Missing recipe mappings</p>
+              <div className="mt-2 grid gap-1">
+                {recipePreview.consumption.missingMappings.map((line) => (
+                  <p key={`${line.orderItemId || line.menuItemName}-missing`}>
+                    {line.menuItemName} needs a recipe mapping before consumption can be calculated.
+                  </p>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-4 grid gap-2">
+            {(recipePreview.consumption?.lines || []).length ? recipePreview.consumption.lines.map((line, index) => (
+              <div key={`${line.orderItemId || line.menuItemName}-${line.inventoryItemId || index}`} className="rounded-md border border-neutral-100 px-3 py-2 text-sm">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-semibold">{line.missingMapping ? line.menuItemName : line.inventoryItemName || 'Inventory item'}</p>
+                    <p className="text-neutral-600">
+                      {line.missingMapping
+                        ? `${formatQuantity(line.orderQuantity)} ordered; recipe mapping missing`
+                        : `${formatQuantity(line.totalRequiredQuantity)} ${line.unit} required for ${line.menuItemName}`}
+                    </p>
+                  </div>
+                  {!line.missingMapping ? (
+                    <div className="text-left md:text-right">
+                      <p className="text-neutral-600">
+                        Current: {line.currentStock === null ? 'Not recorded' : `${formatQuantity(line.currentStock)} ${line.unit}`}
+                      </p>
+                      {line.stockStatusLabel ? (
+                        <span className={getStockBadgeClass(line)}>{line.stockStatusLabel}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )) : (
+              <p className="rounded-md border border-dashed border-neutral-200 px-4 py-6 text-center text-sm text-neutral-500">
+                No recipe ingredient lines are available for this order.
+              </p>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid gap-3 md:grid-cols-4">
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
@@ -221,6 +316,14 @@ export default function TenantKitchenClient({ restaurantSlug, staffRole }) {
                     {order.notes ? <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">{order.notes}</p> : null}
 
                     <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => loadRecipePreview(order)}
+                        disabled={previewLoadingId === order.id}
+                        className="rounded-md border border-emerald-200 px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {previewLoadingId === order.id ? 'Loading preview...' : 'Recipe preview'}
+                      </button>
                       {actions.length ? actions.map((nextStatus) => (
                         <button
                           key={nextStatus}
