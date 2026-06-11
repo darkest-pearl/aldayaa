@@ -13,6 +13,13 @@ export function normalizeRecipeIngredientUnit(unit) {
   return normalizeInventoryUnit(unit);
 }
 
+export function getRecipeIngredientEstimatedCost(ingredient = {}) {
+  const inventoryItem = ingredient.inventoryItem || {};
+  const costPerUnit = inventoryItem.costPerUnit;
+  if (costPerUnit === null || costPerUnit === undefined) return null;
+  return toNumber(ingredient.quantity) * toNumber(costPerUnit);
+}
+
 export function getMenuItemIngredientCount(menuItem = {}) {
   const count = menuItem.ingredientCount ?? menuItem.ingredients?.length ?? 0;
   return Math.max(0, Math.trunc(toNumber(count)));
@@ -39,6 +46,7 @@ export function getRecipeMappingCoverage(menuItems = []) {
 
 export function normalizeMenuItemIngredient(ingredient = {}) {
   const inventoryItem = ingredient.inventoryItem ? normalizeInventoryItem(ingredient.inventoryItem) : null;
+  const estimatedCost = getRecipeIngredientEstimatedCost(ingredient);
 
   return {
     id: ingredient.id,
@@ -53,9 +61,49 @@ export function normalizeMenuItemIngredient(ingredient = {}) {
     inventoryItemStockStatusLabel: inventoryItem?.stockStatusLabel || null,
     quantity: toNumber(ingredient.quantity),
     unit: normalizeRecipeIngredientUnit(ingredient.unit),
+    estimatedCost,
     notes: ingredient.notes || null,
     createdAt: ingredient.createdAt,
     updatedAt: ingredient.updatedAt,
+  };
+}
+
+export function getMenuItemRecipeEstimatedCost(menuItem = {}) {
+  const ingredients = Array.isArray(menuItem.ingredients) ? menuItem.ingredients : [];
+  return ingredients.reduce((total, ingredient) => total + toNumber(getRecipeIngredientEstimatedCost(ingredient)), 0);
+}
+
+export function getRecipeLowStockIngredientCount(menuItem = {}) {
+  const ingredients = Array.isArray(menuItem.ingredients) ? menuItem.ingredients : [];
+  return ingredients.filter((ingredient) => {
+    const item = ingredient.inventoryItem || {};
+    return item.stockStatus === 'LOW_STOCK' || item.stockStatus === 'OUT_OF_STOCK' || item.isLowStock;
+  }).length;
+}
+
+export function normalizeMenuItemRecipe(menuItem = {}) {
+  const ingredients = (menuItem.ingredients || []).map(normalizeMenuItemIngredient);
+  const ingredientCount = getMenuItemIngredientCount({ ...menuItem, ingredients });
+  const estimatedCost = ingredients.reduce((sum, ingredient) => sum + toNumber(ingredient.estimatedCost), 0);
+  const missingCostCount = ingredients.filter((ingredient) => ingredient.estimatedCost === null).length;
+
+  return {
+    id: menuItem.id,
+    menuItemId: menuItem.id,
+    name: menuItem.name || '',
+    description: menuItem.description || '',
+    price: toNumber(menuItem.price),
+    categoryId: menuItem.categoryId || null,
+    categoryName: menuItem.category?.name || null,
+    ingredientCount,
+    hasRecipeMapping: hasRecipeMapping({ ...menuItem, ingredientCount }),
+    estimatedCost,
+    missingCostCount,
+    lowStockIngredientCount: ingredients.filter((ingredient) =>
+      ingredient.inventoryItemStockStatus === 'LOW_STOCK' ||
+      ingredient.inventoryItemStockStatus === 'OUT_OF_STOCK'
+    ).length,
+    ingredients,
   };
 }
 

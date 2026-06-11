@@ -4,6 +4,7 @@ import { INVENTORY_STOCK_STATUSES, getInventoryStockStatus } from '../../../../l
 import { ORDER_CONTEXTS, ORDER_STATUSES } from '../../../../lib/order-status';
 import { prisma } from '../../../../lib/prisma';
 import { requireRestaurantStaffAccess } from '../../../../lib/restaurant-staff-access';
+import { getMenuItemIngredientCount } from '../../../../lib/recipes';
 import TenantAdminNav from './TenantAdminNav';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
     redirect(`/r/${params.restaurantSlug}/admin/login`);
   }
 
-  const [kitchenOrders, inventoryItems, recentMovementCount] = await Promise.all([
+  const [kitchenOrders, inventoryItems, recentMovementCount, recipeMenuItems] = await Promise.all([
     prisma.order.findMany({
       where: {
         restaurantId: staff.restaurantId,
@@ -39,6 +40,25 @@ export default async function TenantRestaurantAdminPage({ params }) {
     }),
     prisma.inventoryMovement.count({
       where: { restaurantId: staff.restaurantId },
+    }),
+    prisma.menuItem.findMany({
+      where: { restaurantId: staff.restaurantId },
+      select: {
+        id: true,
+        ingredients: {
+          where: { restaurantId: staff.restaurantId },
+          select: {
+            id: true,
+            inventoryItem: {
+              select: {
+                currentStock: true,
+                reorderLevel: true,
+                isActive: true,
+              },
+            },
+          },
+        },
+      },
     }),
   ]);
 
@@ -67,13 +87,24 @@ export default async function TenantRestaurantAdminPage({ params }) {
     ).length,
     recentMovements: recentMovementCount,
   };
+  const recipeCounters = {
+    totalRecipes: recipeMenuItems.filter((item) => getMenuItemIngredientCount(item) > 0).length,
+    menuItemsWithoutRecipes: recipeMenuItems.filter((item) => getMenuItemIngredientCount(item) === 0).length,
+    lowStockLinkedRecipes: recipeMenuItems.filter((item) =>
+      item.ingredients.some((ingredient) =>
+        ingredient.inventoryItem &&
+        ingredient.inventoryItem.isActive !== false &&
+        getInventoryStockStatus(ingredient.inventoryItem) !== INVENTORY_STOCK_STATUSES.OK
+      )
+    ).length,
+  };
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-950">
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, and inventory management are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, and recipe linkage are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -224,8 +255,35 @@ export default async function TenantRestaurantAdminPage({ params }) {
             Open inventory
           </a>
         </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Recipes</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Link menu items to tenant inventory ingredients for recipe visibility and estimated cost. No automatic stock depletion or order consumption is triggered.
+          </p>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Recipes</span>
+              <span className="text-lg font-semibold">{recipeCounters.totalRecipes}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Unmapped</span>
+              <span className="text-lg font-semibold">{recipeCounters.menuItemsWithoutRecipes}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Low stock</span>
+              <span className="text-lg font-semibold">{recipeCounters.lowStockLinkedRecipes}</span>
+            </div>
+          </div>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/recipes`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open recipes
+          </a>
+        </div>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Assisted ordering, payments, advanced kitchen automation, automatic inventory consumption, recipes, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Assisted ordering, payments, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>
