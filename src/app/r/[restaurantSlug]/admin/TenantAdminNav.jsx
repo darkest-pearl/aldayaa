@@ -17,6 +17,7 @@ export default function TenantAdminNav({ restaurantSlug, active = 'overview', st
     { key: 'recipes', label: 'Recipes', href: `/r/${restaurantSlug}/admin/recipes` },
     { key: 'suppliers', label: 'Suppliers', href: `/r/${restaurantSlug}/admin/suppliers` },
     { key: 'purchase-requests', label: 'Purchase Requests', href: `/r/${restaurantSlug}/admin/purchase-requests` },
+    { key: 'purchase-invoices', label: 'Purchase Invoices', href: `/r/${restaurantSlug}/admin/purchase-invoices` },
   ];
 
   return (
