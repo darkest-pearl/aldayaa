@@ -48,6 +48,8 @@ const purchaseInvoiceInclude = {
   },
 };
 
+const DUPLICATE_INVOICE_NUMBER_MESSAGE = 'Purchase invoice number is already used for this restaurant';
+
 class TenantPurchaseInvoiceError extends Error {
   constructor(message, status = 400) {
     super(message);
@@ -86,6 +88,10 @@ function getCreateStatus(status) {
     throw new TenantPurchaseInvoiceError('Invalid purchase invoice status', 400);
   }
   return cleanStatus;
+}
+
+function isUniqueInvoiceNumberError(error) {
+  return error?.code === 'P2002';
 }
 
 async function validateSupplierOwnership(tx, supplierId, restaurantId) {
@@ -202,6 +208,18 @@ export async function POST(request) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
+    const duplicateInvoice = await prisma.purchaseInvoice.findFirst({
+      where: {
+        restaurantId: staff.restaurantId,
+        invoiceNumber: parsed.data.invoiceNumber.trim(),
+      },
+      select: { id: true },
+    });
+
+    if (duplicateInvoice) {
+      return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409);
+    }
+
     const purchaseInvoice = await prisma.$transaction(async (tx) => {
       const supplierId = await validateSupplierOwnership(
         tx,
@@ -242,6 +260,10 @@ export async function POST(request) {
 
     return success({ purchaseInvoice: normalizePurchaseInvoice(purchaseInvoice) });
   } catch (error) {
+    if (isUniqueInvoiceNumberError(error)) {
+      return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409);
+    }
+
     return handleApiError(error);
   }
 }

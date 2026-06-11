@@ -36,6 +36,8 @@ const purchaseInvoiceInclude = {
   },
 };
 
+const DUPLICATE_INVOICE_NUMBER_MESSAGE = 'Purchase invoice number is already used for this restaurant';
+
 function cleanId(value) {
   return normalizeOptionalText(value);
 }
@@ -54,6 +56,10 @@ function cleanDate(value) {
 function getRequestedStatus(data) {
   if (data.status === undefined) return undefined;
   return data.status.trim().toUpperCase();
+}
+
+function isUniqueInvoiceNumberError(error) {
+  return error?.code === 'P2002';
 }
 
 async function validateSupplierOwnership(supplierId, restaurantId) {
@@ -133,6 +139,21 @@ export async function PUT(request, { params }) {
 
     if (!existing) return failure('Purchase invoice not found', 404);
 
+    if (parsed.data.invoiceNumber !== undefined) {
+      const duplicateInvoice = await prisma.purchaseInvoice.findFirst({
+        where: {
+          restaurantId: staff.restaurantId,
+          invoiceNumber: parsed.data.invoiceNumber.trim(),
+          NOT: { id: params.id },
+        },
+        select: { id: true },
+      });
+
+      if (duplicateInvoice) {
+        return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409);
+      }
+    }
+
     const requestedStatus = getRequestedStatus(parsed.data);
     if (requestedStatus !== undefined && !isValidPurchaseInvoiceStatus(requestedStatus)) {
       return failure('Invalid purchase invoice status', 400);
@@ -160,10 +181,19 @@ export async function PUT(request, { params }) {
       return failure('Due date is invalid', 400);
     }
 
-    const updated = await prisma.purchaseInvoice.updateMany({
-      where: { id: params.id, restaurantId: staff.restaurantId },
-      data: buildUpdateData(parsed.data, supplierId, purchaseRequestId, requestedStatus, existing),
-    });
+    let updated;
+    try {
+      updated = await prisma.purchaseInvoice.updateMany({
+        where: { id: params.id, restaurantId: staff.restaurantId },
+        data: buildUpdateData(parsed.data, supplierId, purchaseRequestId, requestedStatus, existing),
+      });
+    } catch (error) {
+      if (isUniqueInvoiceNumberError(error)) {
+        return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409);
+      }
+
+      throw error;
+    }
 
     if (updated.count !== 1) {
       return failure('Purchase invoice not found', 404);
@@ -178,6 +208,10 @@ export async function PUT(request, { params }) {
 
     return success({ purchaseInvoice: normalizePurchaseInvoice(purchaseInvoice) });
   } catch (error) {
+    if (isUniqueInvoiceNumberError(error)) {
+      return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409);
+    }
+
     return handleApiError(error);
   }
 }

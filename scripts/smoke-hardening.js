@@ -3628,6 +3628,9 @@ function checkTenantPurchaseInvoiceFoundation() {
   assertIncludes(invoiceItemRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant purchase invoice PUT requires OWNER/MANAGER');
   assertIncludes(invoiceRoute, 'const where = { restaurantId: staff.restaurantId }', 'Tenant purchase invoice GET scopes by restaurantId');
   assertIncludes(invoiceRoute, 'restaurantId: staff.restaurantId', 'Tenant purchase invoice create stamps restaurantId');
+  assertIncludes(invoiceRoute, 'const duplicateInvoice = await prisma.purchaseInvoice.findFirst', 'Tenant purchase invoice create checks duplicate invoice numbers before create');
+  assertIncludes(invoiceRoute, 'restaurantId: staff.restaurantId,\n        invoiceNumber: parsed.data.invoiceNumber.trim()', 'Tenant purchase invoice create duplicate check scopes by restaurantId and invoiceNumber');
+  assertIncludes(invoiceRoute, 'Purchase invoice number is already used for this restaurant', 'Tenant purchase invoice create duplicate check returns safe conflict message');
   assertIncludes(invoiceRoute, 'where: { id: supplierId, restaurantId, isActive: true }', 'Tenant purchase invoice validates supplier ownership');
   assertIncludes(invoiceRoute, 'where: { id: purchaseRequestId, restaurantId }', 'Tenant purchase invoice validates purchase request ownership');
   assertIncludes(invoiceRoute, 'tx.inventoryItem.findMany', 'Tenant purchase invoice validates inventory item ownership');
@@ -3636,10 +3639,16 @@ function checkTenantPurchaseInvoiceFoundation() {
   assertIncludes(invoiceRoute, 'createdByAdminEmail: staff.email', 'Tenant purchase invoice records staff email');
   assertIncludes(invoiceRoute, 'calculatePurchaseInvoiceTotals', 'Tenant purchase invoice computes totals server-side');
   assertIncludes(invoiceItemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant purchase invoice item route scopes by restaurantId');
+  assertIncludes(invoiceItemRoute, 'const duplicateInvoice = await prisma.purchaseInvoice.findFirst', 'Tenant purchase invoice update checks duplicate invoice numbers before update');
+  assertIncludes(invoiceItemRoute, 'restaurantId: staff.restaurantId,\n          invoiceNumber: parsed.data.invoiceNumber.trim(),\n          NOT: { id: params.id }', 'Tenant purchase invoice update duplicate check scopes by restaurantId, invoiceNumber, and NOT id');
+  assertIncludes(invoiceItemRoute, 'Purchase invoice number is already used for this restaurant', 'Tenant purchase invoice update duplicate check returns safe conflict message');
   assertIncludes(invoiceItemRoute, 'where: { id: supplierId, restaurantId, isActive: true }', 'Tenant purchase invoice update validates supplier ownership');
   assertIncludes(invoiceItemRoute, 'where: { id: purchaseRequestId, restaurantId }', 'Tenant purchase invoice update validates purchase request ownership');
   assertIncludes(invoiceItemRoute, 'prisma.purchaseInvoice.updateMany', 'Tenant purchase invoice updates use scoped updateMany');
   assertIncludes(invoiceItemRoute, 'updated.count !== 1', 'Tenant purchase invoice updates check scoped update count');
+  assertIncludes(invoiceApiSource, 'error?.code === \'P2002\'', 'Tenant purchase invoice APIs handle Prisma unique conflicts safely');
+  assertIncludes(invoiceApiSource, 'return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409)', 'Tenant purchase invoice APIs return safe 409 for unique conflicts');
+  assert(!/where:\s*\{\s*invoiceNumber:/m.test(invoiceApiSource), 'Tenant purchase invoice APIs must not perform global invoiceNumber lookups');
   assertNotIncludes(invoiceApiSource, 'prisma.purchaseInvoice.update({', 'Tenant purchase invoice APIs must not mutate by id only');
   assertNotIncludes(invoiceApiSource, 'prisma.purchaseInvoice.delete', 'Tenant purchase invoice APIs must not hard delete');
   assertNotIncludes(invoiceApiSource, 'purchaseRequest.update', 'Tenant purchase invoice APIs must not update purchase requests');
