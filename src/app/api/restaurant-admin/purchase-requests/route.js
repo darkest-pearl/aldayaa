@@ -153,6 +153,11 @@ export async function POST(request) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
+    const createStatus = getCreateStatus(parsed.data.status);
+    if (createStatus === PURCHASE_REQUEST_STATUSES.RECEIVED) {
+      return failure('Use the receive stock action to mark a purchase request as received', 400);
+    }
+
     const purchaseRequest = await prisma.$transaction(async (tx) => {
       const supplierId = await validateSupplierOwnership(
         tx,
@@ -165,7 +170,7 @@ export async function POST(request) {
         data: {
           restaurantId: staff.restaurantId,
           reference: generatePurchaseRequestReference(),
-          status: getCreateStatus(parsed.data.status),
+          status: createStatus,
           supplierId,
           expectedDate: cleanExpectedDate(parsed.data.expectedDate),
           notes: normalizeOptionalText(parsed.data.notes),

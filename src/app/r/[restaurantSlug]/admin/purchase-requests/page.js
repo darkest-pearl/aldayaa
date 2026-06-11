@@ -24,8 +24,9 @@ export default async function TenantPurchaseRequestsPage({ params }) {
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Tenant inventory replenishment</p>
           <h1 className="mt-1 text-2xl font-semibold">Purchase requests</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">
-            Create manual purchase requests from tenant inventory items and track request status. This does not send
-            requests to vendors, create invoices, update stock, create inventory movements, or process payments.
+            Create manual purchase requests from tenant inventory items, track request status, and receive stock when
+            the goods arrive. Receiving uses full purchase request lines only, increases inventory, and records
+            inventory movements; it does not send requests to suppliers, create invoices, or process payments.
           </p>
         </div>
         <TenantPurchaseRequestsClient restaurantSlug={params.restaurantSlug} staffRole={staff.role} />

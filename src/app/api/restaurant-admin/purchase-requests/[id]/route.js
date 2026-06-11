@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { z } from 'zod';
 import { failure, handleApiError, success } from '../../../../../lib/api-response';
 import {
+  PURCHASE_REQUEST_STATUSES,
   isValidPurchaseRequestStatus,
   normalizePurchaseRequest,
 } from '../../../../../lib/purchase-requests';
@@ -40,6 +41,11 @@ function cleanExpectedDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function getRequestedStatus(data) {
+  if (data.status === undefined) return undefined;
+  return data.status.trim().toUpperCase();
+}
+
 async function validateSupplierOwnership(supplierId, restaurantId) {
   if (!supplierId) return null;
   const supplier = await prisma.supplier.findFirst({
@@ -50,12 +56,9 @@ async function validateSupplierOwnership(supplierId, restaurantId) {
   return supplier?.id || null;
 }
 
-function buildUpdateData(data, supplierId) {
+function buildUpdateData(data, supplierId, requestedStatus) {
   const update = {};
-  if (data.status !== undefined) {
-    const status = data.status.trim().toUpperCase();
-    if (isValidPurchaseRequestStatus(status)) update.status = status;
-  }
+  if (requestedStatus !== undefined && isValidPurchaseRequestStatus(requestedStatus)) update.status = requestedStatus;
   if (data.supplierId !== undefined) update.supplierId = supplierId;
   if (data.expectedDate !== undefined) update.expectedDate = cleanExpectedDate(data.expectedDate);
   if (data.notes !== undefined) update.notes = normalizeOptionalText(data.notes);
@@ -93,10 +96,23 @@ export async function PUT(request, { params }) {
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
     const existing = await prisma.purchaseRequest.findFirst({
       where: { id: params.id, restaurantId: staff.restaurantId },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     if (!existing) return failure('Purchase request not found', 404);
+
+    const requestedStatus = getRequestedStatus(parsed.data);
+    if (requestedStatus !== undefined && !isValidPurchaseRequestStatus(requestedStatus)) {
+      return failure('Invalid purchase request status', 400);
+    }
+
+    if (requestedStatus === PURCHASE_REQUEST_STATUSES.RECEIVED) {
+      return failure('Use the receive stock action to mark a purchase request as received', 400);
+    }
+
+    if (existing.status === PURCHASE_REQUEST_STATUSES.RECEIVED && requestedStatus !== undefined) {
+      return failure('Received purchase requests cannot change status', 409);
+    }
 
     let supplierId = undefined;
     if (parsed.data.supplierId !== undefined) {
@@ -104,16 +120,25 @@ export async function PUT(request, { params }) {
       if (cleanSupplierId(parsed.data.supplierId) && !supplierId) return failure('Supplier not found', 404);
     }
 
-    if (parsed.data.status !== undefined && !isValidPurchaseRequestStatus(parsed.data.status.trim().toUpperCase())) {
-      return failure('Invalid purchase request status', 400);
+    const updateWhere = { id: params.id, restaurantId: staff.restaurantId };
+    if (requestedStatus !== undefined) {
+      updateWhere.status = { not: PURCHASE_REQUEST_STATUSES.RECEIVED };
     }
 
     const updated = await prisma.purchaseRequest.updateMany({
-      where: { id: params.id, restaurantId: staff.restaurantId },
-      data: buildUpdateData(parsed.data, supplierId),
+      where: updateWhere,
+      data: buildUpdateData(parsed.data, supplierId, requestedStatus),
     });
 
     if (updated.count !== 1) {
+      const current = await prisma.purchaseRequest.findFirst({
+        where: { id: params.id, restaurantId: staff.restaurantId },
+        select: { status: true },
+      });
+      if (current?.status === PURCHASE_REQUEST_STATUSES.RECEIVED && requestedStatus !== undefined) {
+        return failure('Received purchase requests cannot change status', 409);
+      }
+
       return failure('Purchase request not found', 404);
     }
 

@@ -230,6 +230,11 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - OWNER and MANAGER can create, update, deactivate, and change request status; SUPPORT remains read-only.
 - Purchase request lines validate tenant inventory item ownership, and supplier links validate tenant supplier ownership.
 - Purchase requests do not mutate inventory stock, create inventory movements, send email/WhatsApp messages, create invoices, process payments, trigger billing/domain/CRM automation, or auto-generate replenishment.
+- Tenant purchase receiving stock intake added.
+- OWNER and MANAGER can receive a full tenant purchase request, which increases scoped inventory stock and creates scoped stock-in inventory movements.
+- SUPPORT remains read-only for purchase receiving.
+- Partial receiving remains future work because purchase request lines do not store received quantities yet.
+- Receiving purchase requests does not create invoices, process payments, send supplier/email/WhatsApp messages, trigger billing/domain/CRM/payroll/analytics automation, or auto-generate replenishment.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 

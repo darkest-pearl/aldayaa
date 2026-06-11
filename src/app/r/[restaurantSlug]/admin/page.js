@@ -119,6 +119,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
     openRequests: purchaseRequests.filter((request) =>
       ![PURCHASE_REQUEST_STATUSES.RECEIVED, PURCHASE_REQUEST_STATUSES.CANCELLED].includes(request.status)
     ).length,
+    receivedRequests: purchaseRequests.filter((request) => request.status === PURCHASE_REQUEST_STATUSES.RECEIVED).length,
   };
 
   return (
@@ -325,9 +326,9 @@ export default async function TenantRestaurantAdminPage({ params }) {
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
           <h2 className="mt-2 text-xl font-semibold">Purchase requests</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Review low-stock inventory and create manual purchase request drafts with scoped line items. Stock is not changed by requests.
+            Review low-stock inventory, create manual purchase request drafts, and receive full requests. Manual receiving increases stock and creates movement history.
           </p>
-          <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+          <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
             <div className="rounded-md bg-neutral-50 px-3 py-2">
               <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Requests</span>
               <span className="text-lg font-semibold">{purchaseRequestCounters.totalRequests}</span>
@@ -335,6 +336,10 @@ export default async function TenantRestaurantAdminPage({ params }) {
             <div className="rounded-md bg-neutral-50 px-3 py-2">
               <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Open</span>
               <span className="text-lg font-semibold">{purchaseRequestCounters.openRequests}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Received</span>
+              <span className="text-lg font-semibold">{purchaseRequestCounters.receivedRequests}</span>
             </div>
           </div>
           <a

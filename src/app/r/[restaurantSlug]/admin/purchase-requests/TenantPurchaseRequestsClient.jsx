@@ -9,6 +9,7 @@ import {
 
 const inputClass = 'rounded-md border border-neutral-200 px-3 py-2 text-sm outline-none transition focus:border-emerald-700 disabled:bg-neutral-50 disabled:text-neutral-500';
 const statusOptions = getPurchaseRequestStatusOptions();
+const transitionStatusOptions = statusOptions.filter((status) => status.value !== PURCHASE_REQUEST_STATUSES.RECEIVED);
 
 const emptyRequestForm = {
   supplierId: '',
@@ -99,6 +100,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [receivingId, setReceivingId] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [search, setSearch] = useState('');
@@ -136,6 +138,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
     open: purchaseRequests.filter((request) =>
       ![PURCHASE_REQUEST_STATUSES.RECEIVED, PURCHASE_REQUEST_STATUSES.CANCELLED].includes(request.status)
     ).length,
+    received: purchaseRequests.filter((request) => request.status === PURCHASE_REQUEST_STATUSES.RECEIVED).length,
     lowStock: lowStockItems.length,
   }), [lowStockItems.length, purchaseRequests]);
   const filteredRequests = useMemo(() => {
@@ -199,6 +202,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
   }
 
   function startEdit(request) {
+    if (!canEditRequest(request)) return;
     setEditingId(request.id);
     setForm({
       supplierId: request.supplierId || '',
@@ -215,6 +219,19 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
     });
     setError('');
     setSuccessMessage('');
+  }
+
+  function canReceiveRequest(request) {
+    return Boolean(
+      writable &&
+      request.status !== PURCHASE_REQUEST_STATUSES.RECEIVED &&
+      request.status !== PURCHASE_REQUEST_STATUSES.CANCELLED &&
+      request.lines?.length
+    );
+  }
+
+  function canEditRequest(request) {
+    return Boolean(writable && request.status !== PURCHASE_REQUEST_STATUSES.RECEIVED);
   }
 
   async function submitRequest(event) {
@@ -247,7 +264,12 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
   }
 
   async function updateStatus(request, status) {
-    if (!writable || request.status === status) return;
+    if (
+      !writable ||
+      request.status === status ||
+      request.status === PURCHASE_REQUEST_STATUSES.RECEIVED ||
+      status === PURCHASE_REQUEST_STATUSES.RECEIVED
+    ) return;
     setError('');
     setSuccessMessage('');
     try {
@@ -262,6 +284,27 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
     }
   }
 
+  async function receiveRequest(request) {
+    if (!canReceiveRequest(request)) return;
+    if (!window.confirm(`Receive stock for ${request.reference}? Receiving stock increases inventory and records inventory movements for every line. No invoice, payment, supplier sending, email, or WhatsApp workflow is connected.`)) return;
+    setReceivingId(request.id);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await apiRequest(`/api/restaurant-admin/purchase-requests/${request.id}/receive`, {
+        method: 'POST',
+        body: JSON.stringify({ restaurantSlug }),
+      });
+      setSuccessMessage(`Stock received for ${request.reference}. Inventory increased and inventory movements were recorded.`);
+      if (editingId === request.id) resetForm();
+      await load(false);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setReceivingId('');
+    }
+  }
+
   return (
     <div className="space-y-5">
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
@@ -273,10 +316,10 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
         </div>
       ) : null}
       <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-        Manual purchase request foundation only. No send-to-vendor action, invoice automation, stock update, inventory movement, payment, email, or WhatsApp workflow is connected.
+        Receiving stock increases inventory and records inventory movements from full request lines. No invoice, payment, supplier sending, email, or WhatsApp workflow is connected. No send-to-vendor action is added.
       </div>
 
-      <section className="grid gap-3 md:grid-cols-3">
+      <section className="grid gap-3 md:grid-cols-4">
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Requests</p>
           <p className="mt-1 text-2xl font-semibold">{summary.total}</p>
@@ -284,6 +327,10 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Open</p>
           <p className="mt-1 text-2xl font-semibold">{summary.open}</p>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Received</p>
+          <p className="mt-1 text-2xl font-semibold">{summary.received}</p>
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Low-stock review</p>
@@ -306,7 +353,7 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
                 </select>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <select className={inputClass} disabled={saving} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
-                    {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                    {transitionStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                   </select>
                   <input className={inputClass} type="date" disabled={saving} value={form.expectedDate} onChange={(event) => updateForm('expectedDate', event.target.value)} />
                 </div>
@@ -411,12 +458,30 @@ export default function TenantPurchaseRequestsClient({ restaurantSlug, staffRole
                   </div>
                   {writable ? (
                     <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => startEdit(request)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
-                        Edit
-                      </button>
-                      <select className={inputClass} value={request.status} onChange={(event) => updateStatus(request, event.target.value)}>
-                        {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
+                      {canReceiveRequest(request) ? (
+                        <button
+                          type="button"
+                          onClick={() => receiveRequest(request)}
+                          disabled={receivingId === request.id}
+                          className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {receivingId === request.id ? 'Receiving...' : 'Receive stock'}
+                        </button>
+                      ) : request.status === PURCHASE_REQUEST_STATUSES.RECEIVED ? (
+                        <span className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+                          Stock received
+                        </span>
+                      ) : null}
+                      {canEditRequest(request) ? (
+                        <>
+                          <button type="button" onClick={() => startEdit(request)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
+                            Edit
+                          </button>
+                          <select className={inputClass} value={request.status} disabled={receivingId === request.id} onChange={(event) => updateStatus(request, event.target.value)}>
+                            {transitionStatusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                          </select>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
