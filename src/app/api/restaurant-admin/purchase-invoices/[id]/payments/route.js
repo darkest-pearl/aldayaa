@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { failure, handleApiError, success } from '../../../../../../lib/api-response';
 import {
@@ -60,6 +61,10 @@ function roundMoney(value) {
   return Math.round(Number(value || 0) * 100) / 100;
 }
 
+function isTransactionConflictError(error) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error?.code === 'P2034';
+}
+
 function assertInvoiceCanAcceptPayment(invoice) {
   if (invoice.status === PURCHASE_INVOICE_STATUSES.DRAFT) {
     throw new TenantPurchaseInvoicePaymentError('Draft purchase invoices cannot record payments', 400);
@@ -99,72 +104,81 @@ export async function POST(request, { params }) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
-    const result = await prisma.$transaction(async (tx) => {
-      const invoice = await tx.purchaseInvoice.findFirst({
-        where: { id: params.id, restaurantId: staff.restaurantId },
-        select: {
-          id: true,
-          status: true,
-          currency: true,
-          totalAmount: true,
-        },
-      });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const invoice = await tx.purchaseInvoice.findFirst({
+          where: { id: params.id, restaurantId: staff.restaurantId },
+          select: {
+            id: true,
+            status: true,
+            currency: true,
+            totalAmount: true,
+          },
+        });
 
-      if (!invoice) throw new TenantPurchaseInvoicePaymentError('Purchase invoice not found', 404);
-      assertInvoiceCanAcceptPayment(invoice);
+        if (!invoice) throw new TenantPurchaseInvoicePaymentError('Purchase invoice not found', 404);
+        assertInvoiceCanAcceptPayment(invoice);
 
-      const currency = cleanCurrency(parsed.data.currency, invoice.currency);
-      if (currency !== invoice.currency) {
-        throw new TenantPurchaseInvoicePaymentError('Payment currency must match invoice currency', 400);
-      }
+        const currency = cleanCurrency(parsed.data.currency, invoice.currency);
+        if (currency !== invoice.currency) {
+          throw new TenantPurchaseInvoicePaymentError('Payment currency must match invoice currency', 400);
+        }
 
-      const existingPayments = await tx.purchaseInvoicePayment.aggregate({
-        _sum: { amount: true },
-        where: {
-          purchaseInvoiceId: invoice.id,
-          restaurantId: staff.restaurantId,
-          status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
-        },
-      });
-      const paidAmount = roundMoney(existingPayments._sum.amount || 0);
-      const paymentAmount = roundMoney(parsed.data.amount);
-      const balanceDue = roundMoney(invoice.totalAmount - paidAmount);
+        const existingPayments = await tx.purchaseInvoicePayment.aggregate({
+          _sum: { amount: true },
+          where: {
+            purchaseInvoiceId: invoice.id,
+            restaurantId: staff.restaurantId,
+            status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
+          },
+        });
+        const paidAmount = roundMoney(existingPayments._sum.amount || 0);
+        const paymentAmount = roundMoney(parsed.data.amount);
+        const balanceDue = roundMoney(invoice.totalAmount - paidAmount);
 
-      if (paymentAmount > balanceDue) {
-        throw new TenantPurchaseInvoicePaymentError('Payment amount exceeds invoice balance', 400);
-      }
+        if (paymentAmount > balanceDue) {
+          throw new TenantPurchaseInvoicePaymentError('Payment amount exceeds invoice balance', 400);
+        }
 
-      const payment = await tx.purchaseInvoicePayment.create({
-        data: {
-          restaurantId: staff.restaurantId,
-          purchaseInvoiceId: invoice.id,
-          amount: paymentAmount,
-          currency,
-          method: parsed.data.method.trim(),
-          reference: normalizeOptionalText(parsed.data.reference),
-          paidAt: cleanPaidAt(parsed.data.paidAt),
-          notes: normalizeOptionalText(parsed.data.notes),
-          status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
-          createdByAdminId: staff.id,
-          createdByAdminEmail: staff.email,
-        },
-      });
+        const payment = await tx.purchaseInvoicePayment.create({
+          data: {
+            restaurantId: staff.restaurantId,
+            purchaseInvoiceId: invoice.id,
+            amount: paymentAmount,
+            currency,
+            method: parsed.data.method.trim(),
+            reference: normalizeOptionalText(parsed.data.reference),
+            paidAt: cleanPaidAt(parsed.data.paidAt),
+            notes: normalizeOptionalText(parsed.data.notes),
+            status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
+            createdByAdminId: staff.id,
+            createdByAdminEmail: staff.email,
+          },
+        });
 
-      const purchaseInvoice = await tx.purchaseInvoice.findFirst({
-        where: { id: params.id, restaurantId: staff.restaurantId },
-        include: purchaseInvoiceInclude,
-      });
+        const purchaseInvoice = await tx.purchaseInvoice.findFirst({
+          where: { id: params.id, restaurantId: staff.restaurantId },
+          include: purchaseInvoiceInclude,
+        });
 
-      if (!purchaseInvoice) throw new TenantPurchaseInvoicePaymentError('Purchase invoice not found', 404);
+        if (!purchaseInvoice) throw new TenantPurchaseInvoicePaymentError('Purchase invoice not found', 404);
 
-      return { payment, purchaseInvoice };
-    });
+        return { payment, purchaseInvoice };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     return success({
       payment: normalizePurchaseInvoicePayment(result.payment),
       purchaseInvoice: normalizePurchaseInvoice(result.purchaseInvoice),
     });
   } catch (error) {
+    if (isTransactionConflictError(error)) {
+      return failure('Payment balance changed; refresh and try again', 409);
+    }
+
     return handleApiError(error);
   }
 }

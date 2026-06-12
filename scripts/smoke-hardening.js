@@ -3781,6 +3781,7 @@ function checkTenantPurchaseInvoicePaymentRecordingFoundation() {
   assertNotIncludes(invoiceApiSource, 'purchaseInvoicePayment.updateMany', 'Tenant purchase invoice create/update APIs must not void payment records');
 
   assertIncludes(paymentRoute, 'const createPurchaseInvoicePaymentSchema = z.object', 'Tenant purchase invoice payment API validates payload');
+  assertIncludes(paymentRoute, "import { Prisma } from '@prisma/client';", 'Tenant purchase invoice payment API imports Prisma for transaction isolation');
   assertIncludes(paymentRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant purchase invoice payment GET uses staff auth');
   assertIncludes(paymentRoute, 'requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true })', 'Tenant purchase invoice payment POST requires OWNER/MANAGER');
   assertIncludes(paymentRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant purchase invoice payment API scopes invoice by restaurantId');
@@ -3791,7 +3792,11 @@ function checkTenantPurchaseInvoicePaymentRecordingFoundation() {
   assertIncludes(paymentRoute, 'Payment amount exceeds invoice balance', 'Tenant purchase invoice payment rejects overpayment');
   assertIncludes(paymentRoute, 'tx.purchaseInvoicePayment.aggregate', 'Tenant purchase invoice payment sums existing recorded payments');
   assertIncludes(paymentRoute, 'status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED', 'Tenant purchase invoice payment aggregate scopes recorded payments');
-  assertIncludes(paymentRoute, 'prisma.$transaction(async (tx) =>', 'Tenant purchase invoice payment create uses a transaction');
+  assertIncludes(paymentRoute, 'const result = await prisma.$transaction(', 'Tenant purchase invoice payment create uses a transaction');
+  assertIncludes(paymentRoute, 'async (tx) =>', 'Tenant purchase invoice payment create keeps transaction callback');
+  assertIncludes(paymentRoute, 'Prisma.TransactionIsolationLevel.Serializable', 'Tenant purchase invoice payment create uses serializable transaction isolation');
+  assertIncludes(paymentRoute, "error?.code === 'P2034'", 'Tenant purchase invoice payment create handles transaction conflicts safely');
+  assertIncludes(paymentRoute, 'Payment balance changed; refresh and try again', 'Tenant purchase invoice payment create returns safe transaction conflict message');
   assertIncludes(paymentRoute, 'tx.purchaseInvoicePayment.create', 'Tenant purchase invoice payment API creates payment records');
   assertIncludes(paymentRoute, 'restaurantId: staff.restaurantId', 'Tenant purchase invoice payment create stamps restaurantId');
   assertIncludes(paymentRoute, 'purchaseInvoiceId: invoice.id', 'Tenant purchase invoice payment create stamps invoice id');
