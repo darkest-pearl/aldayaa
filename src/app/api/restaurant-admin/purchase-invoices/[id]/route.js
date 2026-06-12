@@ -34,6 +34,9 @@ const purchaseInvoiceInclude = {
     orderBy: { createdAt: 'asc' },
     include: { inventoryItem: true },
   },
+  payments: {
+    orderBy: { paidAt: 'desc' },
+  },
 };
 
 const DUPLICATE_INVOICE_NUMBER_MESSAGE = 'Purchase invoice number is already used for this restaurant';

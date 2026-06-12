@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation';
 import { INVENTORY_STOCK_STATUSES, getInventoryStockStatus } from '../../../../lib/inventory';
 import { ORDER_CONTEXTS, ORDER_STATUSES } from '../../../../lib/order-status';
 import { prisma } from '../../../../lib/prisma';
-import { PURCHASE_INVOICE_STATUSES } from '../../../../lib/purchase-invoices';
+import {
+  PURCHASE_INVOICE_PAYMENT_STATUSES,
+  PURCHASE_INVOICE_STATUSES,
+  calculatePurchaseInvoicePaymentSummary,
+} from '../../../../lib/purchase-invoices';
 import { PURCHASE_REQUEST_STATUSES } from '../../../../lib/purchase-requests';
 import { requireRestaurantStaffAccess } from '../../../../lib/restaurant-staff-access';
 import { getMenuItemIngredientCount } from '../../../../lib/recipes';
@@ -79,7 +83,20 @@ export default async function TenantRestaurantAdminPage({ params }) {
     }),
     prisma.purchaseInvoice.findMany({
       where: { restaurantId: staff.restaurantId },
-      select: { status: true },
+      select: {
+        status: true,
+        totalAmount: true,
+        payments: {
+          where: {
+            restaurantId: staff.restaurantId,
+            status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
+          },
+          select: {
+            amount: true,
+            status: true,
+          },
+        },
+      },
     }),
   ]);
 
@@ -133,13 +150,23 @@ export default async function TenantRestaurantAdminPage({ params }) {
     recordedInvoices: purchaseInvoices.filter((invoice) => invoice.status === PURCHASE_INVOICE_STATUSES.RECORDED).length,
     voidInvoices: purchaseInvoices.filter((invoice) => invoice.status === PURCHASE_INVOICE_STATUSES.VOID).length,
   };
+  const purchaseInvoicePaymentSummaries = purchaseInvoices.map((invoice) => calculatePurchaseInvoicePaymentSummary(invoice));
+  const paymentCounters = {
+    unpaidInvoices: purchaseInvoicePaymentSummaries.filter((summary) => summary.paymentStatus === 'UNPAID').length,
+    partiallyPaidInvoices: purchaseInvoicePaymentSummaries.filter((summary) => summary.paymentStatus === 'PARTIALLY_PAID').length,
+    paidInvoices: purchaseInvoicePaymentSummaries.filter((summary) => summary.paymentStatus === 'PAID').length,
+    totalRecordedPaymentAmount: purchaseInvoices.reduce(
+      (sum, invoice) => sum + invoice.payments.reduce((paymentSum, payment) => paymentSum + Number(payment.amount || 0), 0),
+      0,
+    ),
+  };
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-950">
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, and purchase invoice recording are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, and manual purchase invoice payment records are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -365,7 +392,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
           <h2 className="mt-2 text-xl font-semibold">Purchase invoices</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            Record supplier invoice details and manual line totals for this tenant. Invoice recording does not change stock, create movements, or process payments.
+            Record supplier invoice details, manual line totals, and manual payment records for this tenant. Invoice payment records do not process real payments.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <div className="rounded-md bg-neutral-50 px-3 py-2">
@@ -383,6 +410,22 @@ export default async function TenantRestaurantAdminPage({ params }) {
             <div className="rounded-md bg-neutral-50 px-3 py-2">
               <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Void</span>
               <span className="text-lg font-semibold">{purchaseInvoiceCounters.voidInvoices}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Unpaid</span>
+              <span className="text-lg font-semibold">{paymentCounters.unpaidInvoices}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Partial</span>
+              <span className="text-lg font-semibold">{paymentCounters.partiallyPaidInvoices}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Paid</span>
+              <span className="text-lg font-semibold">{paymentCounters.paidInvoices}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Recorded payments</span>
+              <span className="text-lg font-semibold">AED {paymentCounters.totalRecordedPaymentAmount.toFixed(2)}</span>
             </div>
           </div>
           <a

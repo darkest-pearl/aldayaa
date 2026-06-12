@@ -36,6 +36,7 @@ model Restaurant {
   purchaseRequestLines PurchaseRequestLine[]
   purchaseInvoices   PurchaseInvoice[]
   purchaseInvoiceLines PurchaseInvoiceLine[]
+  purchaseInvoicePayments PurchaseInvoicePayment[]
   restaurantUsers   RestaurantUser[]
 }
 
@@ -433,6 +434,7 @@ model PurchaseInvoice {
   purchaseRequestId   String?
   purchaseRequest     PurchaseRequest?      @relation(fields: [purchaseRequestId], references: [id], onDelete: SetNull)
   lines               PurchaseInvoiceLine[]
+  payments            PurchaseInvoicePayment[]
 
   @@unique([restaurantId, invoiceNumber])
   @@index([restaurantId])
@@ -462,6 +464,31 @@ model PurchaseInvoiceLine {
   @@index([restaurantId])
   @@index([purchaseInvoiceId])
   @@index([inventoryItemId])
+}
+
+model PurchaseInvoicePayment {
+  id                  String          @id @default(cuid())
+  amount              Float
+  currency            String          @default("AED")
+  method              String
+  reference           String?
+  paidAt              DateTime
+  notes               String?
+  status              String          @default("RECORDED")
+  createdByAdminId    String?
+  createdByAdminEmail String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  restaurantId        String
+  restaurant          Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  purchaseInvoiceId   String
+  purchaseInvoice     PurchaseInvoice @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Restrict)
+
+  @@index([restaurantId])
+  @@index([purchaseInvoiceId])
+  @@index([paidAt])
+  @@index([status])
+  @@index([method])
 }
 
 model Announcement {
