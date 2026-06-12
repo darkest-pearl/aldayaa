@@ -111,6 +111,10 @@ function getLineTotal(line) {
   return Math.round(toNumber(line.quantity) * toNumber(line.unitCost) * 100) / 100;
 }
 
+function hasRecordedPayments(invoice) {
+  return toNumber(invoice?.paymentSummary?.paidAmount) > 0;
+}
+
 function toCreatePayload(restaurantSlug, form) {
   return {
     restaurantSlug,
@@ -243,6 +247,11 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
       return matchesStatus && matchesSearch;
     });
   }, [purchaseInvoices, search, statusFilter]);
+  const editingInvoice = useMemo(
+    () => purchaseInvoices.find((invoice) => invoice.id === editingId) || null,
+    [editingId, purchaseInvoices],
+  );
+  const editingInvoiceHasRecordedPayments = hasRecordedPayments(editingInvoice);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -434,7 +443,7 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
   }
 
   async function updateStatus(invoice, status) {
-    if (!writable || invoice.status === status) return;
+    if (!writable || invoice.status === status || hasRecordedPayments(invoice)) return;
     setError('');
     setSuccessMessage('');
     try {
@@ -502,6 +511,11 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
             <p className="mt-1 text-sm text-neutral-600">
               {editingId ? 'Editing updates invoice details and status. Line changes can be handled by recording a corrected invoice if needed.' : 'Record invoice lines from supplier paperwork without changing stock or payment state.'}
             </p>
+            {editingInvoiceHasRecordedPayments ? (
+              <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Void payment records before changing invoice status, currency, or total.
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-3">
               <input className={inputClass} required disabled={saving} placeholder="Invoice number" value={form.invoiceNumber} onChange={(event) => updateForm('invoiceNumber', event.target.value)} />
               <div className="grid gap-3 sm:grid-cols-2">
@@ -515,15 +529,15 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                 </select>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <select className={inputClass} disabled={saving} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
+                <select className={inputClass} disabled={saving || editingInvoiceHasRecordedPayments} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
                   {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                 </select>
                 <input className={inputClass} required type="date" disabled={saving} value={form.invoiceDate} onChange={(event) => updateForm('invoiceDate', event.target.value)} />
                 <input className={inputClass} type="date" disabled={saving} value={form.dueDate} onChange={(event) => updateForm('dueDate', event.target.value)} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input className={inputClass} disabled={saving} placeholder="Currency" value={form.currency} onChange={(event) => updateForm('currency', event.target.value.toUpperCase())} />
-                <input className={inputClass} type="number" min="0" step="0.01" disabled={saving} placeholder="Tax amount" value={form.taxAmount} onChange={(event) => updateForm('taxAmount', event.target.value)} />
+                <input className={inputClass} disabled={saving || editingInvoiceHasRecordedPayments} placeholder="Currency" value={form.currency} onChange={(event) => updateForm('currency', event.target.value.toUpperCase())} />
+                <input className={inputClass} type="number" min="0" step="0.01" disabled={saving || editingInvoiceHasRecordedPayments} placeholder="Tax amount" value={form.taxAmount} onChange={(event) => updateForm('taxAmount', event.target.value)} />
               </div>
               <textarea className={`${inputClass} min-h-[76px]`} disabled={saving} placeholder="Internal invoice notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} />
 
@@ -568,7 +582,7 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
               <div className="grid gap-2 rounded-md bg-neutral-50 px-3 py-2 text-sm sm:grid-cols-3">
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Subtotal</span>
-                  <span className="font-semibold">{formatMoney(editingId ? purchaseInvoices.find((invoice) => invoice.id === editingId)?.subtotal : invoiceTotals.subtotal, form.currency)}</span>
+                  <span className="font-semibold">{formatMoney(editingId ? editingInvoice?.subtotal : invoiceTotals.subtotal, form.currency)}</span>
                 </div>
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Tax</span>
@@ -576,7 +590,7 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                 </div>
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Total</span>
-                  <span className="font-semibold">{formatMoney(editingId ? toNumber(purchaseInvoices.find((invoice) => invoice.id === editingId)?.subtotal) + invoiceTotals.taxAmount : invoiceTotals.totalAmount, form.currency)}</span>
+                  <span className="font-semibold">{formatMoney(editingId ? toNumber(editingInvoice?.subtotal) + invoiceTotals.taxAmount : invoiceTotals.totalAmount, form.currency)}</span>
                 </div>
               </div>
 
@@ -632,9 +646,15 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                       <button type="button" onClick={() => startEdit(invoice)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
                         Edit
                       </button>
-                      <select className={inputClass} value={invoice.status} onChange={(event) => updateStatus(invoice, event.target.value)}>
-                        {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
+                      {hasRecordedPayments(invoice) ? (
+                        <p className="max-w-[220px] rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                          Void payment records before changing invoice status, currency, or total.
+                        </p>
+                      ) : (
+                        <select className={inputClass} value={invoice.status} onChange={(event) => updateStatus(invoice, event.target.value)}>
+                          {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                        </select>
+                      )}
                     </div>
                   ) : null}
                 </div>

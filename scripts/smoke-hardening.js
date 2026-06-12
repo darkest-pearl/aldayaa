@@ -3639,12 +3639,12 @@ function checkTenantPurchaseInvoiceFoundation() {
   assertIncludes(invoiceRoute, 'createdByAdminEmail: staff.email', 'Tenant purchase invoice records staff email');
   assertIncludes(invoiceRoute, 'calculatePurchaseInvoiceTotals', 'Tenant purchase invoice computes totals server-side');
   assertIncludes(invoiceItemRoute, 'where: { id: params.id, restaurantId: staff.restaurantId }', 'Tenant purchase invoice item route scopes by restaurantId');
-  assertIncludes(invoiceItemRoute, 'const duplicateInvoice = await prisma.purchaseInvoice.findFirst', 'Tenant purchase invoice update checks duplicate invoice numbers before update');
+  assertIncludes(invoiceItemRoute, 'const duplicateInvoice = await tx.purchaseInvoice.findFirst', 'Tenant purchase invoice update checks duplicate invoice numbers inside transaction');
   assert(/where:\s*\{\s*restaurantId: staff\.restaurantId,\s*invoiceNumber: parsed\.data\.invoiceNumber\.trim\(\),\s*NOT: \{ id: params\.id \},?\s*\}/.test(invoiceItemRoute), 'Tenant purchase invoice update duplicate check scopes by restaurantId, invoiceNumber, and NOT id');
   assertIncludes(invoiceItemRoute, 'Purchase invoice number is already used for this restaurant', 'Tenant purchase invoice update duplicate check returns safe conflict message');
   assertIncludes(invoiceItemRoute, 'where: { id: supplierId, restaurantId, isActive: true }', 'Tenant purchase invoice update validates supplier ownership');
   assertIncludes(invoiceItemRoute, 'where: { id: purchaseRequestId, restaurantId }', 'Tenant purchase invoice update validates purchase request ownership');
-  assertIncludes(invoiceItemRoute, 'prisma.purchaseInvoice.updateMany', 'Tenant purchase invoice updates use scoped updateMany');
+  assertIncludes(invoiceItemRoute, 'tx.purchaseInvoice.updateMany', 'Tenant purchase invoice updates use scoped updateMany');
   assertIncludes(invoiceItemRoute, 'updated.count !== 1', 'Tenant purchase invoice updates check scoped update count');
   assertIncludes(invoiceApiSource, 'error?.code === \'P2002\'', 'Tenant purchase invoice APIs handle Prisma unique conflicts safely');
   assertIncludes(invoiceApiSource, 'return failure(DUPLICATE_INVOICE_NUMBER_MESSAGE, 409)', 'Tenant purchase invoice APIs return safe 409 for unique conflicts');
@@ -3776,6 +3776,19 @@ function checkTenantPurchaseInvoicePaymentRecordingFoundation() {
 
   assertIncludes(invoiceRoute, 'payments: {', 'Tenant purchase invoice list includes payments');
   assertIncludes(invoiceItemRoute, 'payments: {', 'Tenant purchase invoice detail includes payments');
+  assertIncludes(invoiceItemRoute, "import { Prisma } from '@prisma/client';", 'Tenant purchase invoice PUT imports Prisma for transaction isolation');
+  assertIncludes(invoiceItemRoute, 'PURCHASE_INVOICE_PAYMENT_STATUSES', 'Tenant purchase invoice PUT imports payment status constants');
+  assertIncludes(invoiceItemRoute, 'const purchaseInvoice = await prisma.$transaction(', 'Tenant purchase invoice PUT uses a transaction');
+  assertIncludes(invoiceItemRoute, 'Prisma.TransactionIsolationLevel.Serializable', 'Tenant purchase invoice PUT uses serializable transaction isolation');
+  assertIncludes(invoiceItemRoute, 'tx.purchaseInvoicePayment.aggregate', 'Tenant purchase invoice PUT aggregates recorded payments');
+  assertIncludes(invoiceItemRoute, 'purchaseInvoiceId: params.id', 'Tenant purchase invoice PUT aggregates payments by invoice id');
+  assertIncludes(invoiceItemRoute, 'restaurantId: staff.restaurantId', 'Tenant purchase invoice PUT keeps payment checks tenant-scoped');
+  assertIncludes(invoiceItemRoute, 'status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED', 'Tenant purchase invoice PUT only counts recorded payments');
+  assertIncludes(invoiceItemRoute, 'Purchase invoice currency cannot change after payments are recorded', 'Tenant purchase invoice PUT rejects currency changes after payment');
+  assertIncludes(invoiceItemRoute, 'Purchase invoice status cannot change after payments are recorded', 'Tenant purchase invoice PUT rejects status changes after payment');
+  assertIncludes(invoiceItemRoute, 'Purchase invoice total cannot be less than recorded payments', 'Tenant purchase invoice PUT rejects totals below recorded payments');
+  assertIncludes(invoiceItemRoute, "error?.code === 'P2034'", 'Tenant purchase invoice PUT handles transaction conflicts safely');
+  assertIncludes(invoiceItemRoute, 'Purchase invoice payment state changed; refresh and try again', 'Tenant purchase invoice PUT returns safe payment-state conflict message');
   assertNotIncludes(invoiceApiSource, 'purchaseInvoicePayment.create', 'Tenant purchase invoice create/update APIs must not create payment records');
   assertNotIncludes(invoiceApiSource, 'purchaseInvoicePayment.update', 'Tenant purchase invoice create/update APIs must not update payment records');
   assertNotIncludes(invoiceApiSource, 'purchaseInvoicePayment.updateMany', 'Tenant purchase invoice create/update APIs must not void payment records');
@@ -3831,6 +3844,10 @@ function checkTenantPurchaseInvoicePaymentRecordingFoundation() {
   assertNotIncludes(paymentApiSource, 'sendToVendor', 'Tenant purchase invoice payment APIs must not add supplier sending');
 
   assertIncludes(invoicesClient, 'paymentSummary', 'Tenant purchase invoice UI shows payment summary');
+  assertIncludes(invoicesClient, 'function hasRecordedPayments(invoice)', 'Tenant purchase invoice UI detects recorded payments');
+  assertIncludes(invoicesClient, 'Void payment records before changing invoice status, currency, or total.', 'Tenant purchase invoice UI explains locked payment-sensitive edits');
+  assertIncludes(invoicesClient, 'saving || editingInvoiceHasRecordedPayments', 'Tenant purchase invoice UI disables payment-sensitive edit fields after payments');
+  assertIncludes(invoicesClient, 'hasRecordedPayments(invoice)', 'Tenant purchase invoice UI blocks normal status changes after payments');
   assertIncludes(invoicesClient, 'Record manual payment', 'Tenant purchase invoice UI exposes manual payment action');
   assertIncludes(invoicesClient, 'No real payment processing', 'Tenant purchase invoice UI explains no real payment processing');
   assertIncludes(invoicesClient, 'No refunds', 'Tenant purchase invoice UI explains no refunds');
