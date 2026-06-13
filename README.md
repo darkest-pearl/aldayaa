@@ -162,7 +162,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Platform ADMIN can create the first OWNER RestaurantUser for initialized non-demo tenants.
 - Tenant staff login uses `/r/[restaurantSlug]/admin/login` and `/api/restaurant-admin/login`.
 - Staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`, and cannot access `/platform-admin`.
-- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, billing, domains, email, and WhatsApp automation remain future work.
+- Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.
 - Tenant menu/gallery admin added.
 - Restaurant staff can manage tenant-scoped menu categories, menu items, gallery categories, and photos under `/r/[restaurantSlug]/admin`.
 - OWNER and MANAGER can write; SUPPORT is read-only.
@@ -245,6 +245,12 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - OWNER and MANAGER can record and void manual payment records for recorded invoices; SUPPORT remains read-only.
 - Void payment records are excluded from paid amount and balance calculations.
 - Payment recording does not process real payments, create refunds, mutate invoice totals, mutate inventory stock, create inventory movements, send supplier/email/WhatsApp messages, or trigger billing/domain/CRM/payroll/accounting/tax/analytics automation.
+- Tenant operations reporting foundation added.
+- Restaurant staff can view tenant-scoped read-only operations reports under `/r/[restaurantSlug]/admin/reports`.
+- Reports include date-period summaries for orders, reservations, kitchen, inventory, recipes, suppliers, purchase requests, purchase invoices, and manual invoice payments where the current schema safely supports them.
+- SUPPORT can view reports; no write access is required.
+- Reporting does not mutate tenant orders, booking records, inventory items, purchase requests, invoices, payments, or supplier records.
+- Advanced analytics, forecasting, BI exports, scheduled reports, real payment processing, refunds, accounting/tax automation, billing, domains, CRM, payroll, email, WhatsApp, and vendor sending remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
