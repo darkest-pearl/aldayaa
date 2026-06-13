@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  PURCHASE_INVOICE_PAYMENT_STATUSES,
   PURCHASE_INVOICE_STATUSES,
   getPurchaseInvoiceStatusOptions,
 } from '../../../../../lib/purchase-invoices';
@@ -34,6 +35,19 @@ function createEmptyInvoiceForm() {
         notes: '',
       },
     ],
+  };
+}
+
+function createEmptyPaymentForm(invoice = null) {
+  const balanceDue = invoice?.paymentSummary?.balanceDue ?? invoice?.totalAmount ?? 0;
+  return {
+    invoiceId: invoice?.id || '',
+    amount: balanceDue > 0 ? String(balanceDue) : '',
+    currency: invoice?.currency || 'AED',
+    method: 'Cash',
+    reference: '',
+    paidAt: todayInputValue(),
+    notes: '',
   };
 }
 
@@ -86,8 +100,19 @@ function getStatusBadgeClass(status) {
   return 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700';
 }
 
+function getPaymentStatusBadgeClass(status) {
+  if (status === 'PAID') return 'rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800';
+  if (status === 'PARTIALLY_PAID') return 'rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800';
+  if (status === 'VOID') return 'rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700';
+  return 'rounded-full bg-neutral-100 px-2 py-1 text-xs font-semibold text-neutral-700';
+}
+
 function getLineTotal(line) {
   return Math.round(toNumber(line.quantity) * toNumber(line.unitCost) * 100) / 100;
+}
+
+function hasRecordedPayments(invoice) {
+  return toNumber(invoice?.paymentSummary?.paidAmount) > 0;
 }
 
 function toCreatePayload(restaurantSlug, form) {
@@ -128,6 +153,18 @@ function toUpdatePayload(restaurantSlug, form) {
   };
 }
 
+function toPaymentPayload(restaurantSlug, form) {
+  return {
+    restaurantSlug,
+    amount: toNumber(form.amount),
+    currency: form.currency.trim() || 'AED',
+    method: form.method.trim(),
+    reference: form.reference.trim() || null,
+    paidAt: form.paidAt,
+    notes: form.notes.trim() || null,
+  };
+}
+
 export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole }) {
   const writable = canWrite(staffRole);
   const [purchaseInvoices, setPurchaseInvoices] = useState([]);
@@ -135,9 +172,12 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
   const [purchaseRequests, setPurchaseRequests] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [form, setForm] = useState(createEmptyInvoiceForm);
+  const [paymentForm, setPaymentForm] = useState(createEmptyPaymentForm);
   const [editingId, setEditingId] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [voidingPaymentId, setVoidingPaymentId] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [search, setSearch] = useState('');
@@ -185,6 +225,9 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
     draft: purchaseInvoices.filter((invoice) => invoice.status === PURCHASE_INVOICE_STATUSES.DRAFT).length,
     recorded: purchaseInvoices.filter((invoice) => invoice.status === PURCHASE_INVOICE_STATUSES.RECORDED).length,
     void: purchaseInvoices.filter((invoice) => invoice.status === PURCHASE_INVOICE_STATUSES.VOID).length,
+    unpaid: purchaseInvoices.filter((invoice) => invoice.paymentSummary?.paymentStatus === 'UNPAID').length,
+    partiallyPaid: purchaseInvoices.filter((invoice) => invoice.paymentSummary?.paymentStatus === 'PARTIALLY_PAID').length,
+    paid: purchaseInvoices.filter((invoice) => invoice.paymentSummary?.paymentStatus === 'PAID').length,
   }), [purchaseInvoices]);
   const filteredInvoices = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -204,14 +247,27 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
       return matchesStatus && matchesSearch;
     });
   }, [purchaseInvoices, search, statusFilter]);
+  const editingInvoice = useMemo(
+    () => purchaseInvoices.find((invoice) => invoice.id === editingId) || null,
+    [editingId, purchaseInvoices],
+  );
+  const editingInvoiceHasRecordedPayments = hasRecordedPayments(editingInvoice);
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function updatePaymentForm(field, value) {
+    setPaymentForm((current) => ({ ...current, [field]: value }));
+  }
+
   function resetForm() {
     setEditingId('');
     setForm(createEmptyInvoiceForm());
+  }
+
+  function resetPaymentForm() {
+    setPaymentForm(createEmptyPaymentForm());
   }
 
   function updateLine(index, field, value) {
@@ -292,6 +348,29 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
     setSuccessMessage('');
   }
 
+  function startPayment(invoice) {
+    if (!writable || invoice.status !== PURCHASE_INVOICE_STATUSES.RECORDED) return;
+    setPaymentForm(createEmptyPaymentForm(invoice));
+    setError('');
+    setSuccessMessage('');
+  }
+
+  function canRecordPayment(invoice) {
+    return (
+      writable &&
+      invoice.status === PURCHASE_INVOICE_STATUSES.RECORDED &&
+      toNumber(invoice.paymentSummary?.balanceDue) > 0
+    );
+  }
+
+  function canVoidPayment(invoice, payment) {
+    return (
+      writable &&
+      invoice.status === PURCHASE_INVOICE_STATUSES.RECORDED &&
+      payment.status === PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED
+    );
+  }
+
   async function submitInvoice(event) {
     event.preventDefault();
     if (!writable) return;
@@ -321,8 +400,50 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
     }
   }
 
+  async function submitPayment(event, invoice) {
+    event.preventDefault();
+    if (!canRecordPayment(invoice)) return;
+    if (!window.confirm('Record this manual payment? No real payment processing, No refunds, no supplier sending, no email/WhatsApp, and no accounting/bank integration is connected.')) return;
+    setPaymentSaving(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await apiRequest(`/api/restaurant-admin/purchase-invoices/${invoice.id}/payments`, {
+        method: 'POST',
+        body: JSON.stringify(toPaymentPayload(restaurantSlug, paymentForm)),
+      });
+      setSuccessMessage(`Manual payment recorded for ${invoice.invoiceNumber}.`);
+      resetPaymentForm();
+      await load(false);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setPaymentSaving(false);
+    }
+  }
+
+  async function voidPayment(invoice, payment) {
+    if (!canVoidPayment(invoice, payment)) return;
+    if (!window.confirm(`Void payment ${formatMoney(payment.amount, payment.currency)} for ${invoice.invoiceNumber}? No refunds or payment reversals are processed.`)) return;
+    setVoidingPaymentId(payment.id);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await apiRequest(`/api/restaurant-admin/purchase-invoices/${invoice.id}/payments/${payment.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ restaurantSlug, status: PURCHASE_INVOICE_PAYMENT_STATUSES.VOID }),
+      });
+      setSuccessMessage(`Manual payment voided for ${invoice.invoiceNumber}.`);
+      await load(false);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setVoidingPaymentId('');
+    }
+  }
+
   async function updateStatus(invoice, status) {
-    if (!writable || invoice.status === status) return;
+    if (!writable || invoice.status === status || hasRecordedPayments(invoice)) return;
     setError('');
     setSuccessMessage('');
     try {
@@ -348,11 +469,11 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
         </div>
       ) : null}
       <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950">
-        Invoice recording only. No payment processing, refund workflow, supplier/vendor sending, email, WhatsApp,
-        billing, accounting, tax, or analytics automation is connected. No inventory stock change and No inventory movement creation happens from invoices.
+        Invoice and manual payment recording only. No real payment processing, No refunds, no supplier sending, no email/WhatsApp,
+        no accounting/bank integration, billing, tax, or analytics automation is connected. No inventory stock change and No inventory movement creation happens from invoices.
       </div>
 
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
         <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Invoices</p>
           <p className="mt-1 text-2xl font-semibold">{summary.total}</p>
@@ -369,6 +490,18 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
           <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Void</p>
           <p className="mt-1 text-2xl font-semibold">{summary.void}</p>
         </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Unpaid</p>
+          <p className="mt-1 text-2xl font-semibold">{summary.unpaid}</p>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Partial</p>
+          <p className="mt-1 text-2xl font-semibold">{summary.partiallyPaid}</p>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-normal text-neutral-500">Paid</p>
+          <p className="mt-1 text-2xl font-semibold">{summary.paid}</p>
+        </div>
       </section>
 
       <section className={writable ? 'grid gap-4 xl:grid-cols-[0.95fr_1.05fr]' : 'grid gap-4'}>
@@ -378,6 +511,11 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
             <p className="mt-1 text-sm text-neutral-600">
               {editingId ? 'Editing updates invoice details and status. Line changes can be handled by recording a corrected invoice if needed.' : 'Record invoice lines from supplier paperwork without changing stock or payment state.'}
             </p>
+            {editingInvoiceHasRecordedPayments ? (
+              <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                Void payment records before changing invoice status, currency, or total.
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-3">
               <input className={inputClass} required disabled={saving} placeholder="Invoice number" value={form.invoiceNumber} onChange={(event) => updateForm('invoiceNumber', event.target.value)} />
               <div className="grid gap-3 sm:grid-cols-2">
@@ -391,15 +529,15 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                 </select>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <select className={inputClass} disabled={saving} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
+                <select className={inputClass} disabled={saving || editingInvoiceHasRecordedPayments} value={form.status} onChange={(event) => updateForm('status', event.target.value)}>
                   {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
                 </select>
                 <input className={inputClass} required type="date" disabled={saving} value={form.invoiceDate} onChange={(event) => updateForm('invoiceDate', event.target.value)} />
                 <input className={inputClass} type="date" disabled={saving} value={form.dueDate} onChange={(event) => updateForm('dueDate', event.target.value)} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <input className={inputClass} disabled={saving} placeholder="Currency" value={form.currency} onChange={(event) => updateForm('currency', event.target.value.toUpperCase())} />
-                <input className={inputClass} type="number" min="0" step="0.01" disabled={saving} placeholder="Tax amount" value={form.taxAmount} onChange={(event) => updateForm('taxAmount', event.target.value)} />
+                <input className={inputClass} disabled={saving || editingInvoiceHasRecordedPayments} placeholder="Currency" value={form.currency} onChange={(event) => updateForm('currency', event.target.value.toUpperCase())} />
+                <input className={inputClass} type="number" min="0" step="0.01" disabled={saving || editingInvoiceHasRecordedPayments} placeholder="Tax amount" value={form.taxAmount} onChange={(event) => updateForm('taxAmount', event.target.value)} />
               </div>
               <textarea className={`${inputClass} min-h-[76px]`} disabled={saving} placeholder="Internal invoice notes" value={form.notes} onChange={(event) => updateForm('notes', event.target.value)} />
 
@@ -444,7 +582,7 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
               <div className="grid gap-2 rounded-md bg-neutral-50 px-3 py-2 text-sm sm:grid-cols-3">
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Subtotal</span>
-                  <span className="font-semibold">{formatMoney(editingId ? purchaseInvoices.find((invoice) => invoice.id === editingId)?.subtotal : invoiceTotals.subtotal, form.currency)}</span>
+                  <span className="font-semibold">{formatMoney(editingId ? editingInvoice?.subtotal : invoiceTotals.subtotal, form.currency)}</span>
                 </div>
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Tax</span>
@@ -452,7 +590,7 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                 </div>
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Total</span>
-                  <span className="font-semibold">{formatMoney(editingId ? toNumber(purchaseInvoices.find((invoice) => invoice.id === editingId)?.subtotal) + invoiceTotals.taxAmount : invoiceTotals.totalAmount, form.currency)}</span>
+                  <span className="font-semibold">{formatMoney(editingId ? toNumber(editingInvoice?.subtotal) + invoiceTotals.taxAmount : invoiceTotals.totalAmount, form.currency)}</span>
                 </div>
               </div>
 
@@ -508,9 +646,15 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                       <button type="button" onClick={() => startEdit(invoice)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
                         Edit
                       </button>
-                      <select className={inputClass} value={invoice.status} onChange={(event) => updateStatus(invoice, event.target.value)}>
-                        {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
-                      </select>
+                      {hasRecordedPayments(invoice) ? (
+                        <p className="max-w-[220px] rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                          Void payment records before changing invoice status, currency, or total.
+                        </p>
+                      ) : (
+                        <select className={inputClass} value={invoice.status} onChange={(event) => updateStatus(invoice, event.target.value)}>
+                          {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
+                        </select>
+                      )}
                     </div>
                   ) : null}
                 </div>
@@ -526,6 +670,84 @@ export default function TenantPurchaseInvoicesClient({ restaurantSlug, staffRole
                   <span>Subtotal: <strong>{formatMoney(invoice.subtotal, invoice.currency)}</strong></span>
                   <span>Tax: <strong>{formatMoney(invoice.taxAmount, invoice.currency)}</strong></span>
                   <span>Total: <strong>{formatMoney(invoice.totalAmount, invoice.currency)}</strong></span>
+                </div>
+                <div className="mt-3 grid gap-3 rounded-md border border-neutral-100 bg-white px-3 py-3 text-sm">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">Payment summary</p>
+                        <span className={getPaymentStatusBadgeClass(invoice.paymentSummary?.paymentStatus)}>
+                          {invoice.paymentSummary?.paymentStatusLabel || 'Unpaid'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        Manual records only. No real payment processing, No refunds, no supplier sending, no email/WhatsApp, and no accounting/bank integration is connected.
+                      </p>
+                    </div>
+                    {canRecordPayment(invoice) ? (
+                      <button type="button" onClick={() => startPayment(invoice)} className="rounded-md border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700">
+                        Record manual payment
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-md bg-neutral-50 px-3 py-2">
+                      <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Paid</span>
+                      <span className="font-semibold">{formatMoney(invoice.paymentSummary?.paidAmount, invoice.currency)}</span>
+                    </div>
+                    <div className="rounded-md bg-neutral-50 px-3 py-2">
+                      <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Balance due</span>
+                      <span className="font-semibold">{formatMoney(invoice.paymentSummary?.balanceDue, invoice.currency)}</span>
+                    </div>
+                    <div className="rounded-md bg-neutral-50 px-3 py-2">
+                      <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Payments</span>
+                      <span className="font-semibold">{invoice.payments?.length || 0}</span>
+                    </div>
+                  </div>
+                  {paymentForm.invoiceId === invoice.id ? (
+                    <form onSubmit={(event) => submitPayment(event, invoice)} className="grid gap-3 rounded-md border border-neutral-200 bg-neutral-50 p-3">
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <input className={inputClass} required type="number" min="0.01" step="0.01" disabled={paymentSaving} placeholder="Amount" value={paymentForm.amount} onChange={(event) => updatePaymentForm('amount', event.target.value)} />
+                        <input className={inputClass} disabled={paymentSaving} placeholder="Currency" value={paymentForm.currency} onChange={(event) => updatePaymentForm('currency', event.target.value.toUpperCase())} />
+                        <input className={inputClass} required disabled={paymentSaving} placeholder="Method" value={paymentForm.method} onChange={(event) => updatePaymentForm('method', event.target.value)} />
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input className={inputClass} type="date" required disabled={paymentSaving} value={paymentForm.paidAt} onChange={(event) => updatePaymentForm('paidAt', event.target.value)} />
+                        <input className={inputClass} disabled={paymentSaving} placeholder="Reference" value={paymentForm.reference} onChange={(event) => updatePaymentForm('reference', event.target.value)} />
+                      </div>
+                      <textarea className={`${inputClass} min-h-[68px]`} disabled={paymentSaving} placeholder="Payment notes" value={paymentForm.notes} onChange={(event) => updatePaymentForm('notes', event.target.value)} />
+                      <div className="flex flex-wrap gap-2">
+                        <button type="submit" disabled={paymentSaving} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white">
+                          {paymentSaving ? 'Recording...' : 'Save manual payment'}
+                        </button>
+                        <button type="button" onClick={resetPaymentForm} disabled={paymentSaving} className="rounded-md border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700">
+                          Cancel payment
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
+                  <div className="grid gap-2">
+                    {invoice.payments?.length ? invoice.payments.map((payment) => (
+                      <div key={payment.id} className="flex flex-col gap-2 rounded-md bg-neutral-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-semibold">{formatMoney(payment.amount, payment.currency)} - {payment.method}</p>
+                          <p className="text-xs text-neutral-500">
+                            Paid: {formatDate(payment.paidAt)}{payment.reference ? ` - Ref: ${payment.reference}` : ''} - {payment.statusLabel}
+                          </p>
+                          {payment.notes ? <p className="mt-1 text-xs text-neutral-600">{payment.notes}</p> : null}
+                        </div>
+                        {canVoidPayment(invoice, payment) ? (
+                          <button type="button" onClick={() => voidPayment(invoice, payment)} disabled={voidingPaymentId === payment.id} className="rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+                            {voidingPaymentId === payment.id ? 'Voiding...' : 'Void payment'}
+                          </button>
+                        ) : null}
+                      </div>
+                    )) : (
+                      <p className="rounded-md border border-dashed border-neutral-200 px-3 py-3 text-center text-sm text-neutral-500">
+                        No manual payment records yet.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </article>
             )) : (
