@@ -33,6 +33,18 @@ function formatMoney(value, currency = 'AED') {
   return `${currency} ${formatNumber(value)}`;
 }
 
+const purchaseInvoiceCurrencyColumns = [
+  { key: 'invoiceCount', label: 'Invoices', render: (row) => formatNumber(row.invoiceCount) },
+  { key: 'subtotalAmount', label: 'Subtotal', render: (row) => formatMoney(row.subtotalAmount, row.currency) },
+  { key: 'taxAmount', label: 'Tax', render: (row) => formatMoney(row.taxAmount, row.currency) },
+  { key: 'totalAmount', label: 'Total', render: (row) => formatMoney(row.totalAmount, row.currency) },
+];
+
+const recordedPaymentCurrencyColumns = [
+  { key: 'paymentCount', label: 'Payments', render: (row) => formatNumber(row.paymentCount) },
+  { key: 'amount', label: 'Amount', render: (row) => formatMoney(row.amount, row.currency) },
+];
+
 function formatDateTime(value) {
   if (!value) return 'Not recorded';
   const date = new Date(value);
@@ -52,6 +64,42 @@ function MetricCard({ label, value, tone = 'neutral' }) {
       <p className="text-xs font-semibold uppercase tracking-normal opacity-70">{label}</p>
       <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
+  );
+}
+
+function CurrencyTotalsTable({ title, rows, columns }) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+      <h3 className="text-base font-semibold">{title}</h3>
+      <div className="mt-3 overflow-hidden rounded-md border border-neutral-100">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-neutral-50 text-xs uppercase tracking-normal text-neutral-500">
+            <tr>
+              <th className="px-3 py-2 font-semibold">Currency</th>
+              {columns.map((column) => (
+                <th key={`${title}-${column.key}`} className="px-3 py-2 text-right font-semibold">{column.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows?.length ? rows.map((row) => (
+              <tr key={`${title}-${row.currency}`} className="border-t border-neutral-100">
+                <td className="px-3 py-2 font-semibold">{row.currency}</td>
+                {columns.map((column) => (
+                  <td key={`${title}-${row.currency}-${column.key}`} className="px-3 py-2 text-right font-semibold">
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            )) : (
+              <tr>
+                <td className="px-3 py-4 text-neutral-500" colSpan={columns.length + 1}>No currency totals for this period.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -252,25 +300,25 @@ export default function TenantReportsClient({ restaurantSlug, staffRole }) {
 
           <section className="space-y-3">
             <SectionHeader title="Purchase invoices" description="Invoice status counts and supplier invoice totals for the selected invoice date range." />
-            <div className="grid gap-3 md:grid-cols-5">
+            <div className="grid gap-3 md:grid-cols-4">
               <MetricCard label="Invoices" value={formatNumber(purchaseInvoiceSummary.invoiceCount)} tone="emerald" />
-              <MetricCard label="Subtotal" value={formatMoney(purchaseInvoiceSummary.subtotalAmount)} />
-              <MetricCard label="Tax" value={formatMoney(purchaseInvoiceSummary.taxAmount)} />
-              <MetricCard label="Total" value={formatMoney(purchaseInvoiceSummary.totalAmount)} />
               <MetricCard label="Recorded" value={formatNumber(purchaseInvoiceSummary.recordedCount)} />
+              <MetricCard label="Draft" value={formatNumber(purchaseInvoiceSummary.draftCount)} />
+              <MetricCard label="Void" value={formatNumber(purchaseInvoiceSummary.voidCount)} />
             </div>
+            <CurrencyTotalsTable title="Purchase invoice totals by currency" rows={purchaseInvoiceSummary.totalsByCurrency} columns={purchaseInvoiceCurrencyColumns} />
             <CountTable title="Purchase invoices by status" rows={purchaseInvoiceSummary.byStatus} />
           </section>
 
           <section className="space-y-3">
             <SectionHeader title="Manual invoice payments" description="Manual payment record summaries only; no real payment processing is connected." />
-            <div className="grid gap-3 md:grid-cols-5">
-              <MetricCard label="Recorded amount" value={formatMoney(paymentSummary.recordedPaymentAmount)} tone="emerald" />
+            <div className="grid gap-3 md:grid-cols-4">
               <MetricCard label="Voided payments" value={formatNumber(paymentSummary.voidedPaymentCount)} />
               <MetricCard label="Unpaid invoices" value={formatNumber(paymentSummary.unpaidInvoiceCount)} />
               <MetricCard label="Partial invoices" value={formatNumber(paymentSummary.partiallyPaidInvoiceCount)} />
               <MetricCard label="Paid invoices" value={formatNumber(paymentSummary.paidInvoiceCount)} />
             </div>
+            <CurrencyTotalsTable title="Recorded payments by currency" rows={paymentSummary.recordedPaymentsByCurrency} columns={recordedPaymentCurrencyColumns} />
           </section>
         </>
       ) : null}

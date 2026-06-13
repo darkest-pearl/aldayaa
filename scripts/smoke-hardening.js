@@ -3936,6 +3936,19 @@ function checkTenantOperationsReportingFoundation() {
     assertIncludes(helper, token, `Tenant reports helper includes ${token}`);
     assertIncludes(reportsClient, token, `Tenant reports UI renders ${token}`);
   }
+  assertIncludes(helper, "const [statusRows, totalsByCurrency] = await Promise.all", 'Tenant reports helper groups purchase invoice totals separately from status counts');
+  assertIncludes(helper, "prisma.purchaseInvoice.groupBy({\n      by: ['currency']", 'Tenant reports helper groups purchase invoice totals by currency');
+  assertIncludes(helper, 'totalsByCurrency: totalsByCurrency.map', 'Tenant reports helper returns purchase invoice totals by currency');
+  assertIncludes(helper, 'invoiceCount: getCount(row)', 'Tenant reports helper returns invoice counts per currency');
+  assertIncludes(helper, "prisma.purchaseInvoicePayment.groupBy({\n      by: ['currency']", 'Tenant reports helper groups recorded payment amounts by currency');
+  assertIncludes(helper, 'recordedPaymentsByCurrency: normalizedRecordedPaymentsByCurrency', 'Tenant reports helper returns recorded payment totals by currency');
+  assertIncludes(helper, 'paymentCount: getCount(row)', 'Tenant reports helper returns payment counts per currency');
+  assertIncludes(reportsClient, 'totalsByCurrency', 'Tenant reports UI renders purchase invoice totals by currency');
+  assertIncludes(reportsClient, 'recordedPaymentsByCurrency', 'Tenant reports UI renders recorded payments by currency');
+  assertNotIncludes(reportsClient, 'formatMoney(paymentSummary.recordedPaymentAmount)', 'Tenant reports UI must not display mixed-currency recorded payment totals as AED');
+  assertNotIncludes(reportsClient, 'formatMoney(purchaseInvoiceSummary.subtotalAmount)', 'Tenant reports UI must not display mixed-currency invoice subtotal as AED');
+  assertNotIncludes(reportsClient, 'formatMoney(purchaseInvoiceSummary.taxAmount)', 'Tenant reports UI must not display mixed-currency invoice tax as AED');
+  assertNotIncludes(reportsClient, 'formatMoney(purchaseInvoiceSummary.totalAmount)', 'Tenant reports UI must not display mixed-currency invoice total as AED');
 
   assertIncludes(reportsPage, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Tenant reports page validates staff session');
   assertIncludes(tenantNav, "label: 'Reports'", 'Tenant admin navigation includes Reports');

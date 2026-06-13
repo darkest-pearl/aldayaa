@@ -466,13 +466,14 @@ async function buildPurchaseRequestSummary({ restaurantId, range }) {
 
 async function buildPurchaseInvoiceSummary({ restaurantId, range }) {
   const periodWhere = { restaurantId, ...getDateRangeWhere('invoiceDate', range) };
-  const [statusRows, totals] = await Promise.all([
+  const [statusRows, totalsByCurrency] = await Promise.all([
     prisma.purchaseInvoice.groupBy({
       by: ['status'],
       where: periodWhere,
       _count: { _all: true },
     }),
-    prisma.purchaseInvoice.aggregate({
+    prisma.purchaseInvoice.groupBy({
+      by: ['currency'],
       where: periodWhere,
       _count: { _all: true },
       _sum: {
@@ -483,27 +484,34 @@ async function buildPurchaseInvoiceSummary({ restaurantId, range }) {
     }),
   ]);
   const byStatus = mapKnownStatusCounts(Object.values(PURCHASE_INVOICE_STATUSES), statusRows, getPurchaseInvoiceStatusLabel);
+  const invoiceCount = totalsByCurrency.reduce((total, row) => total + getCount(row), 0);
 
   return {
-    invoiceCount: totals._count._all || 0,
+    invoiceCount,
     byStatus,
     draftCount: byStatus.find((status) => status.status === PURCHASE_INVOICE_STATUSES.DRAFT)?.count || 0,
     recordedCount: byStatus.find((status) => status.status === PURCHASE_INVOICE_STATUSES.RECORDED)?.count || 0,
     voidCount: byStatus.find((status) => status.status === PURCHASE_INVOICE_STATUSES.VOID)?.count || 0,
-    subtotalAmount: roundMoney(totals._sum.subtotal),
-    taxAmount: roundMoney(totals._sum.taxAmount),
-    totalAmount: roundMoney(totals._sum.totalAmount),
+    totalsByCurrency: totalsByCurrency.map((row) => ({
+      currency: row.currency || 'AED',
+      invoiceCount: getCount(row),
+      subtotalAmount: roundMoney(row._sum.subtotal),
+      taxAmount: roundMoney(row._sum.taxAmount),
+      totalAmount: roundMoney(row._sum.totalAmount),
+    })).sort((a, b) => a.currency.localeCompare(b.currency)),
   };
 }
 
 async function buildPaymentSummary({ restaurantId, range }) {
-  const [recordedPaymentTotals, voidedPaymentCount, invoices] = await Promise.all([
-    prisma.purchaseInvoicePayment.aggregate({
+  const [recordedPaymentsByCurrency, voidedPaymentCount, invoices] = await Promise.all([
+    prisma.purchaseInvoicePayment.groupBy({
+      by: ['currency'],
       where: {
         restaurantId,
         status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
         ...getDateRangeWhere('paidAt', range),
       },
+      _count: { _all: true },
       _sum: { amount: true },
     }),
     prisma.purchaseInvoicePayment.count({
@@ -529,9 +537,14 @@ async function buildPaymentSummary({ restaurantId, range }) {
     }),
   ]);
   const paymentStatuses = invoices.map((invoice) => calculatePurchaseInvoicePaymentSummary(invoice).paymentStatus);
+  const normalizedRecordedPaymentsByCurrency = recordedPaymentsByCurrency.map((row) => ({
+    currency: row.currency || 'AED',
+    paymentCount: getCount(row),
+    amount: roundMoney(row._sum.amount),
+  })).sort((a, b) => a.currency.localeCompare(b.currency));
 
   return {
-    recordedPaymentAmount: roundMoney(recordedPaymentTotals._sum.amount),
+    recordedPaymentsByCurrency: normalizedRecordedPaymentsByCurrency,
     voidedPaymentCount,
     unpaidInvoiceCount: paymentStatuses.filter((status) => status === PURCHASE_INVOICE_PAYMENT_SUMMARY_STATUSES.UNPAID).length,
     partiallyPaidInvoiceCount: paymentStatuses.filter((status) => status === PURCHASE_INVOICE_PAYMENT_SUMMARY_STATUSES.PARTIALLY_PAID).length,
@@ -540,7 +553,7 @@ async function buildPaymentSummary({ restaurantId, range }) {
       {
         status: PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED,
         label: getPurchaseInvoicePaymentStatusLabel(PURCHASE_INVOICE_PAYMENT_STATUSES.RECORDED),
-        amount: roundMoney(recordedPaymentTotals._sum.amount),
+        paymentsByCurrency: normalizedRecordedPaymentsByCurrency,
       },
       {
         status: PURCHASE_INVOICE_PAYMENT_STATUSES.VOID,
