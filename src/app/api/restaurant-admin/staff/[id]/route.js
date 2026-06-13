@@ -14,6 +14,7 @@ import {
   hashRestaurantStaffPassword,
   normalizeRestaurantStaffEmail,
 } from '../../../../../lib/restaurant-staff-auth';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const updateStaffSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -137,6 +138,22 @@ export async function PUT(request, { params }) {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.STAFF_UPDATED,
+      entityType: 'STAFF',
+      entityId: updatedStaffUser.id,
+      summary: `Updated tenant staff user ${updatedStaffUser.email}`,
+      metadata: {
+        targetEmail: updatedStaffUser.email,
+        targetRole: updatedStaffUser.role,
+        isActive: updatedStaffUser.isActive,
+        updatedFields: Object.keys(data).filter((field) => field !== 'passwordHash'),
+        passwordChanged: Boolean(parsed.data.password),
+      },
+    });
 
     return success({ staffUser: normalizeRestaurantStaffUser(updatedStaffUser) });
   } catch (error) {

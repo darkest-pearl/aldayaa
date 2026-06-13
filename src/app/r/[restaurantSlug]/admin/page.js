@@ -9,7 +9,10 @@ import {
   calculatePurchaseInvoicePaymentSummary,
 } from '../../../../lib/purchase-invoices';
 import { PURCHASE_REQUEST_STATUSES } from '../../../../lib/purchase-requests';
-import { requireRestaurantStaffAccess } from '../../../../lib/restaurant-staff-access';
+import {
+  isRestaurantStaffWriteRole,
+  requireRestaurantStaffAccess,
+} from '../../../../lib/restaurant-staff-access';
 import { getMenuItemIngredientCount } from '../../../../lib/recipes';
 import TenantAdminNav from './TenantAdminNav';
 
@@ -25,6 +28,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
     redirect(`/r/${params.restaurantSlug}/admin/login`);
   }
 
+  const canViewAuditLogs = isRestaurantStaffWriteRole(staff.role);
   const [
     kitchenOrders,
     inventoryItems,
@@ -33,6 +37,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
     activeSupplierCount,
     purchaseRequests,
     purchaseInvoices,
+    auditLogCount,
   ] = await Promise.all([
     prisma.order.findMany({
       where: {
@@ -98,6 +103,11 @@ export default async function TenantRestaurantAdminPage({ params }) {
         },
       },
     }),
+    canViewAuditLogs
+      ? prisma.restaurantAuditLog.count({
+          where: { restaurantId: staff.restaurantId },
+        })
+      : Promise.resolve(0),
   ]);
 
   const kitchenCounters = kitchenOrders.reduce(
@@ -166,7 +176,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, and read-only operations reports are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, and tenant audit logs are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -449,8 +459,28 @@ export default async function TenantRestaurantAdminPage({ params }) {
             Open reports
           </a>
         </div>
+        {canViewAuditLogs ? (
+          <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+            <h2 className="mt-2 text-xl font-semibold">Audit logs</h2>
+            <p className="mt-2 text-sm leading-6 text-neutral-600">
+              Review tenant-scoped staff admin activity for important writes. Audit logs are read-only and do not connect
+              to external logging, SIEM, alerting, email, or WhatsApp workflows.
+            </p>
+            <div className="mt-4 rounded-md bg-neutral-50 px-3 py-2 text-sm">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Entries</span>
+              <span className="text-lg font-semibold">{auditLogCount}</span>
+            </div>
+            <a
+              href={`/r/${params.restaurantSlug}/admin/audit-logs`}
+              className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+            >
+              Open audit logs
+            </a>
+          </div>
+        ) : null}
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 md:col-span-2">
-          Assisted ordering, automatic vendor sending, payment reconciliation, advanced analytics, forecasting, BI exports, scheduled reports, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
+          Assisted ordering, automatic vendor sending, payment reconciliation, external logging/SIEM, alerting, compliance exports, advanced analytics, forecasting, BI exports, scheduled reports, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.
         </div>
       </section>
     </main>

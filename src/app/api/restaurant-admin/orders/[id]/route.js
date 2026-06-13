@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { failure, handleApiError, success } from '../../../../../lib/api-response';
 import { prisma } from '../../../../../lib/prisma';
 import { requireRestaurantStaffAccess } from '../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 import {
   canTransitionOrderStatus,
   getOrderStatusLabel,
@@ -31,7 +32,7 @@ export async function PUT(request, { params }) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
-    const order = await prisma.$transaction(async (tx) => {
+    const { order, beforeStatus } = await prisma.$transaction(async (tx) => {
       const existingOrder = await tx.order.findFirst({
         where: { id: params.id, restaurantId: staff.restaurantId },
         select: { id: true, status: true },
@@ -66,7 +67,21 @@ export async function PUT(request, { params }) {
         throw apiError('Order not found', 404);
       }
 
-      return order;
+      return { order, beforeStatus: existingOrder.status };
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.ORDER_STATUS_UPDATED,
+      entityType: 'ORDER',
+      entityId: order.id,
+      summary: `Updated order ${order.reference || order.id} status`,
+      metadata: {
+        reference: order.reference,
+        beforeStatus,
+        afterStatus: order.status,
+      },
     });
 
     return success({ order: normalizeTenantOrder(order) });

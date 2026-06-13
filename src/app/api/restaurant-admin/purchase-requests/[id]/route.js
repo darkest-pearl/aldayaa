@@ -13,6 +13,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const updatePurchaseRequestSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -148,6 +149,21 @@ export async function PUT(request, { params }) {
     });
 
     if (!purchaseRequest) return failure('Purchase request not found', 404);
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_REQUEST_UPDATED,
+      entityType: 'PURCHASE_REQUEST',
+      entityId: purchaseRequest.id,
+      summary: `Updated purchase request ${purchaseRequest.reference}`,
+      metadata: {
+        reference: purchaseRequest.reference,
+        beforeStatus: existing.status,
+        afterStatus: purchaseRequest.status,
+        supplierId: purchaseRequest.supplierId,
+      },
+    });
 
     return success({ purchaseRequest: normalizePurchaseRequest(purchaseRequest) });
   } catch (error) {

@@ -9,6 +9,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../../lib/tenant-audit';
 
 const updateSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -99,6 +100,22 @@ export async function PUT(request, { params }) {
     });
     if (!item) return failure('Inventory item not found', 404);
 
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.INVENTORY_ITEM_UPDATED,
+      entityType: 'INVENTORY_ITEM',
+      entityId: item.id,
+      summary: `Updated inventory item ${item.name}`,
+      metadata: {
+        name: item.name,
+        sku: item.sku,
+        updatedFields: Object.keys(data),
+        beforeActive: existing.isActive,
+        afterActive: item.isActive,
+      },
+    });
+
     return success({ item: normalizeInventoryItem(item) });
   } catch (error) {
     return handleApiError(error);
@@ -122,6 +139,21 @@ export async function DELETE(request, { params }) {
       where: { id: params.id, restaurantId: staff.restaurantId },
     });
     if (!item) return failure('Inventory item not found', 404);
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.INVENTORY_ITEM_UPDATED,
+      entityType: 'INVENTORY_ITEM',
+      entityId: item.id,
+      summary: `Deactivated inventory item ${item.name}`,
+      metadata: {
+        name: item.name,
+        sku: item.sku,
+        beforeActive: true,
+        afterActive: item.isActive,
+      },
+    });
 
     return success({ item: normalizeInventoryItem(item) });
   } catch (error) {

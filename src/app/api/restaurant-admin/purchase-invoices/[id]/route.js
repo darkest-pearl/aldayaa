@@ -15,6 +15,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const updatePurchaseInvoiceSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -185,7 +186,7 @@ export async function PUT(request, { params }) {
       return failure('Due date is invalid', 400);
     }
 
-    const purchaseInvoice = await prisma.$transaction(
+    const { purchaseInvoice, beforeStatus } = await prisma.$transaction(
       async (tx) => {
         const existing = await tx.purchaseInvoice.findFirst({
           where: { id: params.id, restaurantId: staff.restaurantId },
@@ -260,12 +261,28 @@ export async function PUT(request, { params }) {
 
         if (!updatedPurchaseInvoice) throw new TenantPurchaseInvoiceError('Purchase invoice not found', 404);
 
-        return updatedPurchaseInvoice;
+        return { purchaseInvoice: updatedPurchaseInvoice, beforeStatus: existing.status };
       },
       {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_INVOICE_UPDATED,
+      entityType: 'PURCHASE_INVOICE',
+      entityId: purchaseInvoice.id,
+      summary: `Updated purchase invoice ${purchaseInvoice.invoiceNumber}`,
+      metadata: {
+        invoiceNumber: purchaseInvoice.invoiceNumber,
+        beforeStatus,
+        afterStatus: purchaseInvoice.status,
+        currency: purchaseInvoice.currency,
+        totalAmount: purchaseInvoice.totalAmount,
+      },
+    });
 
     return success({ purchaseInvoice: normalizePurchaseInvoice(purchaseInvoice) });
   } catch (error) {

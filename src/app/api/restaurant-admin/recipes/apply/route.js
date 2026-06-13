@@ -13,6 +13,7 @@ import {
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
 import { calculateRecipeConsumptionForOrder } from '../../../../../lib/recipes';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const APPLIED_CONSUMPTION_STATUS = 'APPLIED';
 const ORDER_RECIPE_CONSUMPTION_SOURCE = 'ORDER_RECIPE_CONSUMPTION';
@@ -263,6 +264,21 @@ export async function POST(request) {
       }
 
       return { order, consumption, appliedConsumption, movements, updatedItems };
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.RECIPE_CONSUMPTION_APPLIED,
+      entityType: 'ORDER_RECIPE_CONSUMPTION',
+      entityId: appliedConsumption.id,
+      summary: `Applied recipe consumption for order ${order.reference || order.id}`,
+      metadata: {
+        orderId: order.id,
+        orderReference: order.reference,
+        movementCount: movements.length,
+        updatedItemCount: updatedItems.length,
+      },
     });
 
     return success({

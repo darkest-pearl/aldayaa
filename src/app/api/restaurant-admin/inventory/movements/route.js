@@ -14,6 +14,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const movementSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -116,6 +117,22 @@ export async function POST(request) {
       });
 
       return { updatedItem, movement };
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.INVENTORY_MOVEMENT_CREATED,
+      entityType: 'INVENTORY_MOVEMENT',
+      entityId: movement.id,
+      summary: `Created ${movement.type} movement for ${movement.item?.name || movement.itemId}`,
+      metadata: {
+        itemId: movement.itemId,
+        itemName: movement.item?.name,
+        type: movement.type,
+        quantity: movement.quantity,
+        resultingStock: updatedItem.currentStock,
+      },
     });
 
     return success({

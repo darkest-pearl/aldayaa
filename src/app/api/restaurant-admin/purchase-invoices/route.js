@@ -15,6 +15,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const lineSchema = z.object({
   description: z.string().trim().min(1).max(200),
@@ -259,6 +260,22 @@ export async function POST(request) {
         },
         include: purchaseInvoiceInclude,
       });
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_INVOICE_CREATED,
+      entityType: 'PURCHASE_INVOICE',
+      entityId: purchaseInvoice.id,
+      summary: `Created purchase invoice ${purchaseInvoice.invoiceNumber}`,
+      metadata: {
+        invoiceNumber: purchaseInvoice.invoiceNumber,
+        status: purchaseInvoice.status,
+        currency: purchaseInvoice.currency,
+        totalAmount: purchaseInvoice.totalAmount,
+        lineCount: purchaseInvoice.lines?.length || 0,
+      },
     });
 
     return success({ purchaseInvoice: normalizePurchaseInvoice(purchaseInvoice) });

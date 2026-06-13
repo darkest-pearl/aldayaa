@@ -14,6 +14,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const itemSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -127,6 +128,22 @@ export async function POST(request) {
       }
       throw error;
     }
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.INVENTORY_ITEM_CREATED,
+      entityType: 'INVENTORY_ITEM',
+      entityId: item.id,
+      summary: `Created inventory item ${item.name}`,
+      metadata: {
+        name: item.name,
+        sku: item.sku,
+        unit: item.unit,
+        currentStock: item.currentStock,
+        reorderLevel: item.reorderLevel,
+      },
+    });
 
     return success({ item: normalizeInventoryItem(item) });
   } catch (error) {
