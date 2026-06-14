@@ -1812,14 +1812,14 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(tenantAdmin, "redirect(`/r/${params.restaurantSlug}/admin/login`)", 'Tenant admin page redirects unauthenticated staff');
   assertIncludes(tenantAdminLayout, 'bg-neutral-950', 'Tenant admin layout minimal shell styling');
   assertIncludes(tenantAdmin, 'Restaurant staff access is active', 'Tenant admin minimal dashboard copy');
-  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings, read-only operations reports, and tenant audit logs are available now.', 'Tenant admin current modules copy');
+  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings, payment provider event tracking, read-only operations reports, and tenant audit logs are available now.', 'Tenant admin current modules copy');
   assertIncludes(tenantAdminLogin, '/api/restaurant-admin/login', 'Tenant admin login posts to staff login API');
   assertIncludes(tenantAdminLogin, 'restaurantSlug', 'Tenant admin login sends route slug');
   assertNotIncludes(tenantAdmin, 'MenuClient', 'Tenant admin dashboard should not expose menu tools');
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70; tenant audit logging and security hardening foundation resolved by Batch 71; production readiness checklist documented by Batch 72; tenant payment settings foundation resolved by Batch 74.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70; tenant audit logging and security hardening foundation resolved by Batch 71; production readiness checklist documented by Batch 72; tenant payment settings foundation resolved by Batch 74; payment webhook idempotency foundation resolved by Batch 75.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -1836,7 +1836,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
   assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
   assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
-  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, read-only operations reports, tenant audit logs, public tenant order creation when enabled, tenant table QR ordering when enabled, tenant public order support actions, and tenant public reservation support actions.', 'Tenant admin enabled modules note');
+  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, payment provider event tracking foundation, read-only operations reports, tenant audit logs, public tenant order creation when enabled, tenant table QR ordering when enabled, tenant public order support actions, and tenant public reservation support actions.', 'Tenant admin enabled modules note');
   assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion on order creation/status changes, automatic supplier sending, invoice automation, staff invitations, self-service password reset flows, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
   assertNotIncludes(blocker, 'Restaurant staff login is authentication-only for now.', 'Tenant admin doc stale auth-only wording');
   assertNotIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin doc stale module future wording');
@@ -2026,7 +2026,7 @@ function checkTenantMenuGalleryAdmin() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
 
   assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 74 updated tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, payment provider event tracking foundation, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 75 updated tenant staff access note');
   assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
   assertIncludes(readme, 'Inventory automation, automatic recipe depletion, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 future modules note');
   assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
@@ -2380,7 +2380,7 @@ function checkTenantReservationsManagement() {
   assertIncludes(readme, 'OWNER and MANAGER can update reservation status; SUPPORT remains read-only.', 'README Batch 54 reservations role note');
   assertIncludes(readme, 'Public tenant reservation creation is available at `/r/[restaurantSlug]/reservations` for initialized, non-archived tenants.', 'README Batch 54 public tenant reservations note');
   assertIncludes(readme, 'Demo reservation behavior remains available at `/public/reservations` and `/r/demo-restaurant/reservations`.', 'README Batch 54 demo reservation preservation note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 74 tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings foundation, payment provider event tracking foundation, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 75 tenant staff access note');
   assertIncludes(readme, 'Tenant public reservation support actions added.', 'README Batch 60 note');
   assertIncludes(readme, 'Tenant public reservation lookup and cancellation are scoped by restaurantSlug, reference, and phone.', 'README Batch 60 scoped support note');
   assertIncludes(readme, 'Demo reservation cancellation remains demo-scoped at `/api/reservations/cancel`.', 'README Batch 60 demo support preservation note');
@@ -4701,6 +4701,172 @@ function checkTenantPaymentSettingsFoundation() {
   assertNotIncludes(packageJson, 'checkout', 'Batch 74 should not add checkout dependency');
 }
 
+function checkPaymentWebhookIdempotencyFoundation() {
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const boundary = read('docs/PAYMENT_INTEGRATION_BOUNDARY.md');
+  const providerReadiness = read('docs/PAYMENT_PROVIDER_READINESS_CHECKLIST.md');
+  const productionReadiness = read('docs/PRODUCTION_READINESS_CHECKLIST.md');
+  const security = read('docs/SECURITY_HARDENING_CHECKLIST.md');
+  const packageJson = read('package.json');
+  const migrationPath = path.join(root, 'prisma/migrations/20260615090000_add_payment_provider_events/migration.sql');
+  const helperPath = path.join(root, 'src/lib/payment-provider-events.js');
+  const apiPath = path.join(root, 'src/app/api/restaurant-admin/payment-provider-events/route.js');
+  const pagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/payment-provider-events/page.js');
+  const clientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/payment-provider-events/TenantPaymentProviderEventsClient.jsx');
+
+  assert(fs.existsSync(migrationPath), 'Batch 75 payment provider event migration is missing');
+  assert(fs.existsSync(helperPath), 'Batch 75 payment provider event helper is missing');
+  assert(fs.existsSync(apiPath), 'Batch 75 payment provider event API route is missing');
+  assert(fs.existsSync(pagePath), 'Batch 75 tenant payment provider events page is missing');
+  assert(fs.existsSync(clientPath), 'Batch 75 tenant payment provider events client is missing');
+
+  const migration = read('prisma/migrations/20260615090000_add_payment_provider_events/migration.sql');
+  const helper = read('src/lib/payment-provider-events.js');
+  const apiRoute = read('src/app/api/restaurant-admin/payment-provider-events/route.js');
+  const page = read('src/app/r/[restaurantSlug]/admin/payment-provider-events/page.js');
+  const client = read('src/app/r/[restaurantSlug]/admin/payment-provider-events/TenantPaymentProviderEventsClient.jsx');
+  const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const docsSource = `${readme}\n${blocker}\n${boundary}\n${providerReadiness}\n${productionReadiness}\n${security}`;
+  const batch75Source = `${helper}\n${apiRoute}\n${page}\n${client}\n${tenantNav}\n${tenantAdmin}`;
+
+  assertIncludes(schema, 'model PaymentProviderEvent', 'PaymentProviderEvent Prisma model');
+  assertIncludes(schema, '@@unique([provider, providerMode, providerEventId])', 'PaymentProviderEvent provider/mode/event unique constraint');
+  assertIncludes(schema, '@@index([relatedEntityType, relatedEntityId])', 'PaymentProviderEvent related entity composite index');
+  assert(/metadata\s+Json\?/.test(schema), 'PaymentProviderEvent sanitized metadata field');
+  assert(/restaurantId\s+String\?/.test(schema), 'PaymentProviderEvent nullable restaurantId for unresolved future events');
+  assertIncludes(migration, 'CREATE TABLE "PaymentProviderEvent"', 'PaymentProviderEvent migration table');
+  assertIncludes(migration, '"restaurantId" TEXT', 'PaymentProviderEvent migration nullable restaurantId column');
+  assertIncludes(migration, '"metadata" JSONB', 'PaymentProviderEvent migration JSONB metadata');
+  assertIncludes(migration, 'PaymentProviderEvent_provider_providerMode_providerEventId_key', 'PaymentProviderEvent migration unique event key');
+  assertIncludes(migration, 'PaymentProviderEvent_relatedEntityType_relatedEntityId_idx', 'PaymentProviderEvent migration related entity index');
+
+  for (const token of [
+    'PAYMENT_PROVIDER_EVENT_STATUSES',
+    'PAYMENT_PROVIDER_MODES',
+    'RECEIVED',
+    'IGNORED',
+    'PROCESSED',
+    'FAILED',
+    'TEST',
+    'LIVE',
+    'sanitizePaymentProviderEventMetadata',
+    'normalizePaymentProviderEvent',
+    'normalizePaymentProviderEvents',
+    'isValidPaymentProviderEventStatus',
+    'isValidPaymentProviderMode',
+    'UNSAFE_PAYMENT_PROVIDER_EVENT_METADATA_KEY_PATTERN',
+  ]) {
+    assertIncludes(helper, token, `Batch 75 payment provider event helper ${token}`);
+  }
+  for (const unsafeKey of ['authorization', 'cookie', 'signature', 'card', 'cvc', 'payload', 'secret', 'token', 'header']) {
+    assertIncludes(helper, unsafeKey, `Batch 75 helper sanitizes ${unsafeKey} metadata`);
+  }
+  assertIncludes(helper, 'metadataSummary', 'Batch 75 normalizer exposes safe metadata summary only');
+  assertNotIncludes(helper, 'rawMetadata', 'Batch 75 normalizer must not expose raw metadata');
+  assertNotIncludes(helper, 'process.env', 'Batch 75 helper must not read environment secret values');
+  assertNotIncludes(helper, 'fetch(', 'Batch 75 helper must not make network calls');
+  assertNotIncludes(helper, 'stripe', 'Batch 75 helper must not import Stripe');
+  assertNotIncludes(helper, 'paypal', 'Batch 75 helper must not import PayPal');
+
+  assertIncludes(apiRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Payment provider events API uses staff auth');
+  assertIncludes(apiRoute, 'isRestaurantStaffWriteRole(staff.role)', 'Payment provider events API is OWNER/MANAGER only');
+  assertIncludes(apiRoute, 'const where = { restaurantId: staff.restaurantId }', 'Payment provider events API scopes reads by staff restaurantId');
+  assertIncludes(apiRoute, 'MAX_PAYMENT_PROVIDER_EVENT_LIMIT = 100', 'Payment provider events API caps limit at 100');
+  assertIncludes(apiRoute, 'MAX_PAYMENT_PROVIDER_EVENT_RANGE_DAYS = 366', 'Payment provider events API caps date range at 366 days');
+  assertIncludes(apiRoute, 'From and To dates are required when filtering payment provider events', 'Payment provider events API rejects one-sided date filters');
+  assertIncludes(apiRoute, 'providerMode', 'Payment provider events API supports providerMode filter');
+  assertIncludes(apiRoute, 'eventType', 'Payment provider events API supports eventType filter');
+  assertIncludes(apiRoute, 'normalizePaymentProviderEvents', 'Payment provider events API uses safe normalizer');
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    assertNotIncludes(apiRoute, `export async function ${method}`, `Payment provider events API must not implement ${method}`);
+  }
+  assertNotIncludes(apiRoute, 'create({', 'Payment provider events API must not create events');
+  assertNotIncludes(apiRoute, 'update({', 'Payment provider events API must not update events');
+  assertNotIncludes(apiRoute, 'updateMany', 'Payment provider events API must not update events');
+  assertNotIncludes(apiRoute, 'delete', 'Payment provider events API must not delete events');
+
+  assertIncludes(page, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Payment provider events page uses DB-backed staff guard');
+  assertIncludes(page, 'isRestaurantStaffWriteRole(staff.role)', 'Payment provider events page is OWNER/MANAGER only');
+  assertIncludes(client, 'Provider event tracking is a foundation only.', 'Payment provider events UI foundation copy');
+  assertIncludes(client, 'No webhook endpoint is active.', 'Payment provider events UI no webhook copy');
+  assertIncludes(client, 'No real payment processing occurs.', 'Payment provider events UI no processing copy');
+  assertIncludes(client, 'No refunds or checkout sessions are created.', 'Payment provider events UI no refund/checkout copy');
+  assertIncludes(client, 'Refresh', 'Payment provider events UI refresh control');
+  assertIncludes(client, 'table', 'Payment provider events UI read-only table');
+  for (const forbiddenControl of ['Save', 'Create', 'Update', 'Delete', 'Void', 'Refund', 'Checkout']) {
+    assertNotIncludes(client, `>${forbiddenControl}<`, `Payment provider events UI must not expose ${forbiddenControl} mutation control`);
+  }
+  assertIncludes(tenantNav, "label: 'Payment Events'", 'Tenant nav includes Payment Events');
+  assertIncludes(tenantNav, "key: 'payment-provider-events'", 'Tenant nav payment events key');
+  assertIncludes(tenantAdmin, 'paymentProviderEventCount', 'Tenant dashboard includes payment provider event count');
+  assertIncludes(tenantAdmin, 'Open payment events', 'Tenant dashboard links to payment events');
+  assertIncludes(tenantAdmin, 'No webhook endpoint is active.', 'Tenant dashboard payment event boundary copy');
+
+  for (const doc of [readme, blocker, boundary, providerReadiness, productionReadiness, security]) {
+    assertIncludes(doc, 'payment webhook idempotency foundation', 'Batch 75 docs mention payment webhook idempotency foundation');
+    assertIncludes(doc, 'no webhook endpoint is active', 'Batch 75 docs preserve no active webhook endpoint boundary');
+    assertIncludes(doc, 'no real payment processing', 'Batch 75 docs preserve no real payment processing boundary');
+    assertIncludes(doc, 'no provider calls', 'Batch 75 docs preserve no provider calls boundary');
+    assertIncludes(doc, 'no raw card data or secrets stored', 'Batch 75 docs preserve no raw card data or secrets boundary');
+  }
+  assertIncludes(readme, 'Payment webhook idempotency foundation added.', 'README Batch 75 note');
+  assertIncludes(blocker, 'payment webhook idempotency foundation resolved by Batch 75', 'Tenant admin blocker Batch 75 status');
+
+  const apiRouteFiles = [];
+  const collectApiRoutes = (relativePath) => {
+    for (const entry of fs.readdirSync(path.join(root, relativePath), { withFileTypes: true })) {
+      const childRelativePath = path.join(relativePath, entry.name);
+      if (entry.isDirectory()) collectApiRoutes(childRelativePath);
+      if (entry.isFile() && entry.name === 'route.js') apiRouteFiles.push(childRelativePath.replace(/\\/g, '/'));
+    }
+  };
+  collectApiRoutes('src/app/api');
+  assert(!apiRouteFiles.some((file) => /checkout|session|refund|webhook/i.test(file)), 'Batch 75 must not add checkout/session/refund/webhook API routes');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payment-provider-events')), 'Batch 75 must not add public payment provider events API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Batch 75 must not add generic payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/refunds')), 'Batch 75 must not add refund API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/webhooks')), 'Batch 75 must not add webhook API route');
+
+  for (const forbidden of [
+    'stripe.checkout',
+    'checkout.sessions',
+    'paymentIntents.create',
+    'refunds.create',
+    'webhooks.constructEvent',
+    '@stripe/stripe-js',
+    'stripe-node',
+    'paypal',
+    'capturePayment',
+    'authorizePayment',
+    'createCheckoutSession',
+    'processPayment',
+    'money movement',
+  ]) {
+    assertNotIncludes(batch75Source, forbidden, `Batch 75 must not add provider/payment implementation ${forbidden}`);
+  }
+  for (const forbidden of [
+    'PAYMENT_SECRET_KEY=',
+    'PAYMENT_WEBHOOK_SIGNING_SECRET=',
+    'sk_live_',
+    'sk_test_',
+    'whsec_',
+    '-----BEGIN',
+    'postgres://',
+    'postgresql://',
+    'DATABASE_URL=',
+  ]) {
+    assertNotIncludes(docsSource, forbidden, `Batch 75 docs must not include secret example ${forbidden}`);
+  }
+
+  assertNotIncludes(packageJson, 'stripe', 'Batch 75 should not add Stripe dependency');
+  assertNotIncludes(packageJson, '@stripe', 'Batch 75 should not add Stripe scoped dependency');
+  assertNotIncludes(packageJson, 'paypal', 'Batch 75 should not add PayPal dependency');
+  assertNotIncludes(packageJson, 'checkout', 'Batch 75 should not add checkout dependency');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -5930,6 +6096,7 @@ const checks = [
   checkProductionReadinessSecurityChecklist,
   checkPaymentIntegrationBoundaryFoundation,
   checkTenantPaymentSettingsFoundation,
+  checkPaymentWebhookIdempotencyFoundation,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

@@ -43,6 +43,7 @@ Session cookies should keep these properties:
 - Do not write production secrets to the repository or generated artifacts.
 - Redact request metadata before audit logging.
 - The tenant payment settings foundation is planned/disabled only: no real payment processing, no provider calls, and no secrets stored in database records.
+- The payment webhook idempotency foundation stores sanitized provider-neutral event records only; no webhook endpoint is active, no real payment processing occurs, no provider calls are made, and no raw card data or secrets stored.
 
 ## Public Routes
 

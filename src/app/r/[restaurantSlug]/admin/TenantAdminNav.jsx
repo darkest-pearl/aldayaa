@@ -22,7 +22,10 @@ export default function TenantAdminNav({ restaurantSlug, active = 'overview', st
     { key: 'payment-settings', label: 'Payment Settings', href: `/r/${restaurantSlug}/admin/payment-settings` },
     { key: 'reports', label: 'Reports', href: `/r/${restaurantSlug}/admin/reports` },
     ...(staff && isRestaurantStaffWriteRole(staff.role)
-      ? [{ key: 'audit-logs', label: 'Audit Logs', href: `/r/${restaurantSlug}/admin/audit-logs` }]
+      ? [
+          { key: 'payment-provider-events', label: 'Payment Events', href: `/r/${restaurantSlug}/admin/payment-provider-events` },
+          { key: 'audit-logs', label: 'Audit Logs', href: `/r/${restaurantSlug}/admin/audit-logs` },
+        ]
       : []),
   ];
 

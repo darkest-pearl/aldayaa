@@ -10,6 +10,7 @@ Core operations foundation through Batch 71 is complete for the current bounded 
 - Tenant staff access is separate from platform AdminUser access.
 - Tenant admin modules cover menu, gallery, profile, settings, staff records, reservations, tables, order status, kitchen queue, inventory, recipes, manual recipe consumption, suppliers, purchase requests, purchase receiving, purchase invoices, manual invoice payments, read-only reports, and tenant audit logs.
 - The tenant payment settings foundation stores disabled/planned-only provider readiness values. It does no real payment processing, makes no provider calls, and keeps no secrets stored in database records.
+- The payment webhook idempotency foundation stores provider-neutral event/idempotency records for future replay protection and read-only tenant visibility; no webhook endpoint is active, no real payment processing occurs, no provider calls are made, and no raw card data or secrets stored.
 - Tenant audit logs are read-only for OWNER and MANAGER staff and sanitize sensitive metadata.
 - Commercial integrations remain future work: real payments/refunds, billing/subscriptions, custom domains, CRM, email/WhatsApp, payroll, advanced analytics, onboarding polish, external logging/SIEM, alerting, and compliance exports.
 - Payment provider readiness remains a future commercial expansion. Batch 73 documents provider-neutral payment boundaries, refund workflow planning, and provider launch criteria without implementing real payment processing.

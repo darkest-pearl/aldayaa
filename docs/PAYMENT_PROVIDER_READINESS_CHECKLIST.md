@@ -4,6 +4,8 @@ Batch 73 records readiness criteria for a future payment provider integration. I
 
 Batch 74 adds the tenant payment settings foundation for disabled/planned-only provider readiness. The tenant payment settings foundation does no real payment processing, makes no provider calls, and keeps no secrets stored in database records.
 
+Batch 75 adds the payment webhook idempotency foundation for future replay protection and read-only tenant visibility. For this foundation, no webhook endpoint is active, no real payment processing occurs, no provider calls are made, and no raw card data or secrets stored.
+
 ## Provider Account Setup Checklist
 
 This provider account setup checklist must be completed before any provider-specific implementation starts.
