@@ -250,6 +250,7 @@ model RestaurantSettings {
   cancellationFee       Float   @default(0)
   workingHoursByDay     String?
   displayHours          String?
+  paymentSettings       String?
   restaurantId          String?
   restaurant            Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
 

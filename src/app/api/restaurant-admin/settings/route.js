@@ -61,9 +61,11 @@ function normalizeTenantSettings(settings) {
     settings.openingTime,
     settings.closingTime,
   );
+  const safeSettings = { ...settings };
+  delete safeSettings.paymentSettings;
 
   return {
-    ...settings,
+    ...safeSettings,
     workingHoursByDay,
     displayHours: getDisplayHours(settings),
   };

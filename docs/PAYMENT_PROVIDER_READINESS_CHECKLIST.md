@@ -2,6 +2,8 @@
 
 Batch 73 records readiness criteria for a future payment provider integration. It does not select a provider and does not implement real payment processing.
 
+Batch 74 adds the tenant payment settings foundation for disabled/planned-only provider readiness. The tenant payment settings foundation does no real payment processing, makes no provider calls, and keeps no secrets stored in database records.
+
 ## Provider Account Setup Checklist
 
 This provider account setup checklist must be completed before any provider-specific implementation starts.
@@ -20,6 +22,7 @@ This test/live mode separation keeps provider testing isolated from production m
 - Keep test and live provider accounts or modes separate.
 - Keep test and live keys separate in hosting provider secret settings.
 - Never reuse live keys in local development.
+- Use tenant payment settings only to mark test/live readiness as planned; do not store live provider credentials in tenant settings.
 - Verify UI copy and operational reports distinguish test activity from live activity before launch.
 - Plan a live-mode smoke test that uses a reviewed, reversible, low-risk flow.
 
