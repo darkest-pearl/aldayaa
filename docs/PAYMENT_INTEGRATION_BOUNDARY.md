@@ -4,6 +4,10 @@ Batch 73 defines a provider-neutral architecture for future payment work. It is 
 
 Batch 74 adds the tenant payment settings foundation as disabled/planned-only configuration. The tenant payment settings foundation records provider readiness flags only, performs no real payment processing, makes no provider calls, and keeps no secrets stored in database records.
 
+Batch 75 adds the payment webhook idempotency foundation for future provider callback handling. It stores provider-neutral event/idempotency records for replay protection and read-only tenant visibility, but no webhook endpoint is active, no real payment processing occurs, no provider calls are made, and no raw card data or secrets stored.
+
+Tenant payment event visibility exposes sanitized summaries only: raw idempotency keys are not exposed, and unsafe provider failure details are redacted before tenant staff can view them.
+
 ## Provider-Neutral Architecture
 
 Future payment work should keep payment orchestration behind internal application boundaries instead of coupling order, invoice, or tenant admin routes directly to a provider. The provider adapter should receive normalized application intent, return normalized provider references, and never expose provider secrets or raw provider payloads to UI code.

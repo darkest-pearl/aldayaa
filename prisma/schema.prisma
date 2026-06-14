@@ -37,6 +37,7 @@ model Restaurant {
   purchaseInvoices   PurchaseInvoice[]
   purchaseInvoiceLines PurchaseInvoiceLine[]
   purchaseInvoicePayments PurchaseInvoicePayment[]
+  paymentProviderEvents PaymentProviderEvent[]
   restaurantUsers   RestaurantUser[]
   auditLogs         RestaurantAuditLog[]
 }
@@ -515,6 +516,36 @@ model PurchaseInvoicePayment {
   @@index([paidAt])
   @@index([status])
   @@index([method])
+}
+
+model PaymentProviderEvent {
+  id                String      @id @default(cuid())
+  provider          String
+  providerMode      String
+  providerEventId   String
+  eventType         String
+  status            String
+  receivedAt        DateTime    @default(now())
+  processedAt       DateTime?
+  failureReason     String?
+  idempotencyKey    String?
+  relatedEntityType String?
+  relatedEntityId   String?
+  metadata          Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  restaurantId      String?
+  restaurant        Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerMode, providerEventId])
+  @@index([provider])
+  @@index([providerMode])
+  @@index([eventType])
+  @@index([status])
+  @@index([restaurantId])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([receivedAt])
+  @@index([idempotencyKey])
 }
 
 model Announcement {
