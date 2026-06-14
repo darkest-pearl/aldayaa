@@ -11,6 +11,7 @@ Core operations foundation through Batch 71 is complete for the current bounded 
 - Tenant admin modules cover menu, gallery, profile, settings, staff records, reservations, tables, order status, kitchen queue, inventory, recipes, manual recipe consumption, suppliers, purchase requests, purchase receiving, purchase invoices, manual invoice payments, read-only reports, and tenant audit logs.
 - Tenant audit logs are read-only for OWNER and MANAGER staff and sanitize sensitive metadata.
 - Commercial integrations remain future work: real payments/refunds, billing/subscriptions, custom domains, CRM, email/WhatsApp, payroll, advanced analytics, onboarding polish, external logging/SIEM, alerting, and compliance exports.
+- Payment provider readiness remains a future commercial expansion. Batch 73 documents provider-neutral payment boundaries, refund workflow planning, and provider launch criteria without implementing real payment processing.
 
 ## Required Migration Status
 
@@ -85,6 +86,7 @@ Use these rollback notes during deploy review:
 ## Known Future Work
 
 - Real payments/refunds
+- Payment provider selection and webhook implementation
 - Billing/subscriptions
 - Custom domains
 - CRM

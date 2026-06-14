@@ -259,6 +259,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Core restaurant operations foundation is complete through tenant audit logs.
 - Production readiness, secrets rotation, deployment, and security hardening runbooks are available under `docs/`.
 - Real payment processing, refunds, billing/subscriptions, custom domains, CRM, email/WhatsApp, payroll, advanced analytics, onboarding polish, external logging/SIEM, alerting, and compliance exports remain future work.
+- Payment integration boundary foundation added.
+- Provider-neutral payment planning docs are available under `docs/PAYMENT_INTEGRATION_BOUNDARY.md`, `docs/REFUND_WORKFLOW_PLAN.md`, and `docs/PAYMENT_PROVIDER_READINESS_CHECKLIST.md`.
+- Manual purchase invoice payment recording remains recordkeeping only and is separate from real payment processing.
+- Real payment processing, refunds, provider webhooks, and subscription charging remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
