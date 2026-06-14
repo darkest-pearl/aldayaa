@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { INVENTORY_STOCK_STATUSES, getInventoryStockStatus } from '../../../../lib/inventory';
 import { ORDER_CONTEXTS, ORDER_STATUSES } from '../../../../lib/order-status';
+import { normalizePaymentSettings } from '../../../../lib/payment-settings';
 import { prisma } from '../../../../lib/prisma';
 import {
   PURCHASE_INVOICE_PAYMENT_STATUSES,
@@ -37,6 +38,7 @@ export default async function TenantRestaurantAdminPage({ params }) {
     activeSupplierCount,
     purchaseRequests,
     purchaseInvoices,
+    tenantPaymentSettings,
     auditLogCount,
   ] = await Promise.all([
     prisma.order.findMany({
@@ -102,6 +104,10 @@ export default async function TenantRestaurantAdminPage({ params }) {
           },
         },
       },
+    }),
+    prisma.restaurantSettings.findUnique({
+      where: { restaurantId: staff.restaurantId },
+      select: { paymentSettings: true },
     }),
     canViewAuditLogs
       ? prisma.restaurantAuditLog.count({
@@ -170,13 +176,23 @@ export default async function TenantRestaurantAdminPage({ params }) {
       0,
     ),
   };
+  const normalizedPaymentSettings = normalizePaymentSettings(tenantPaymentSettings?.paymentSettings);
+  const paymentSettingsSummary = {
+    paymentMode: normalizedPaymentSettings.paymentMode,
+    provider: normalizedPaymentSettings.provider,
+    readinessCount: [
+      normalizedPaymentSettings.provider !== 'NONE',
+      normalizedPaymentSettings.publicKeyConfigured,
+      normalizedPaymentSettings.webhookConfigured,
+    ].filter(Boolean).length,
+  };
 
   return (
     <main className="min-h-screen bg-neutral-100 text-neutral-950">
       <TenantAdminNav restaurantSlug={params.restaurantSlug} active="overview" staff={staff} />
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-6 md:grid-cols-2">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-6 text-emerald-950 md:col-span-2">
-          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, and tenant audit logs are available now.
+          <span className="font-semibold">Restaurant staff access is active.</span> Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, payment settings, read-only operations reports, and tenant audit logs are available now.
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
@@ -443,6 +459,33 @@ export default async function TenantRestaurantAdminPage({ params }) {
             className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
           >
             Open purchase invoices
+          </a>
+        </div>
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm md:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-normal text-emerald-700">Available now</p>
+          <h2 className="mt-2 text-xl font-semibold">Payment settings</h2>
+          <p className="mt-2 text-sm leading-6 text-neutral-600">
+            Configure planned provider readiness for this tenant only. No real payment processing is enabled. No provider secrets are stored in the database.
+          </p>
+          <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Mode</span>
+              <span className="text-lg font-semibold">{paymentSettingsSummary.paymentMode}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Provider</span>
+              <span className="text-lg font-semibold">{paymentSettingsSummary.provider}</span>
+            </div>
+            <div className="rounded-md bg-neutral-50 px-3 py-2">
+              <span className="block text-xs font-semibold uppercase tracking-normal text-neutral-500">Readiness</span>
+              <span className="text-lg font-semibold">{paymentSettingsSummary.readinessCount}/3</span>
+            </div>
+          </div>
+          <a
+            href={`/r/${params.restaurantSlug}/admin/payment-settings`}
+            className="mt-4 inline-flex rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open payment settings
           </a>
         </div>
         <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-sm md:col-span-2">

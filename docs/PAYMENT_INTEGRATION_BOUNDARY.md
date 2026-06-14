@@ -2,6 +2,8 @@
 
 Batch 73 defines a provider-neutral architecture for future payment work. It is planning and boundary documentation only. It does not add real payment processing, refunds, provider webhooks, checkout sessions, subscription charging, provider SDKs, schema changes, seed data, or production database writes.
 
+Batch 74 adds the tenant payment settings foundation as disabled/planned-only configuration. The tenant payment settings foundation records provider readiness flags only, performs no real payment processing, makes no provider calls, and keeps no secrets stored in database records.
+
 ## Provider-Neutral Architecture
 
 Future payment work should keep payment orchestration behind internal application boundaries instead of coupling order, invoice, or tenant admin routes directly to a provider. The provider adapter should receive normalized application intent, return normalized provider references, and never expose provider secrets or raw provider payloads to UI code.
@@ -74,6 +76,8 @@ Future provider configuration should use environment variable names only in code
 - `PAYMENT_CANCEL_URL`
 
 These names are placeholders only. No secret values or sample secret values are included here.
+
+Tenant payment settings may record whether public-key or webhook readiness is configured externally, but they must not store secret values, webhook signing secrets, raw provider tokens, card data, or bank account data.
 
 ## Explicit Non-Goals For Batch 73
 

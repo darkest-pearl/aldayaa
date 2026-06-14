@@ -42,6 +42,7 @@ Session cookies should keep these properties:
 - Keep environment variables in deployment settings or a managed secret store.
 - Do not write production secrets to the repository or generated artifacts.
 - Redact request metadata before audit logging.
+- The tenant payment settings foundation is planned/disabled only: no real payment processing, no provider calls, and no secrets stored in database records.
 
 ## Public Routes
 
