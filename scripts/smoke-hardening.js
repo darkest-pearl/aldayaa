@@ -4383,6 +4383,154 @@ function checkProductionReadinessSecurityChecklist() {
   assertIncludes(packageJson, '"db:seed": "prisma db seed"', 'Batch 72 should not add a new seed script');
 }
 
+function checkPaymentIntegrationBoundaryFoundation() {
+  const readme = read('README.md');
+  const packageJson = read('package.json');
+  const readiness = read('docs/PRODUCTION_READINESS_CHECKLIST.md');
+  const security = read('docs/SECURITY_HARDENING_CHECKLIST.md');
+  const boundaryPath = path.join(root, 'docs/PAYMENT_INTEGRATION_BOUNDARY.md');
+  const refundPath = path.join(root, 'docs/REFUND_WORKFLOW_PLAN.md');
+  const readinessPath = path.join(root, 'docs/PAYMENT_PROVIDER_READINESS_CHECKLIST.md');
+  const helperPath = path.join(root, 'src/lib/payment-boundaries.js');
+  const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
+
+  assert(fs.existsSync(boundaryPath), 'Batch 73 payment integration boundary doc is missing');
+  assert(fs.existsSync(refundPath), 'Batch 73 refund workflow plan is missing');
+  assert(fs.existsSync(readinessPath), 'Batch 73 payment provider readiness checklist is missing');
+  assert(fs.existsSync(helperPath), 'Batch 73 payment boundary constants helper is missing');
+
+  const boundary = read('docs/PAYMENT_INTEGRATION_BOUNDARY.md');
+  const refund = read('docs/REFUND_WORKFLOW_PLAN.md');
+  const providerReadiness = read('docs/PAYMENT_PROVIDER_READINESS_CHECKLIST.md');
+  const helper = read('src/lib/payment-boundaries.js');
+  const batch73Docs = `${boundary}\n${refund}\n${providerReadiness}`;
+  const batch73Source = `${helper}`;
+
+  for (const phrase of [
+    'provider-neutral architecture',
+    'customer online order payments',
+    'tenant subscription billing',
+    'invoice/manual payment reconciliation',
+    'refunds',
+    'manual payment recording',
+    'real payment processing',
+    'signature verification',
+    'idempotency',
+    'tenant scoping',
+    'no raw card data',
+    'no secrets in logs',
+    'audit logging',
+  ]) {
+    assertIncludes(boundary, phrase, `Batch 73 payment boundary phrase ${phrase}`);
+  }
+
+  for (const envName of [
+    'PAYMENT_PROVIDER',
+    'PAYMENT_MODE',
+    'PAYMENT_PUBLIC_KEY',
+    'PAYMENT_SECRET_KEY',
+    'PAYMENT_WEBHOOK_SIGNING_SECRET',
+    'PAYMENT_SUCCESS_URL',
+    'PAYMENT_CANCEL_URL',
+  ]) {
+    assertIncludes(batch73Docs, envName, `Batch 73 payment docs env name ${envName}`);
+    assertIncludes(helper, envName, `Batch 73 payment helper env name ${envName}`);
+  }
+
+  for (const phrase of [
+    'refund states',
+    'approval boundaries',
+    'audit requirements',
+    'No refund implementation is included in this batch',
+    'No provider API calls are included in this batch',
+  ]) {
+    assertIncludes(refund, phrase, `Batch 73 refund plan phrase ${phrase}`);
+  }
+
+  for (const phrase of [
+    'provider account setup checklist',
+    'test/live mode separation',
+    'webhook endpoint planning',
+    'secret rotation rules',
+    'PCI/card-data boundary',
+    'audit/logging expectations',
+    'tenant-scoped reconciliation requirements',
+    'launch checklist',
+  ]) {
+    assertIncludes(providerReadiness, phrase, `Batch 73 provider readiness phrase ${phrase}`);
+  }
+
+  assertIncludes(helper, 'PAYMENT_AREAS', 'Batch 73 helper exports payment areas');
+  assertIncludes(helper, 'PAYMENT_PROVIDER_ENV_NAMES', 'Batch 73 helper exports provider env names');
+  assertIncludes(helper, 'PAYMENT_BOUNDARY_STATUSES', 'Batch 73 helper exports boundary statuses');
+  assertNotIncludes(helper, 'fetch(', 'Batch 73 helper must not perform network calls');
+  assertNotIncludes(helper, 'import ', 'Batch 73 helper must not import provider SDKs');
+  assertNotIncludes(helper, 'process.env', 'Batch 73 helper must not read secret values');
+
+  assertIncludes(readme, 'Payment integration boundary foundation added.', 'README Batch 73 note');
+  assertIncludes(readme, 'Manual purchase invoice payment recording remains recordkeeping only and is separate from real payment processing.', 'README Batch 73 manual payment distinction');
+  assertIncludes(readme, 'Real payment processing, refunds, provider webhooks, and subscription charging remain future work.', 'README Batch 73 future work boundary');
+  assertIncludes(readiness, 'Payment provider readiness remains a future commercial expansion', 'Production readiness Batch 73 future commercial expansion note');
+  assertIncludes(security, 'Payment provider controls remain future work', 'Security checklist Batch 73 future payment controls note');
+
+  for (const forbidden of [
+    'postgres://',
+    'postgresql://',
+    'DATABASE_URL=',
+    'DATABASE_URL"',
+    'sk_live_',
+    'sk_test_',
+    'whsec_',
+    '-----BEGIN',
+  ]) {
+    assertNotIncludes(batch73Docs, forbidden, `Batch 73 docs must not include secret example ${forbidden}`);
+    assertNotIncludes(batch73Source, forbidden, `Batch 73 helper must not include secret example ${forbidden}`);
+  }
+  assertNotIncludes(batch73Docs, 'DATABASE_URL', 'Batch 73 docs must not add DATABASE_URL references');
+  assertNotIncludes(batch73Source, 'DATABASE_URL', 'Batch 73 helper must not add DATABASE_URL references');
+
+  assertNotIncludes(packageJson, 'stripe', 'Batch 73 should not add Stripe dependency');
+  assertNotIncludes(packageJson, '@stripe', 'Batch 73 should not add Stripe scoped dependency');
+  assertNotIncludes(packageJson, 'paypal', 'Batch 73 should not add PayPal dependency');
+  assertNotIncludes(packageJson, 'checkout', 'Batch 73 should not add checkout dependency');
+
+  const appApiRoot = path.join(root, 'src/app/api');
+  const apiRouteFiles = [];
+  const collectApiRoutes = (relativePath) => {
+    const fullPath = path.join(root, relativePath);
+    for (const entry of fs.readdirSync(fullPath, { withFileTypes: true })) {
+      const childRelativePath = path.join(relativePath, entry.name);
+      if (entry.isDirectory()) collectApiRoutes(childRelativePath);
+      if (entry.isFile() && entry.name === 'route.js') apiRouteFiles.push(childRelativePath.replace(/\\/g, '/'));
+    }
+  };
+  collectApiRoutes('src/app/api');
+  assert(fs.existsSync(appApiRoot), 'API root is missing');
+  assert(!apiRouteFiles.some((file) => /checkout|session|refund|webhook/i.test(file)), 'Batch 73 must not add checkout/session/refund/webhook API routes');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Batch 73 must not add generic payments API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/refunds')), 'Batch 73 must not add refund API route');
+  assert(!fs.existsSync(path.join(root, 'src/app/api/webhooks')), 'Batch 73 must not add webhook API route');
+
+  const sourceFiles = [
+    ...fs.readdirSync(path.join(root, 'src/lib')).filter((file) => file.endsWith('.js')).map((file) => `src/lib/${file}`),
+    ...apiRouteFiles,
+  ];
+  const implementationSource = sourceFiles.map((file) => read(file)).join('\n');
+  for (const forbidden of [
+    'stripe.checkout',
+    'checkout.sessions',
+    'paymentIntents.create',
+    'refunds.create',
+    'webhooks.constructEvent',
+    '@stripe/stripe-js',
+    'stripe-node',
+  ]) {
+    assertNotIncludes(implementationSource, forbidden, `Batch 73 must not add provider implementation ${forbidden}`);
+  }
+
+  assert(!migrationDirs.some((migrationDir) => /batch.73|payment.integration.boundary|payment.provider.readiness|refund.workflow/i.test(migrationDir)), 'Batch 73 should not add a Prisma migration');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -5610,6 +5758,7 @@ const checks = [
   checkTenantOperationsReportingFoundation,
   checkTenantAuditLoggingSecurityHardening,
   checkProductionReadinessSecurityChecklist,
+  checkPaymentIntegrationBoundaryFoundation,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

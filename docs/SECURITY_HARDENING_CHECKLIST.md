@@ -55,4 +55,5 @@ Session cookies should keep these properties:
 - Add future rate-limiting/WAF at the edge or hosting layer before high-volume production traffic.
 - Add future external logging/SIEM after a provider and redaction policy are selected.
 - Add alerting and compliance exports only after audit log retention, access policy, and customer requirements are defined.
+- Payment provider controls remain future work and must include signature verification, idempotency, tenant scoping, no raw card data, and no secrets in logs before real money movement is implemented.
 - Add payment, billing, domain, CRM, payroll, tax, accounting, email, and WhatsApp controls only with their corresponding integrations.
