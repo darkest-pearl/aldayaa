@@ -187,7 +187,7 @@ export default function TenantPaymentSettingsClient({ restaurantSlug, staffRole 
                 Webhook planned externally
               </label>
             </div>
-            <textarea className={`${inputClass} min-h-[96px]`} disabled={!writable || saving} placeholder="Operator notes; do not enter secrets, tokens, card data, or bank details." value={settings.notes || ''} onChange={(event) => updateField('notes', event.target.value)} />
+            <textarea className={`${inputClass} min-h-[96px]`} disabled={!writable || saving} placeholder="Operator notes only. Do not enter provider secrets, webhook secrets, card data, bank details, or database URLs." value={settings.notes || ''} onChange={(event) => updateField('notes', event.target.value)} />
             <div>
               <button disabled={!writable || saving} className="rounded-md bg-[#10241f] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
                 {saving ? 'Saving payment settings...' : 'Save payment settings'}

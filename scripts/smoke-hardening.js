@@ -4557,6 +4557,7 @@ function checkTenantPaymentSettingsFoundation() {
   const apiRoute = read('src/app/api/restaurant-admin/payment-settings/route.js');
   const page = read('src/app/r/[restaurantSlug]/admin/payment-settings/page.js');
   const client = read('src/app/r/[restaurantSlug]/admin/payment-settings/TenantPaymentSettingsClient.jsx');
+  const settingsRoute = read('src/app/api/restaurant-admin/settings/route.js');
   const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
   const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
   const auditHelper = read('src/lib/tenant-audit.js');
@@ -4571,6 +4572,7 @@ function checkTenantPaymentSettingsFoundation() {
     'PAYMENT_SETTING_PROVIDERS',
     'DEFAULT_PAYMENT_SETTINGS',
     'PAYMENT_SETTINGS_FORBIDDEN_KEY_PATTERN',
+    'PAYMENT_SETTINGS_FORBIDDEN_VALUE_PATTERN',
     'normalizePaymentSettings',
     'serializePaymentSettings',
     'assertSafePaymentSettingsPayload',
@@ -4583,6 +4585,14 @@ function checkTenantPaymentSettingsFoundation() {
   for (const forbiddenKey of ['secret', 'token', 'password', 'webhookSecret', 'signingSecret', 'apiKey', 'card', 'cvc', 'bank']) {
     assertIncludes(helper, forbiddenKey, `Batch 74 helper rejects ${forbiddenKey}`);
   }
+  for (const forbiddenValue of ['sk_live_', 'sk_test_', 'whsec_', 'postgres://', 'postgresql://', '-----BEGIN']) {
+    assertIncludes(helper, forbiddenValue, `Batch 74 helper rejects secret-shaped value ${forbiddenValue}`);
+  }
+  assertIncludes(helper, 'findForbiddenPaymentSettingValue', 'Batch 74 helper scans secret-looking string values');
+  assertIncludes(helper, 'PAYMENT_SETTINGS_SECRET_REJECTION_MESSAGE', 'Batch 74 helper centralizes safe secret rejection message');
+  assertIncludes(helper, 'Payment settings cannot include secret or private payment data', 'Batch 74 helper uses safe secret rejection message');
+  assertNotIncludes(helper, 'entryValue}`', 'Batch 74 helper must not echo submitted secret-looking values');
+  assertNotIncludes(helper, 'value}`', 'Batch 74 helper must not echo submitted secret-looking values');
   assertNotIncludes(helper, 'restaurantId:', 'Batch 74 payment settings normalizer must not expose restaurantId');
   assertNotIncludes(helper, 'process.env', 'Batch 74 payment settings helper must not read environment secret values');
   assertNotIncludes(helper, 'fetch(', 'Batch 74 payment settings helper must not make network calls');
@@ -4593,6 +4603,7 @@ function checkTenantPaymentSettingsFoundation() {
   assertIncludes(apiRoute, 'where: { restaurantId: staff.restaurantId }', 'Payment settings API scopes by staff restaurantId');
   assertIncludes(apiRoute, "body.restaurantId !== undefined", 'Payment settings API rejects restaurantId from body');
   assertIncludes(apiRoute, 'assertSafePaymentSettingsPayload(body)', 'Payment settings API rejects secret-looking fields');
+  assertIncludes(apiRoute, 'paymentSettingsError.message', 'Payment settings API returns safe payment-settings validation messages');
   assertIncludes(apiRoute, 'prisma.restaurantSettings.updateMany', 'Payment settings API uses scoped updateMany');
   assertIncludes(apiRoute, 'updated.count !== 1', 'Payment settings API checks scoped update count');
   assertIncludes(apiRoute, '...previousPaymentSettings', 'Payment settings API preserves existing payment settings fields');
@@ -4606,6 +4617,9 @@ function checkTenantPaymentSettingsFoundation() {
   assertNotIncludes(apiRoute, 'prisma.purchaseInvoicePayment', 'Payment settings API must not mutate payment records');
   assertNotIncludes(apiRoute, 'prisma.inventoryItem', 'Payment settings API must not mutate inventory items');
   assertNotIncludes(apiRoute, 'prisma.inventoryMovement', 'Payment settings API must not create inventory movements');
+  assertIncludes(settingsRoute, 'const safeSettings = { ...settings }', 'Generic tenant settings API builds a safe settings response copy');
+  assertIncludes(settingsRoute, 'delete safeSettings.paymentSettings', 'Generic tenant settings API removes paymentSettings from response');
+  assertIncludes(settingsRoute, '...safeSettings', 'Generic tenant settings API returns redacted safe settings');
 
   assertIncludes(page, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Payment settings page uses DB-backed staff guard');
   assertIncludes(client, 'SUPPORT access is read-only', 'Payment settings UI SUPPORT read-only copy');
@@ -4613,6 +4627,7 @@ function checkTenantPaymentSettingsFoundation() {
   assertIncludes(client, 'No provider secrets are stored here.', 'Payment settings UI no secrets copy');
   assertIncludes(client, 'No checkout sessions or webhooks are active.', 'Payment settings UI no checkout/webhook copy');
   assertIncludes(client, 'Manual invoice payment recording remains separate.', 'Payment settings UI manual recording boundary copy');
+  assertIncludes(client, 'Operator notes only. Do not enter provider secrets, webhook secrets, card data, bank details, or database URLs.', 'Payment settings UI notes warning copy');
   for (const readinessText of [
     'provider selected',
     'public key configured externally',
@@ -4647,13 +4662,18 @@ function checkTenantPaymentSettingsFoundation() {
     'webhooks.constructEvent',
     '@stripe/stripe-js',
     'stripe-node',
+  ]) {
+    assertNotIncludes(source, forbidden, `Batch 74 must not add provider implementation ${forbidden}`);
+  }
+  const uiAndDocsSource = `${page}\n${client}\n${tenantNav}\n${tenantAdmin}\n${readme}\n${blocker}\n${boundary}\n${providerReadiness}\n${productionReadiness}\n${security}`;
+  for (const forbidden of [
     'PAYMENT_SECRET_KEY=',
     'PAYMENT_WEBHOOK_SIGNING_SECRET=',
     'sk_live_',
     'sk_test_',
     'whsec_',
   ]) {
-    assertNotIncludes(source, forbidden, `Batch 74 must not add provider implementation or secret example ${forbidden}`);
+    assertNotIncludes(uiAndDocsSource, forbidden, `Batch 74 UI/docs must not include secret example ${forbidden}`);
   }
 
   const apiRouteFiles = [];
@@ -4665,6 +4685,11 @@ function checkTenantPaymentSettingsFoundation() {
     }
   };
   collectApiRoutes('src/app/api');
+  const paymentSettingsPersistenceRoutes = apiRouteFiles.filter((file) => {
+    const routeSource = read(file);
+    return routeSource.includes('paymentSettings: serializePaymentSettings(nextPaymentSettings)');
+  });
+  assert(paymentSettingsPersistenceRoutes.length === 1 && paymentSettingsPersistenceRoutes[0] === 'src/app/api/restaurant-admin/payment-settings/route.js', 'Payment settings API must be the only route that persists paymentSettings');
   assert(!apiRouteFiles.some((file) => /checkout|session|refund|webhook/i.test(file)), 'Batch 74 must not add checkout/session/refund/webhook API routes');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Batch 74 must not add generic payments API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/refunds')), 'Batch 74 must not add refund API route');

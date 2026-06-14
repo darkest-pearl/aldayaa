@@ -20,10 +20,28 @@ export const DEFAULT_PAYMENT_SETTINGS = Object.freeze({
   webhookConfigured: false,
 });
 
+export const PAYMENT_SETTINGS_SECRET_REJECTION_MESSAGE = 'Payment settings cannot include secret or private payment data';
 export const PAYMENT_SETTINGS_FORBIDDEN_KEY_PATTERN = /secret|token|password|webhookSecret|signingSecret|apiKey|card|cvc|bank/i;
+export const PAYMENT_SETTINGS_FORBIDDEN_VALUE_PATTERN = new RegExp(
+  [
+    'sk_live_',
+    'sk_test_',
+    'whsec_',
+    'postgres://',
+    'postgresql://',
+    '-----BEGIN',
+    'PAYMENT_SECRET_KEY=',
+    'PAYMENT_WEBHOOK_SIGNING_SECRET=',
+  ].map(escapeRegExp).join('|'),
+  'i',
+);
 
 const modeValues = Object.freeze(Object.values(PAYMENT_SETTING_MODES));
 const providerValues = Object.freeze(Object.values(PAYMENT_SETTING_PROVIDERS));
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 function toBoolean(value) {
   return value === true;
@@ -72,11 +90,60 @@ function findForbiddenPaymentSettingKey(value, path = []) {
   return null;
 }
 
+function passesLuhnCheck(value) {
+  let sum = 0;
+  let shouldDouble = false;
+
+  for (let index = value.length - 1; index >= 0; index -= 1) {
+    let digit = Number(value[index]);
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+
+  return sum > 0 && sum % 10 === 0;
+}
+
+function looksLikeRawPaymentCardNumber(value) {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length < 13 || digits.length > 19) return false;
+  if (!/^[\d\s-]+$/.test(value.trim())) return false;
+  return passesLuhnCheck(digits);
+}
+
+function findForbiddenPaymentSettingValue(value, path = []) {
+  if (typeof value === 'string') {
+    if (PAYMENT_SETTINGS_FORBIDDEN_VALUE_PATTERN.test(value) || looksLikeRawPaymentCardNumber(value)) {
+      return path.join('.') || 'value';
+    }
+    return null;
+  }
+
+  if (!value || typeof value !== 'object') return null;
+
+  for (const [key, entryValue] of Object.entries(value)) {
+    const nested = findForbiddenPaymentSettingValue(entryValue, [...path, key]);
+    if (nested) return nested;
+  }
+
+  return null;
+}
+
 export function assertSafePaymentSettingsPayload(value) {
   const forbiddenKey = findForbiddenPaymentSettingKey(value);
   if (forbiddenKey) {
-    const error = new Error(`Payment settings cannot include secret or private payment data: ${forbiddenKey}`);
+    const error = new Error(`${PAYMENT_SETTINGS_SECRET_REJECTION_MESSAGE}: ${forbiddenKey}`);
     error.code = 'PAYMENT_SETTINGS_SECRET_FIELD';
+    throw error;
+  }
+
+  const forbiddenPath = findForbiddenPaymentSettingValue(value);
+  if (forbiddenPath) {
+    const error = new Error(`${PAYMENT_SETTINGS_SECRET_REJECTION_MESSAGE}: ${forbiddenPath}`);
+    error.code = 'PAYMENT_SETTINGS_SECRET_VALUE';
     throw error;
   }
 }
