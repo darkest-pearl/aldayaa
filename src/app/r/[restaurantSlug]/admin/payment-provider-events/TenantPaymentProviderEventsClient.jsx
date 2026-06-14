@@ -118,6 +118,7 @@ export default function TenantPaymentProviderEventsClient({ restaurantSlug }) {
               <th className="px-3 py-2 font-semibold">Mode</th>
               <th className="px-3 py-2 font-semibold">Event</th>
               <th className="px-3 py-2 font-semibold">Status</th>
+              <th className="px-3 py-2 font-semibold">Replay guard</th>
               <th className="px-3 py-2 font-semibold">Related</th>
               <th className="px-3 py-2 font-semibold">Metadata</th>
             </tr>
@@ -134,6 +135,9 @@ export default function TenantPaymentProviderEventsClient({ restaurantSlug }) {
                 </td>
                 <td className="px-3 py-2">{event.status}</td>
                 <td className="px-3 py-2">
+                  {event.hasIdempotencyKey ? 'Idempotency key recorded' : 'Not recorded'}
+                </td>
+                <td className="px-3 py-2">
                   {event.relatedEntityType ? `${event.relatedEntityType}: ${event.relatedEntityId || 'Not recorded'}` : 'Not recorded'}
                 </td>
                 <td className="max-w-[260px] px-3 py-2 text-xs text-neutral-600">
@@ -142,7 +146,7 @@ export default function TenantPaymentProviderEventsClient({ restaurantSlug }) {
               </tr>
             )) : (
               <tr>
-                <td className="px-3 py-6 text-center text-neutral-500" colSpan={7}>
+                <td className="px-3 py-6 text-center text-neutral-500" colSpan={8}>
                   {loading ? 'Loading payment events...' : 'No payment provider events match the current filters.'}
                 </td>
               </tr>

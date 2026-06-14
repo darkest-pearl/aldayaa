@@ -6,6 +6,8 @@ Batch 74 adds the tenant payment settings foundation for disabled/planned-only p
 
 Batch 75 adds the payment webhook idempotency foundation for future replay protection and read-only tenant visibility. For this foundation, no webhook endpoint is active, no real payment processing occurs, no provider calls are made, and no raw card data or secrets stored.
 
+Tenant payment event visibility must stay sanitized: raw idempotency keys are not exposed, and unsafe provider failure details are redacted before display.
+
 ## Provider Account Setup Checklist
 
 This provider account setup checklist must be completed before any provider-specific implementation starts.

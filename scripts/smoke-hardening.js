@@ -4757,6 +4757,7 @@ function checkPaymentWebhookIdempotencyFoundation() {
     'normalizePaymentProviderEvents',
     'isValidPaymentProviderEventStatus',
     'isValidPaymentProviderMode',
+    'sanitizePaymentProviderEventDisplayText',
     'UNSAFE_PAYMENT_PROVIDER_EVENT_METADATA_KEY_PATTERN',
   ]) {
     assertIncludes(helper, token, `Batch 75 payment provider event helper ${token}`);
@@ -4765,7 +4766,12 @@ function checkPaymentWebhookIdempotencyFoundation() {
     assertIncludes(helper, unsafeKey, `Batch 75 helper sanitizes ${unsafeKey} metadata`);
   }
   assertIncludes(helper, 'metadataSummary', 'Batch 75 normalizer exposes safe metadata summary only');
+  assertIncludes(helper, 'hasIdempotencyKey: Boolean(event.idempotencyKey)', 'Batch 75 normalizer exposes idempotency key presence only');
+  assertIncludes(helper, 'failureReason: sanitizePaymentProviderEventDisplayText(event.failureReason, 300)', 'Batch 75 normalizer redacts unsafe failure reason text');
+  assertIncludes(helper, 'UNSAFE_PAYMENT_PROVIDER_EVENT_METADATA_VALUE_PATTERN.test(cleaned)', 'Batch 75 scalar text sanitizer redacts unsafe provider failure text patterns');
+  assertIncludes(helper, 'looksLikeRawCardNumber(cleaned)', 'Batch 75 scalar text sanitizer redacts card-like failure text');
   assertNotIncludes(helper, 'rawMetadata', 'Batch 75 normalizer must not expose raw metadata');
+  assertNotIncludes(helper, 'idempotencyKey: cleanOptionalString(event.idempotencyKey', 'Batch 75 normalizer must not expose raw idempotencyKey');
   assertNotIncludes(helper, 'process.env', 'Batch 75 helper must not read environment secret values');
   assertNotIncludes(helper, 'fetch(', 'Batch 75 helper must not make network calls');
   assertNotIncludes(helper, 'stripe', 'Batch 75 helper must not import Stripe');
@@ -4794,6 +4800,9 @@ function checkPaymentWebhookIdempotencyFoundation() {
   assertIncludes(client, 'No webhook endpoint is active.', 'Payment provider events UI no webhook copy');
   assertIncludes(client, 'No real payment processing occurs.', 'Payment provider events UI no processing copy');
   assertIncludes(client, 'No refunds or checkout sessions are created.', 'Payment provider events UI no refund/checkout copy');
+  assertIncludes(client, 'event.hasIdempotencyKey', 'Payment provider events UI uses idempotency key presence only');
+  assertIncludes(client, 'Idempotency key recorded', 'Payment provider events UI labels idempotency key presence safely');
+  assertNotIncludes(client, 'event.idempotencyKey', 'Payment provider events UI must not display raw idempotencyKey');
   assertIncludes(client, 'Refresh', 'Payment provider events UI refresh control');
   assertIncludes(client, 'table', 'Payment provider events UI read-only table');
   for (const forbiddenControl of ['Save', 'Create', 'Update', 'Delete', 'Void', 'Refund', 'Checkout']) {
@@ -4812,6 +4821,10 @@ function checkPaymentWebhookIdempotencyFoundation() {
     assertIncludes(doc, 'no provider calls', 'Batch 75 docs preserve no provider calls boundary');
     assertIncludes(doc, 'no raw card data or secrets stored', 'Batch 75 docs preserve no raw card data or secrets boundary');
   }
+  assertIncludes(boundary, 'raw idempotency keys are not exposed', 'Payment boundary docs say raw idempotency keys are not exposed');
+  assertIncludes(providerReadiness, 'raw idempotency keys are not exposed', 'Payment readiness docs say raw idempotency keys are not exposed');
+  assertIncludes(boundary, 'unsafe provider failure details are redacted', 'Payment boundary docs say unsafe provider failure details are redacted');
+  assertIncludes(providerReadiness, 'unsafe provider failure details are redacted', 'Payment readiness docs say unsafe provider failure details are redacted');
   assertIncludes(readme, 'Payment webhook idempotency foundation added.', 'README Batch 75 note');
   assertIncludes(blocker, 'payment webhook idempotency foundation resolved by Batch 75', 'Tenant admin blocker Batch 75 status');
 

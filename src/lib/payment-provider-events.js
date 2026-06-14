@@ -75,6 +75,15 @@ function looksLikeRawCardNumber(value) {
   return passesLuhnCheck(digits);
 }
 
+export function sanitizePaymentProviderEventDisplayText(value, maxLength = 300) {
+  const cleaned = cleanOptionalString(value, maxLength);
+  if (!cleaned) return '';
+  if (UNSAFE_PAYMENT_PROVIDER_EVENT_METADATA_VALUE_PATTERN.test(cleaned) || looksLikeRawCardNumber(cleaned)) {
+    return '[Redacted]';
+  }
+  return cleaned;
+}
+
 function sanitizeMetadataValue(value, depth = 0) {
   if (value === null || value === undefined) return null;
   if (depth > 4) return '[Truncated]';
@@ -149,8 +158,8 @@ export function normalizePaymentProviderEvent(event = {}) {
     status: normalizePaymentProviderEventStatus(event.status),
     receivedAt: toDateValue(event.receivedAt),
     processedAt: toDateValue(event.processedAt),
-    failureReason: cleanOptionalString(event.failureReason, 300),
-    idempotencyKey: cleanOptionalString(event.idempotencyKey, 160),
+    failureReason: sanitizePaymentProviderEventDisplayText(event.failureReason, 300),
+    hasIdempotencyKey: Boolean(event.idempotencyKey),
     relatedEntityType: cleanOptionalString(event.relatedEntityType, 120),
     relatedEntityId: cleanOptionalString(event.relatedEntityId, 160),
     metadataSummary: summarizeMetadata(event.metadata),
