@@ -12,6 +12,7 @@ import {
   getRestaurantSlugFromRequest,
   requireRestaurantStaffAccess,
 } from '../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const displayHoursSchema = z
   .object({
@@ -136,6 +137,21 @@ export async function PUT(request) {
         cancellationFee: parsed.data.cancellationFee ?? 0,
         workingHoursByDay: JSON.stringify(normalizedWorkingHours),
         displayHours: JSON.stringify(nextDisplayHours),
+      },
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.SETTINGS_UPDATED,
+      entityType: 'SETTINGS',
+      entityId: String(settings.id),
+      summary: 'Updated tenant restaurant settings',
+      metadata: {
+        openingTime: settings.openingTime,
+        closingTime: settings.closingTime,
+        allowCancelPaid: settings.allowCancelPaid,
+        allowCancelInProgress: settings.allowCancelInProgress,
       },
     });
 

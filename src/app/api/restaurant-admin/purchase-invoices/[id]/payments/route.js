@@ -15,6 +15,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../../lib/tenant-audit';
 
 const createPurchaseInvoicePaymentSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -169,6 +170,22 @@ export async function POST(request, { params }) {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_INVOICE_PAYMENT_RECORDED,
+      entityType: 'PURCHASE_INVOICE_PAYMENT',
+      entityId: result.payment.id,
+      summary: `Recorded purchase invoice payment for invoice ${result.purchaseInvoice.invoiceNumber}`,
+      metadata: {
+        purchaseInvoiceId: result.purchaseInvoice.id,
+        invoiceNumber: result.purchaseInvoice.invoiceNumber,
+        amount: result.payment.amount,
+        currency: result.payment.currency,
+        method: result.payment.method,
+      },
+    });
 
     return success({
       payment: normalizePurchaseInvoicePayment(result.payment),

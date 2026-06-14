@@ -12,6 +12,7 @@ import {
   getRestaurantSlugFromRequest,
   requireRestaurantStaffAccess,
 } from '../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const optionalUrlSchema = z
   .string()
@@ -105,6 +106,20 @@ export async function PUT(request) {
         ...safeProfile,
         enabledFeatures: existingProfile.enabledFeatures,
       }),
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.SETTINGS_UPDATED,
+      entityType: 'PROFILE',
+      entityId: String(updatedProfile.id),
+      summary: 'Updated tenant restaurant profile',
+      metadata: {
+        restaurantName: updatedProfile.restaurantName,
+        cuisineType: updatedProfile.cuisineType,
+        currency: updatedProfile.currency,
+      },
     });
 
     return success({ profile: toPublicRestaurantProfile(updatedProfile) });

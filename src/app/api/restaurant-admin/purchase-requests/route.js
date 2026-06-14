@@ -15,6 +15,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const lineSchema = z.object({
   inventoryItemId: z.string().trim().min(1),
@@ -182,6 +183,21 @@ export async function POST(request) {
         },
         include: purchaseRequestInclude,
       });
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_REQUEST_CREATED,
+      entityType: 'PURCHASE_REQUEST',
+      entityId: purchaseRequest.id,
+      summary: `Created purchase request ${purchaseRequest.reference}`,
+      metadata: {
+        reference: purchaseRequest.reference,
+        status: purchaseRequest.status,
+        supplierId: purchaseRequest.supplierId,
+        lineCount: purchaseRequest.lines?.length || 0,
+      },
     });
 
     return success({ purchaseRequest: normalizePurchaseRequest(purchaseRequest) });

@@ -1812,14 +1812,14 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(tenantAdmin, "redirect(`/r/${params.restaurantSlug}/admin/login`)", 'Tenant admin page redirects unauthenticated staff');
   assertIncludes(tenantAdminLayout, 'bg-neutral-950', 'Tenant admin layout minimal shell styling');
   assertIncludes(tenantAdmin, 'Restaurant staff access is active', 'Tenant admin minimal dashboard copy');
-  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, and read-only operations reports are available now.', 'Tenant admin current modules copy');
+  assertIncludes(tenantAdmin, 'Tenant-scoped menu, gallery, profile, settings, staff management, reservations, tables, order status management, kitchen queue operations, inventory management, recipe linkage, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, and tenant audit logs are available now.', 'Tenant admin current modules copy');
   assertIncludes(tenantAdminLogin, '/api/restaurant-admin/login', 'Tenant admin login posts to staff login API');
   assertIncludes(tenantAdminLogin, 'restaurantSlug', 'Tenant admin login sends route slug');
   assertNotIncludes(tenantAdmin, 'MenuClient', 'Tenant admin dashboard should not expose menu tools');
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70; tenant audit logging and security hardening foundation resolved by Batch 71.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -1836,8 +1836,8 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertIncludes(blocker, 'Platform `AdminUser` remains separate from `RestaurantUser`.', 'Tenant admin foundation separate platform users');
   assertIncludes(blocker, 'restaurant staff sessions use `aldayaa_restaurant_staff`, not `aldayaa_admin`', 'Tenant admin foundation separate cookie');
   assertIncludes(blocker, 'tenant staff sessions cannot access `/platform-admin`', 'Tenant admin foundation platform boundary');
-  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, public tenant order creation when enabled, tenant table QR ordering when enabled, tenant public order support actions, and tenant public reservation support actions.', 'Tenant admin enabled modules note');
-  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion on order creation/status changes, automatic supplier sending, invoice automation, staff invitations, audit logging, self-service password reset flows, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
+  assertIncludes(blocker, 'Restaurant staff access now includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, tenant audit logs, public tenant order creation when enabled, tenant table QR ordering when enabled, tenant public order support actions, and tenant public reservation support actions.', 'Tenant admin enabled modules note');
+  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion on order creation/status changes, automatic supplier sending, invoice automation, staff invitations, self-service password reset flows, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin operational modules future note');
   assertNotIncludes(blocker, 'Restaurant staff login is authentication-only for now.', 'Tenant admin doc stale auth-only wording');
   assertNotIncludes(blocker, 'Menu, gallery, orders, reservations, settings, inventory, recipes, staff management, and other tenant admin modules are not enabled yet.', 'Tenant admin doc stale module future wording');
   assertNotIncludes(blocker, 'Blocker status: partially resolved by Batch 49 schema boundary.', 'Tenant admin doc stale Batch 49 blocker status');
@@ -1977,7 +1977,7 @@ function checkTenantMenuGalleryAdmin() {
   assertIncludes(tenantAdmin, 'Open menu', 'Tenant admin dashboard links to menu');
   assertIncludes(tenantAdmin, 'Open gallery', 'Tenant admin dashboard links to gallery');
   assertIncludes(tenantAdmin, 'Open settings', 'Tenant admin dashboard links to settings');
-  assertIncludes(tenantAdmin, 'Assisted ordering, automatic vendor sending, payment reconciliation, advanced analytics, forecasting, BI exports, scheduled reports, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
+  assertIncludes(tenantAdmin, 'Assisted ordering, automatic vendor sending, payment reconciliation, external logging/SIEM, alerting, compliance exports, advanced analytics, forecasting, BI exports, scheduled reports, advanced kitchen automation, automatic inventory consumption, advanced staff workflows, billing, domains, email, and WhatsApp automation remain future tenant admin work.', 'Tenant admin dashboard future module boundary');
   assertIncludes(tenantMenuPage, 'getRestaurantStaffFromRequest', 'Tenant menu page verifies staff session');
   assertIncludes(tenantMenuPage, 'staff.restaurantSlug !== params.restaurantSlug', 'Tenant menu page enforces slug boundary');
   assertIncludes(tenantGalleryPage, 'getRestaurantStaffFromRequest', 'Tenant gallery page verifies staff session');
@@ -2026,7 +2026,7 @@ function checkTenantMenuGalleryAdmin() {
   assert(!fs.existsSync(path.join(root, 'src/app/api/whatsapp')), 'Tenant menu/gallery batch should not add WhatsApp API route');
 
   assertIncludes(readme, 'Tenant menu/gallery admin added.', 'README Batch 51 tenant menu/gallery note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 70 updated tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 71 updated tenant staff access note');
   assertIncludes(readme, 'OWNER and MANAGER can write; SUPPORT is read-only.', 'README Batch 51 role boundary note');
   assertIncludes(readme, 'Inventory automation, automatic recipe depletion, broader staff management, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 57 future modules note');
   assertNotIncludes(readme, 'Restaurant staff access is authentication-only for now; operational tenant admin modules remain future work.', 'README stale Batch 50 auth-only tenant staff note');
@@ -2380,7 +2380,7 @@ function checkTenantReservationsManagement() {
   assertIncludes(readme, 'OWNER and MANAGER can update reservation status; SUPPORT remains read-only.', 'README Batch 54 reservations role note');
   assertIncludes(readme, 'Public tenant reservation creation is available at `/r/[restaurantSlug]/reservations` for initialized, non-archived tenants.', 'README Batch 54 public tenant reservations note');
   assertIncludes(readme, 'Demo reservation behavior remains available at `/public/reservations` and `/r/demo-restaurant/reservations`.', 'README Batch 54 demo reservation preservation note');
-  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 70 tenant staff access note');
+  assertIncludes(readme, 'Restaurant staff access includes tenant-scoped menu, gallery, profile, settings, staff management foundation, reservations management, table management foundation, order status management foundation, kitchen queue operations, inventory management foundation, recipe/ingredient linkage foundation, recipe consumption preview, supplier records, manual purchase requests, purchase invoice recording, manual purchase invoice payment records, read-only operations reports, tenant audit logs, public tenant order creation when ONLINE_ORDERING is enabled, tenant table QR ordering when TABLE_QR_ORDERING is enabled, tenant public order support actions, and tenant public reservation support actions; assisted ordering, real payment processing, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic inventory consumption, automatic recipe depletion, invoice automation, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, email, and WhatsApp automation remain future work.', 'README Batch 71 tenant staff access note');
   assertIncludes(readme, 'Tenant public reservation support actions added.', 'README Batch 60 note');
   assertIncludes(readme, 'Tenant public reservation lookup and cancellation are scoped by restaurantSlug, reference, and phone.', 'README Batch 60 scoped support note');
   assertIncludes(readme, 'Demo reservation cancellation remains demo-scoped at `/api/reservations/cancel`.', 'README Batch 60 demo support preservation note');
@@ -2822,7 +2822,7 @@ function checkTenantKitchenQueueOperations() {
   assertIncludes(readme, 'No payment, messaging, inventory consumption, recipe consumption, billing, domain, CRM, payroll, or analytics behavior was added.', 'README Batch 61 boundary note');
   assertIncludes(blocker, 'Batch 61 adds tenant-scoped kitchen queue and active order prep status management.', 'Tenant admin doc Batch 61 note');
   assertIncludes(blocker, 'Tenant kitchen queue reads and status updates are scoped by restaurantId.', 'Tenant admin doc kitchen scoping boundary');
-  assertIncludes(blocker, 'automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, staff invitations, audit logging, self-service password reset flows, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin doc future work boundary');
+  assertIncludes(blocker, 'automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, staff invitations, self-service password reset flows, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin doc future work boundary');
 
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant kitchen batch should not add billing API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant kitchen batch should not add payments API route');
@@ -2949,7 +2949,7 @@ function checkTenantInventoryManagementFoundation() {
   assertIncludes(readme, 'Automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, payments, billing, domains, CRM, payroll, analytics, email, and WhatsApp automation remain future work.', 'README Batch 62 boundary note');
   assertIncludes(blocker, 'Batch 62 adds tenant-scoped inventory item management and manual inventory movement tracking.', 'Tenant admin doc Batch 62 note');
   assertIncludes(blocker, 'Tenant inventory reads, item updates, soft deactivation, and manual movements are scoped by restaurantId.', 'Tenant admin doc inventory scoping boundary');
-  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, staff invitations, audit logging, self-service password reset flows, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin doc inventory future boundary');
+  assertIncludes(blocker, 'Assisted ordering, payments, refunds, messaging, advanced guest automation, advanced kitchen automation, automatic recipe depletion, order inventory consumption, automatic supplier sending, invoice automation, staff invitations, self-service password reset flows, external logging/SIEM, alerting, compliance exports, production secrets rotation, advanced analytics, forecasting, BI exports, scheduled reports, billing, domains, CRM, payroll, email, and WhatsApp automation remain future work.', 'Tenant admin doc inventory future boundary');
 
   assert(!fs.existsSync(path.join(root, 'src/app/api/billing')), 'Tenant inventory batch should not add billing API route');
   assert(!fs.existsSync(path.join(root, 'src/app/api/payments')), 'Tenant inventory batch should not add payments API route');
@@ -3778,7 +3778,7 @@ function checkTenantPurchaseInvoicePaymentRecordingFoundation() {
   assertIncludes(invoiceItemRoute, 'payments: {', 'Tenant purchase invoice detail includes payments');
   assertIncludes(invoiceItemRoute, "import { Prisma } from '@prisma/client';", 'Tenant purchase invoice PUT imports Prisma for transaction isolation');
   assertIncludes(invoiceItemRoute, 'PURCHASE_INVOICE_PAYMENT_STATUSES', 'Tenant purchase invoice PUT imports payment status constants');
-  assertIncludes(invoiceItemRoute, 'const purchaseInvoice = await prisma.$transaction(', 'Tenant purchase invoice PUT uses a transaction');
+  assertIncludes(invoiceItemRoute, 'await prisma.$transaction(', 'Tenant purchase invoice PUT uses a transaction');
   assertIncludes(invoiceItemRoute, 'Prisma.TransactionIsolationLevel.Serializable', 'Tenant purchase invoice PUT uses serializable transaction isolation');
   assertIncludes(invoiceItemRoute, 'tx.purchaseInvoicePayment.aggregate', 'Tenant purchase invoice PUT aggregates recorded payments');
   assertIncludes(invoiceItemRoute, 'purchaseInvoiceId: params.id', 'Tenant purchase invoice PUT aggregates payments by invoice id');
@@ -3937,10 +3937,10 @@ function checkTenantOperationsReportingFoundation() {
     assertIncludes(reportsClient, token, `Tenant reports UI renders ${token}`);
   }
   assertIncludes(helper, "const [statusRows, totalsByCurrency] = await Promise.all", 'Tenant reports helper groups purchase invoice totals separately from status counts');
-  assertIncludes(helper, "prisma.purchaseInvoice.groupBy({\n      by: ['currency']", 'Tenant reports helper groups purchase invoice totals by currency');
+  assert(/prisma\.purchaseInvoice\.groupBy\(\{\s*by: \['currency'\]/.test(helper), 'Tenant reports helper groups purchase invoice totals by currency');
   assertIncludes(helper, 'totalsByCurrency: totalsByCurrency.map', 'Tenant reports helper returns purchase invoice totals by currency');
   assertIncludes(helper, 'invoiceCount: getCount(row)', 'Tenant reports helper returns invoice counts per currency');
-  assertIncludes(helper, "prisma.purchaseInvoicePayment.groupBy({\n      by: ['currency']", 'Tenant reports helper groups recorded payment amounts by currency');
+  assert(/prisma\.purchaseInvoicePayment\.groupBy\(\{\s*by: \['currency'\]/.test(helper), 'Tenant reports helper groups recorded payment amounts by currency');
   assertIncludes(helper, 'recordedPaymentsByCurrency: normalizedRecordedPaymentsByCurrency', 'Tenant reports helper returns recorded payment totals by currency');
   assertIncludes(helper, 'paymentCount: getCount(row)', 'Tenant reports helper returns payment counts per currency');
   assertIncludes(reportsClient, 'totalsByCurrency', 'Tenant reports UI renders purchase invoice totals by currency');
@@ -3991,6 +3991,247 @@ function checkTenantOperationsReportingFoundation() {
   assert(!migrationDirs.some((migrationDir) => /operations.*report|tenant.*report|batch.70|202606.*report/i.test(migrationDir)), 'Batch 70 should not add a Prisma migration');
   assertNotIncludes(read('package.json'), 'recharts', 'Batch 70 should not add chart dependencies');
   assertNotIncludes(read('package.json'), 'chart.js', 'Batch 70 should not add chart dependencies');
+}
+
+function checkTenantAuditLoggingSecurityHardening() {
+  const schema = read('prisma/schema.prisma');
+  const readme = read('README.md');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const packageJson = read('package.json');
+  const migrationPath = path.join(root, 'prisma/migrations/20260613160000_add_restaurant_audit_logs/migration.sql');
+  const helperPath = path.join(root, 'src/lib/tenant-audit.js');
+  const auditRoutePath = path.join(root, 'src/app/api/restaurant-admin/audit-logs/route.js');
+  const auditItemRoutePath = path.join(root, 'src/app/api/restaurant-admin/audit-logs/[id]/route.js');
+  const auditPagePath = path.join(root, 'src/app/r/[restaurantSlug]/admin/audit-logs/page.js');
+  const auditClientPath = path.join(root, 'src/app/r/[restaurantSlug]/admin/audit-logs/TenantAuditLogsClient.jsx');
+
+  assert(fs.existsSync(migrationPath), 'Batch 71 audit log migration is missing');
+  assert(fs.existsSync(helperPath), 'Tenant audit helper is missing');
+  assert(fs.existsSync(auditRoutePath), 'Tenant audit log API route is missing');
+  assert(!fs.existsSync(auditItemRoutePath), 'Tenant audit log item route must not exist');
+  assert(fs.existsSync(auditPagePath), 'Tenant audit log admin page is missing');
+  assert(fs.existsSync(auditClientPath), 'Tenant audit log admin client is missing');
+
+  const migration = read('prisma/migrations/20260613160000_add_restaurant_audit_logs/migration.sql');
+  const helper = read('src/lib/tenant-audit.js');
+  const auditRoute = read('src/app/api/restaurant-admin/audit-logs/route.js');
+  const auditPage = read('src/app/r/[restaurantSlug]/admin/audit-logs/page.js');
+  const auditClient = read('src/app/r/[restaurantSlug]/admin/audit-logs/TenantAuditLogsClient.jsx');
+  const supplierRoute = read('src/app/api/restaurant-admin/suppliers/route.js');
+  const supplierItemRoute = read('src/app/api/restaurant-admin/suppliers/[id]/route.js');
+  const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
+  const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
+  const middleware = read('middleware.js');
+  const restaurantModel = getModelBlock(schema, 'Restaurant');
+  const auditModel = getModelBlock(schema, 'RestaurantAuditLog');
+
+  assertIncludes(restaurantModel, 'auditLogs         RestaurantAuditLog[]', 'Restaurant audit log relation');
+  assertIncludes(auditModel, 'restaurantId            String', 'RestaurantAuditLog required restaurantId field');
+  assertIncludes(auditModel, 'restaurant              Restaurant', 'RestaurantAuditLog required restaurant relation');
+  assertIncludes(auditModel, 'onDelete: Restrict', 'RestaurantAuditLog restaurant FK restricts deletes');
+  assertIncludes(auditModel, 'actorRestaurantUserId   String?', 'RestaurantAuditLog actor id field');
+  assertIncludes(auditModel, 'action                  String', 'RestaurantAuditLog action field');
+  assertIncludes(auditModel, 'entityType              String', 'RestaurantAuditLog entity type field');
+  assertIncludes(auditModel, 'metadata                Json?', 'RestaurantAuditLog metadata field');
+  assertIncludes(auditModel, '@@index([restaurantId])', 'RestaurantAuditLog restaurant index');
+  assertIncludes(auditModel, '@@index([actorRestaurantUserId])', 'RestaurantAuditLog actor index');
+  assertIncludes(auditModel, '@@index([action])', 'RestaurantAuditLog action index');
+  assertIncludes(auditModel, '@@index([entityType])', 'RestaurantAuditLog entity type index');
+  assertIncludes(auditModel, '@@index([entityId])', 'RestaurantAuditLog entity id index');
+  assertIncludes(auditModel, '@@index([createdAt])', 'RestaurantAuditLog createdAt index');
+  assertNotIncludes(auditModel, 'restaurantId            String?', 'RestaurantAuditLog restaurantId must not be nullable');
+  assertIncludes(migration, 'CREATE TABLE "RestaurantAuditLog"', 'RestaurantAuditLog migration table');
+  assertIncludes(migration, '"restaurantId" TEXT NOT NULL', 'RestaurantAuditLog migration requires restaurantId');
+  assertIncludes(migration, 'ON DELETE RESTRICT', 'RestaurantAuditLog migration restricts restaurant deletes');
+
+  assertIncludes(helper, 'export const TENANT_AUDIT_ACTIONS = Object.freeze', 'Tenant audit helper action constants');
+  assertIncludes(helper, 'SUPPLIER_CREATED', 'Tenant audit helper supplier created action');
+  assertIncludes(helper, 'SUPPLIER_UPDATED', 'Tenant audit helper supplier updated action');
+  assertIncludes(helper, 'export async function createTenantAuditLog', 'Tenant audit create helper');
+  assertIncludes(helper, 'restaurantId: staff.restaurantId', 'Tenant audit helper stamps restaurantId from staff');
+  assertNotIncludes(helper, 'restaurantId: metadata', 'Tenant audit helper must not accept restaurantId from metadata');
+  assertIncludes(helper, 'SENSITIVE_METADATA_KEYS', 'Tenant audit helper sensitive metadata key list');
+  for (const secretToken of ['password', 'passwordHash', 'cookie', 'session', 'DATABASE_URL', 'secret']) {
+    assertIncludes(helper, secretToken, `Tenant audit helper sanitizes ${secretToken}`);
+  }
+  assertIncludes(helper, 'console.error', 'Tenant audit helper logs audit write failures server-side');
+  assertIncludes(helper, 'normalizeTenantAuditLog', 'Tenant audit normalizer exists');
+  assertNotIncludes(helper.match(/export function normalizeTenantAuditLog[\s\S]*?\n\}/)?.[0] || '', 'restaurantId', 'Tenant audit normalizer must not expose restaurantId');
+
+  assertIncludes(auditRoute, 'export async function GET', 'Tenant audit API exposes GET');
+  assertNotIncludes(auditRoute, 'export async function POST', 'Tenant audit API must not expose POST');
+  assertNotIncludes(auditRoute, 'export async function PUT', 'Tenant audit API must not expose PUT');
+  assertNotIncludes(auditRoute, 'export async function PATCH', 'Tenant audit API must not expose PATCH');
+  assertNotIncludes(auditRoute, 'export async function DELETE', 'Tenant audit API must not expose DELETE');
+  assertIncludes(auditRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant audit API uses restaurant staff auth');
+  assertIncludes(auditRoute, 'isRestaurantStaffWriteRole(staff.role)', 'Tenant audit API gates OWNER/MANAGER access');
+  assertIncludes(auditRoute, 'const where = { restaurantId: staff.restaurantId', 'Tenant audit API scopes reads by restaurantId');
+  assertIncludes(auditRoute, 'From and To dates are required when filtering audit logs', 'Tenant audit API rejects one-sided date filters');
+  assertIncludes(auditRoute, 'MAX_AUDIT_RANGE_DAYS', 'Tenant audit API caps date range');
+  assertIncludes(auditRoute, 'take: limit + 1', 'Tenant audit API caps pagination limit');
+  assertNotIncludes(auditRoute, 'requireAdmin', 'Tenant audit API must not use platform admin auth');
+  assertNotIncludes(auditRoute, 'prisma.adminUser', 'Tenant audit API must not touch AdminUser');
+  assertNotIncludes(auditRoute, 'prisma.gatewayLead', 'Tenant audit API must not touch GatewayLead');
+
+  assertIncludes(auditPage, 'requireRestaurantStaffAccess(cookies(), params.restaurantSlug)', 'Tenant audit page validates staff session');
+  assertIncludes(auditPage, 'isRestaurantStaffWriteRole(staff.role)', 'Tenant audit page OWNER/MANAGER role gate');
+  assertIncludes(auditClient, 'Audit logs are read-only.', 'Tenant audit UI read-only copy');
+  assertIncludes(auditClient, 'Logs are tenant-scoped.', 'Tenant audit UI tenant-scoped copy');
+  assertIncludes(auditClient, 'No external logging or alerting is connected.', 'Tenant audit UI no external logging copy');
+  assertIncludes(auditClient, 'Refresh', 'Tenant audit UI refresh button');
+  assertIncludes(auditClient, 'metadataSummary', 'Tenant audit UI shows sanitized metadata summary only');
+  assertNotIncludes(auditClient, "method: 'POST'", 'Tenant audit UI must not call POST');
+  assertNotIncludes(auditClient, "method: 'PUT'", 'Tenant audit UI must not call PUT');
+  assertNotIncludes(auditClient, "method: 'DELETE'", 'Tenant audit UI must not call DELETE');
+  assertIncludes(tenantNav, "staff && isRestaurantStaffWriteRole(staff.role)", 'Tenant audit nav hides audit logs from SUPPORT');
+  assertIncludes(tenantNav, "label: 'Audit Logs'", 'Tenant admin navigation includes Audit Logs');
+  assertIncludes(tenantAdmin, 'auditLogCount', 'Tenant admin dashboard reads audit log count');
+  assertIncludes(tenantAdmin, 'Open audit logs', 'Tenant admin dashboard links to audit logs');
+
+  assertIncludes(supplierRoute, 'TENANT_AUDIT_ACTIONS', 'Tenant supplier create route imports audit actions');
+  assertIncludes(supplierRoute, 'createTenantAuditLog', 'Tenant supplier create route imports audit helper');
+  assertIncludes(supplierRoute, 'TENANT_AUDIT_ACTIONS.SUPPLIER_CREATED', 'Tenant supplier create route audits supplier creation');
+  assertIncludes(supplierRoute, 'entityType: \'SUPPLIER\'', 'Tenant supplier create audit uses supplier entity type');
+  assertIncludes(supplierRoute, 'hasEmail', 'Tenant supplier create audit stores safe email presence only');
+  assertIncludes(supplierRoute, 'hasPhone', 'Tenant supplier create audit stores safe phone presence only');
+  assertIncludes(supplierRoute, 'hasWhatsapp', 'Tenant supplier create audit stores safe WhatsApp presence only');
+  assertIncludes(supplierItemRoute, 'TENANT_AUDIT_ACTIONS', 'Tenant supplier update route imports audit actions');
+  assertIncludes(supplierItemRoute, 'createTenantAuditLog', 'Tenant supplier update route imports audit helper');
+  assertIncludes(supplierItemRoute, 'TENANT_AUDIT_ACTIONS.SUPPLIER_UPDATED', 'Tenant supplier update route audits supplier updates');
+  assertIncludes(supplierItemRoute, 'beforeActive', 'Tenant supplier update audit stores before active state');
+  assertIncludes(supplierItemRoute, 'afterActive', 'Tenant supplier update audit stores after active state');
+  for (const forbiddenSupplierMetadata of ['notes: supplier.notes', 'address: supplier.address', 'contactName: supplier.contactName']) {
+    assertNotIncludes(`${supplierRoute}\n${supplierItemRoute}`, forbiddenSupplierMetadata, `Tenant supplier audit metadata must not include ${forbiddenSupplierMetadata}`);
+  }
+
+  const staffRoute = read('src/app/api/restaurant-admin/staff/route.js');
+  const staffItemRoute = read('src/app/api/restaurant-admin/staff/[id]/route.js');
+  const settingsRoute = read('src/app/api/restaurant-admin/settings/route.js');
+  const profileRoute = read('src/app/api/restaurant-admin/profile/route.js');
+  const inventoryItemsRoute = read('src/app/api/restaurant-admin/inventory/items/route.js');
+  const inventoryItemRoute = read('src/app/api/restaurant-admin/inventory/items/[id]/route.js');
+  const inventoryMovementsRoute = read('src/app/api/restaurant-admin/inventory/movements/route.js');
+  const recipeApplyRoute = read('src/app/api/restaurant-admin/recipes/apply/route.js');
+  const purchaseRequestRoute = read('src/app/api/restaurant-admin/purchase-requests/route.js');
+  const purchaseRequestItemRoute = read('src/app/api/restaurant-admin/purchase-requests/[id]/route.js');
+  const purchaseReceiveRoute = read('src/app/api/restaurant-admin/purchase-requests/[id]/receive/route.js');
+  const purchaseInvoiceRoute = read('src/app/api/restaurant-admin/purchase-invoices/route.js');
+  const purchaseInvoiceItemRoute = read('src/app/api/restaurant-admin/purchase-invoices/[id]/route.js');
+  const paymentRoute = read('src/app/api/restaurant-admin/purchase-invoices/[id]/payments/route.js');
+  const paymentItemRoute = read('src/app/api/restaurant-admin/purchase-invoices/[id]/payments/[paymentId]/route.js');
+  const orderItemRoute = read('src/app/api/restaurant-admin/orders/[id]/route.js');
+  const reservationItemRoute = read('src/app/api/restaurant-admin/reservations/[id]/route.js');
+  const auditedWriteSources = [
+    staffRoute,
+    staffItemRoute,
+    settingsRoute,
+    profileRoute,
+    supplierRoute,
+    supplierItemRoute,
+    inventoryItemsRoute,
+    inventoryItemRoute,
+    inventoryMovementsRoute,
+    recipeApplyRoute,
+    purchaseRequestRoute,
+    purchaseRequestItemRoute,
+    purchaseReceiveRoute,
+    purchaseInvoiceRoute,
+    purchaseInvoiceItemRoute,
+    paymentRoute,
+    paymentItemRoute,
+    orderItemRoute,
+    reservationItemRoute,
+  ].join('\n');
+  for (const action of [
+    'STAFF_CREATED',
+    'STAFF_UPDATED',
+    'SETTINGS_UPDATED',
+    'SUPPLIER_CREATED',
+    'SUPPLIER_UPDATED',
+    'INVENTORY_ITEM_CREATED',
+    'INVENTORY_ITEM_UPDATED',
+    'INVENTORY_MOVEMENT_CREATED',
+    'RECIPE_CONSUMPTION_APPLIED',
+    'PURCHASE_REQUEST_CREATED',
+    'PURCHASE_REQUEST_UPDATED',
+    'PURCHASE_REQUEST_RECEIVED',
+    'PURCHASE_INVOICE_CREATED',
+    'PURCHASE_INVOICE_UPDATED',
+    'PURCHASE_INVOICE_PAYMENT_RECORDED',
+    'PURCHASE_INVOICE_PAYMENT_VOIDED',
+    'ORDER_STATUS_UPDATED',
+    'RESERVATION_STATUS_UPDATED',
+  ]) {
+    assertIncludes(auditedWriteSources, action, `Tenant write APIs create audit action ${action}`);
+  }
+  assert((auditedWriteSources.match(/createTenantAuditLog/g) || []).length >= 18, 'Tenant write APIs must call createTenantAuditLog for high-value writes');
+  for (const forbidden of ['metadata: { password', 'metadata: { passwordHash', 'cookies:', 'metadata: { DATABASE_URL']) {
+    assertNotIncludes(auditedWriteSources, forbidden, `Tenant write audit metadata must not include ${forbidden}`);
+  }
+  assertNotIncludes(auditedWriteSources, 'prisma.adminUser', 'Tenant audited APIs must not touch AdminUser');
+  assertNotIncludes(auditedWriteSources, 'prisma.gatewayLead', 'Tenant audited APIs must not touch GatewayLead');
+
+  assertNotIncludes(middleware, 'prisma', 'Tenant admin middleware must not import Prisma');
+  assertIncludes(auditRoute, 'staff.restaurantId', 'Tenant audit API must use DB-backed staff restaurant scope');
+  for (const source of [staffRoute, settingsRoute, inventoryItemsRoute, purchaseRequestRoute, purchaseInvoiceRoute, paymentRoute]) {
+    assertIncludes(source, 'requireRestaurantStaffAccess', 'Tenant operational APIs use DB-backed restaurant staff access');
+    assertNotIncludes(source, 'requireAdmin', 'Tenant operational APIs must not use platform requireAdmin');
+    assertNotIncludes(source, 'AdminUser', 'Tenant operational APIs must not use AdminUser');
+  }
+  const platformApiSource = [
+    read('src/app/api/admin/users/route.js'),
+    read('src/app/api/admin/users/[id]/route.js'),
+    read('src/app/api/admin/gateway-leads/route.js'),
+    read('src/app/api/admin/gateway-leads/[id]/route.js'),
+  ].join('\n');
+  assertNotIncludes(platformApiSource, 'requireRestaurantStaffAccess', 'Platform admin APIs must not use restaurant staff auth');
+  const publicTenantWriteSource = [
+    read('src/app/api/orders/route.js'),
+    read('src/app/api/reservations/route.js'),
+    read('src/app/api/orders/tenant-cancel/route.js'),
+    read('src/app/api/reservations/tenant-cancel/route.js'),
+  ].join('\n');
+  assertIncludes(publicTenantWriteSource, 'restaurantSlug', 'Public tenant write APIs remain slug scoped');
+  assertIncludes(publicTenantWriteSource, 'restaurantId', 'Public tenant write APIs remain restaurant scoped');
+  const databaseUrlFiles = [];
+  const scanDatabaseUrl = (relativePath) => {
+    const fullPath = path.join(root, relativePath);
+    for (const entry of fs.readdirSync(fullPath, { withFileTypes: true })) {
+      const childRelativePath = path.join(relativePath, entry.name);
+      if (entry.isDirectory()) {
+        if (!['node_modules', '.next', '.git'].includes(entry.name)) scanDatabaseUrl(childRelativePath);
+      } else if (/\.(js|jsx|prisma)$/.test(entry.name) && read(childRelativePath).includes('DATABASE_URL')) {
+        databaseUrlFiles.push(childRelativePath.replace(/\\/g, '/'));
+      }
+    }
+  };
+  scanDatabaseUrl('src');
+  scanDatabaseUrl('prisma');
+  const expectedDatabaseUrlFiles = new Set([
+    'src/app/action.js',
+    'src/app/api/gateway/leads/route.js',
+    'src/app/platform-admin/(protected)/client-restaurants/page.js',
+    'src/app/platform-admin/(protected)/page.js',
+    'src/app/public/order/page.js',
+    'src/app/public/table/[slug]/page.js',
+    'src/app/r/[restaurantSlug]/table/[slug]/page.js',
+    'src/lib/restaurants.js',
+    'src/lib/restaurant-profile.js',
+    'src/lib/tenant-audit.js',
+    'prisma/schema.prisma',
+    'prisma/seed.js',
+  ]);
+  const unexpectedDatabaseUrlFiles = databaseUrlFiles.filter((file) => !expectedDatabaseUrlFiles.has(file));
+  assert(!unexpectedDatabaseUrlFiles.length, `Unexpected DATABASE_URL references: ${unexpectedDatabaseUrlFiles.join(', ')}`);
+  for (const forbidden of ['winston', 'pino', 'logtail', 'sentry', 'datadog', 'stripe', 'refund', 'sendWhatsApp', 'sendMail', 'nodemailer', 'billing', 'domain', 'crm', 'payroll', 'taxEngine', 'accounting', 'analyticsEngine', 'siem']) {
+    assertNotIncludes(`${helper}\n${auditRoute}\n${auditClient}\n${auditedWriteSources}`, forbidden, `Batch 71 must not add ${forbidden} behavior`);
+    assertNotIncludes(packageJson, forbidden, `Batch 71 must not add ${forbidden} package dependency`);
+  }
+
+  assertIncludes(readme, 'Tenant audit logging and security hardening foundation added.', 'README Batch 71 audit note');
+  assertIncludes(readme, 'Audit logs are tenant-scoped, read-only for OWNER and MANAGER staff, and sanitize sensitive metadata.', 'README Batch 71 scope note');
+  assertIncludes(blocker, 'tenant audit logging and security hardening foundation resolved by Batch 71', 'Tenant admin doc Batch 71 status');
+  assertIncludes(blocker, 'Batch 71 adds tenant-scoped audit logging for high-value tenant staff admin writes.', 'Tenant admin doc Batch 71 behavior');
 }
 
 function checkGatewayLeadAdminManagement() {
@@ -5218,6 +5459,7 @@ const checks = [
   checkTenantPurchaseInvoiceFoundation,
   checkTenantPurchaseInvoicePaymentRecordingFoundation,
   checkTenantOperationsReportingFoundation,
+  checkTenantAuditLoggingSecurityHardening,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

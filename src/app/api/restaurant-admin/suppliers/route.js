@@ -9,6 +9,7 @@ import {
   requireRestaurantStaffAccess,
 } from '../../../../lib/restaurant-staff-access';
 import { normalizeSuppliers } from '../../../../lib/suppliers';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const supplierSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -32,6 +33,16 @@ function buildSupplierData(data) {
     address: normalizeOptionalText(data.address),
     notes: normalizeOptionalText(data.notes),
     isActive: data.isActive ?? true,
+  };
+}
+
+function buildSupplierAuditMetadata(supplier) {
+  return {
+    name: supplier.name,
+    isActive: supplier.isActive !== false,
+    hasEmail: Boolean(supplier.email),
+    hasPhone: Boolean(supplier.phone),
+    hasWhatsapp: Boolean(supplier.whatsapp),
   };
 }
 
@@ -84,6 +95,16 @@ export async function POST(request) {
         ...buildSupplierData(parsed.data),
         restaurantId: staff.restaurantId,
       },
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.SUPPLIER_CREATED,
+      entityType: 'SUPPLIER',
+      entityId: supplier.id,
+      summary: `Created supplier ${supplier.name}`,
+      metadata: buildSupplierAuditMetadata(supplier),
     });
 
     return success({ supplier: normalizeSuppliers([supplier])[0] });

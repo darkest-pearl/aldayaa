@@ -13,6 +13,7 @@ import {
 } from '../../../../../../lib/purchase-requests';
 import { prisma } from '../../../../../../lib/prisma';
 import { requireRestaurantStaffAccess } from '../../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../../lib/tenant-audit';
 
 const PURCHASE_REQUEST_RECEIVE_SOURCE = 'PURCHASE_REQUEST_RECEIVE';
 
@@ -186,6 +187,21 @@ export async function POST(request, { params }) {
       }
 
       return { receivedPurchaseRequest, movements, updatedItems };
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_REQUEST_RECEIVED,
+      entityType: 'PURCHASE_REQUEST',
+      entityId: receivedPurchaseRequest.id,
+      summary: `Received purchase request ${receivedPurchaseRequest.reference}`,
+      metadata: {
+        reference: receivedPurchaseRequest.reference,
+        status: receivedPurchaseRequest.status,
+        movementCount: movements.length,
+        updatedItemCount: updatedItems.length,
+      },
     });
 
     return success({

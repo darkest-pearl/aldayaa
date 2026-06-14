@@ -12,6 +12,7 @@ import {
   normalizeOptionalText,
   requireRestaurantStaffAccess,
 } from '../../../../../../../lib/restaurant-staff-access';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../../../lib/tenant-audit';
 
 const voidPurchaseInvoicePaymentSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -83,6 +84,30 @@ export async function PUT(request, { params }) {
     });
 
     if (!purchaseInvoice) return failure('Purchase invoice not found', 404);
+
+    const payment = await prisma.purchaseInvoicePayment.findFirst({
+      where: {
+        id: params.paymentId,
+        purchaseInvoiceId: params.id,
+        restaurantId: staff.restaurantId,
+      },
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.PURCHASE_INVOICE_PAYMENT_VOIDED,
+      entityType: 'PURCHASE_INVOICE_PAYMENT',
+      entityId: params.paymentId,
+      summary: `Voided purchase invoice payment for invoice ${purchaseInvoice.invoiceNumber}`,
+      metadata: {
+        purchaseInvoiceId: purchaseInvoice.id,
+        invoiceNumber: purchaseInvoice.invoiceNumber,
+        amount: payment?.amount,
+        currency: payment?.currency,
+        method: payment?.method,
+      },
+    });
 
     return success({ purchaseInvoice: normalizePurchaseInvoice(purchaseInvoice) });
   } catch (error) {

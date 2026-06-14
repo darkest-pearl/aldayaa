@@ -38,6 +38,7 @@ model Restaurant {
   purchaseInvoiceLines PurchaseInvoiceLine[]
   purchaseInvoicePayments PurchaseInvoicePayment[]
   restaurantUsers   RestaurantUser[]
+  auditLogs         RestaurantAuditLog[]
 }
 
 model MenuCategory {
@@ -214,6 +215,30 @@ model RestaurantUser {
   @@index([email])
   @@index([role])
   @@index([isActive])
+}
+
+model RestaurantAuditLog {
+  id                      String     @id @default(cuid())
+  restaurantId            String
+  restaurant              Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+  actorRestaurantUserId   String?
+  actorEmail              String?
+  actorRole               String?
+  action                  String
+  entityType              String
+  entityId                String?
+  summary                 String
+  metadata                Json?
+  ipAddress               String?
+  userAgent               String?
+  createdAt               DateTime   @default(now())
+
+  @@index([restaurantId])
+  @@index([actorRestaurantUserId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
 }
 
 model RestaurantSettings {

@@ -15,6 +15,7 @@ import {
   hashRestaurantStaffPassword,
   normalizeRestaurantStaffEmail,
 } from '../../../../lib/restaurant-staff-auth';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../lib/tenant-audit';
 
 const createStaffSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -102,6 +103,20 @@ export async function POST(request) {
         isActive: true,
       },
       select: staffSelect,
+    });
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.STAFF_CREATED,
+      entityType: 'STAFF',
+      entityId: staffUser.id,
+      summary: `Created tenant staff user ${staffUser.email}`,
+      metadata: {
+        targetEmail: staffUser.email,
+        targetRole: staffUser.role,
+        isActive: staffUser.isActive,
+      },
     });
 
     return success({ staffUser: normalizeRestaurantStaffUsers([staffUser])[0] });
