@@ -9,6 +9,7 @@ import {
   requireRestaurantStaffAccess,
 } from '../../../../../lib/restaurant-staff-access';
 import { normalizeSupplier } from '../../../../../lib/suppliers';
+import { TENANT_AUDIT_ACTIONS, createTenantAuditLog } from '../../../../../lib/tenant-audit';
 
 const supplierUpdateSchema = z.object({
   restaurantSlug: z.string().trim().min(1),
@@ -33,6 +34,30 @@ function buildSupplierUpdateData(data) {
   if (data.notes !== undefined) update.notes = normalizeOptionalText(data.notes);
   if (data.isActive !== undefined) update.isActive = data.isActive;
   return update;
+}
+
+function getUpdatedFields(data) {
+  return Object.keys(buildSupplierUpdateData(data));
+}
+
+function buildSupplierAuditMetadata(supplier, existingSupplier, parsedData) {
+  return {
+    name: supplier.name,
+    updatedFields: getUpdatedFields(parsedData),
+    beforeActive: existingSupplier.isActive !== false,
+    afterActive: supplier.isActive !== false,
+    hasEmail: Boolean(supplier.email),
+    hasPhone: Boolean(supplier.phone),
+    hasWhatsapp: Boolean(supplier.whatsapp),
+  };
+}
+
+function getSupplierUpdateSummary(supplier, existingSupplier) {
+  if (existingSupplier.isActive !== false && supplier.isActive === false) {
+    return `Deactivated supplier ${supplier.name}`;
+  }
+
+  return `Updated supplier ${supplier.name}`;
 }
 
 export async function GET(request, { params }) {
@@ -63,6 +88,13 @@ export async function PUT(request, { params }) {
     }
 
     const staff = await requireRestaurantStaffAccess(request, parsed.data.restaurantSlug, { write: true });
+    const existingSupplier = await prisma.supplier.findFirst({
+      where: { id: params.id, restaurantId: staff.restaurantId },
+      select: { id: true, isActive: true },
+    });
+
+    if (!existingSupplier) return failure('Supplier not found', 404);
+
     const updated = await prisma.supplier.updateMany({
       where: { id: params.id, restaurantId: staff.restaurantId },
       data: buildSupplierUpdateData(parsed.data),
@@ -77,6 +109,16 @@ export async function PUT(request, { params }) {
     });
 
     if (!supplier) return failure('Supplier not found', 404);
+
+    await createTenantAuditLog({
+      staff,
+      request,
+      action: TENANT_AUDIT_ACTIONS.SUPPLIER_UPDATED,
+      entityType: 'SUPPLIER',
+      entityId: supplier.id,
+      summary: getSupplierUpdateSummary(supplier, existingSupplier),
+      metadata: buildSupplierAuditMetadata(supplier, existingSupplier, parsed.data),
+    });
 
     return success({ supplier: normalizeSupplier(supplier) });
   } catch (error) {

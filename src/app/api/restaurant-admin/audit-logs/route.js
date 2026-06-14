@@ -39,6 +39,11 @@ function getAuditDateWhere(searchParams) {
   const from = parseDateOnly(searchParams.get('from') || '', 'From');
   const to = parseDateOnly(searchParams.get('to') || '', 'To');
   if (!from && !to) return {};
+  if ((from && !to) || (!from && to)) {
+    const error = new Error('From and To dates are required when filtering audit logs');
+    error.status = 400;
+    throw error;
+  }
 
   const createdAt = {};
   if (from) createdAt.gte = from;

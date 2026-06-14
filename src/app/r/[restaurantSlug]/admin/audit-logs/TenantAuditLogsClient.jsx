@@ -82,6 +82,7 @@ export default function TenantAuditLogsClient({ restaurantSlug }) {
             Refresh
           </button>
         </div>
+        <p className="mt-2 text-xs text-neutral-500">From and To dates are required when filtering audit logs.</p>
       </section>
 
       <section className="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">

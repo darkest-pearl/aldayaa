@@ -4017,6 +4017,8 @@ function checkTenantAuditLoggingSecurityHardening() {
   const auditRoute = read('src/app/api/restaurant-admin/audit-logs/route.js');
   const auditPage = read('src/app/r/[restaurantSlug]/admin/audit-logs/page.js');
   const auditClient = read('src/app/r/[restaurantSlug]/admin/audit-logs/TenantAuditLogsClient.jsx');
+  const supplierRoute = read('src/app/api/restaurant-admin/suppliers/route.js');
+  const supplierItemRoute = read('src/app/api/restaurant-admin/suppliers/[id]/route.js');
   const tenantNav = read('src/app/r/[restaurantSlug]/admin/TenantAdminNav.jsx');
   const tenantAdmin = read('src/app/r/[restaurantSlug]/admin/page.js');
   const middleware = read('middleware.js');
@@ -4043,6 +4045,8 @@ function checkTenantAuditLoggingSecurityHardening() {
   assertIncludes(migration, 'ON DELETE RESTRICT', 'RestaurantAuditLog migration restricts restaurant deletes');
 
   assertIncludes(helper, 'export const TENANT_AUDIT_ACTIONS = Object.freeze', 'Tenant audit helper action constants');
+  assertIncludes(helper, 'SUPPLIER_CREATED', 'Tenant audit helper supplier created action');
+  assertIncludes(helper, 'SUPPLIER_UPDATED', 'Tenant audit helper supplier updated action');
   assertIncludes(helper, 'export async function createTenantAuditLog', 'Tenant audit create helper');
   assertIncludes(helper, 'restaurantId: staff.restaurantId', 'Tenant audit helper stamps restaurantId from staff');
   assertNotIncludes(helper, 'restaurantId: metadata', 'Tenant audit helper must not accept restaurantId from metadata');
@@ -4062,6 +4066,7 @@ function checkTenantAuditLoggingSecurityHardening() {
   assertIncludes(auditRoute, 'requireRestaurantStaffAccess(request, restaurantSlug)', 'Tenant audit API uses restaurant staff auth');
   assertIncludes(auditRoute, 'isRestaurantStaffWriteRole(staff.role)', 'Tenant audit API gates OWNER/MANAGER access');
   assertIncludes(auditRoute, 'const where = { restaurantId: staff.restaurantId', 'Tenant audit API scopes reads by restaurantId');
+  assertIncludes(auditRoute, 'From and To dates are required when filtering audit logs', 'Tenant audit API rejects one-sided date filters');
   assertIncludes(auditRoute, 'MAX_AUDIT_RANGE_DAYS', 'Tenant audit API caps date range');
   assertIncludes(auditRoute, 'take: limit + 1', 'Tenant audit API caps pagination limit');
   assertNotIncludes(auditRoute, 'requireAdmin', 'Tenant audit API must not use platform admin auth');
@@ -4082,6 +4087,22 @@ function checkTenantAuditLoggingSecurityHardening() {
   assertIncludes(tenantNav, "label: 'Audit Logs'", 'Tenant admin navigation includes Audit Logs');
   assertIncludes(tenantAdmin, 'auditLogCount', 'Tenant admin dashboard reads audit log count');
   assertIncludes(tenantAdmin, 'Open audit logs', 'Tenant admin dashboard links to audit logs');
+
+  assertIncludes(supplierRoute, 'TENANT_AUDIT_ACTIONS', 'Tenant supplier create route imports audit actions');
+  assertIncludes(supplierRoute, 'createTenantAuditLog', 'Tenant supplier create route imports audit helper');
+  assertIncludes(supplierRoute, 'TENANT_AUDIT_ACTIONS.SUPPLIER_CREATED', 'Tenant supplier create route audits supplier creation');
+  assertIncludes(supplierRoute, 'entityType: \'SUPPLIER\'', 'Tenant supplier create audit uses supplier entity type');
+  assertIncludes(supplierRoute, 'hasEmail', 'Tenant supplier create audit stores safe email presence only');
+  assertIncludes(supplierRoute, 'hasPhone', 'Tenant supplier create audit stores safe phone presence only');
+  assertIncludes(supplierRoute, 'hasWhatsapp', 'Tenant supplier create audit stores safe WhatsApp presence only');
+  assertIncludes(supplierItemRoute, 'TENANT_AUDIT_ACTIONS', 'Tenant supplier update route imports audit actions');
+  assertIncludes(supplierItemRoute, 'createTenantAuditLog', 'Tenant supplier update route imports audit helper');
+  assertIncludes(supplierItemRoute, 'TENANT_AUDIT_ACTIONS.SUPPLIER_UPDATED', 'Tenant supplier update route audits supplier updates');
+  assertIncludes(supplierItemRoute, 'beforeActive', 'Tenant supplier update audit stores before active state');
+  assertIncludes(supplierItemRoute, 'afterActive', 'Tenant supplier update audit stores after active state');
+  for (const forbiddenSupplierMetadata of ['notes: supplier.notes', 'address: supplier.address', 'contactName: supplier.contactName']) {
+    assertNotIncludes(`${supplierRoute}\n${supplierItemRoute}`, forbiddenSupplierMetadata, `Tenant supplier audit metadata must not include ${forbiddenSupplierMetadata}`);
+  }
 
   const staffRoute = read('src/app/api/restaurant-admin/staff/route.js');
   const staffItemRoute = read('src/app/api/restaurant-admin/staff/[id]/route.js');
@@ -4105,6 +4126,8 @@ function checkTenantAuditLoggingSecurityHardening() {
     staffItemRoute,
     settingsRoute,
     profileRoute,
+    supplierRoute,
+    supplierItemRoute,
     inventoryItemsRoute,
     inventoryItemRoute,
     inventoryMovementsRoute,
@@ -4123,6 +4146,8 @@ function checkTenantAuditLoggingSecurityHardening() {
     'STAFF_CREATED',
     'STAFF_UPDATED',
     'SETTINGS_UPDATED',
+    'SUPPLIER_CREATED',
+    'SUPPLIER_UPDATED',
     'INVENTORY_ITEM_CREATED',
     'INVENTORY_ITEM_UPDATED',
     'INVENTORY_MOVEMENT_CREATED',
@@ -4139,7 +4164,7 @@ function checkTenantAuditLoggingSecurityHardening() {
   ]) {
     assertIncludes(auditedWriteSources, action, `Tenant write APIs create audit action ${action}`);
   }
-  assert((auditedWriteSources.match(/createTenantAuditLog/g) || []).length >= 16, 'Tenant write APIs must call createTenantAuditLog for high-value writes');
+  assert((auditedWriteSources.match(/createTenantAuditLog/g) || []).length >= 18, 'Tenant write APIs must call createTenantAuditLog for high-value writes');
   for (const forbidden of ['metadata: { password', 'metadata: { passwordHash', 'cookies:', 'metadata: { DATABASE_URL']) {
     assertNotIncludes(auditedWriteSources, forbidden, `Tenant write audit metadata must not include ${forbidden}`);
   }
