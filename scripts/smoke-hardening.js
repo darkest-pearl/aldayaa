@@ -1819,7 +1819,7 @@ function checkRestaurantStaffAuthSchemaBoundary() {
   assertNotIncludes(tenantAdmin, 'GalleryClient', 'Tenant admin dashboard should not expose gallery tools');
   assertNotIncludes(tenantAdmin, 'OrdersClient', 'Tenant admin dashboard should not expose orders tools');
 
-  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70; tenant audit logging and security hardening foundation resolved by Batch 71.', 'Tenant admin foundation current status');
+  assertIncludes(blocker, 'Foundation status: first-owner login resolved by Batch 50; tenant menu/gallery management resolved by Batch 51; tenant profile/settings management resolved by Batch 52; tenant staff management foundation resolved by Batch 53; tenant reservations management resolved by Batch 54; tenant table management foundation resolved by Batch 55; tenant order API boundary foundation resolved by Batch 56; tenant public order creation resolved by Batch 57; tenant table QR ordering resolved by Batch 58; tenant public order support actions resolved by Batch 59; tenant public reservation support actions resolved by Batch 60; tenant kitchen queue operations resolved by Batch 61; tenant inventory management foundation resolved by Batch 62; tenant recipe and ingredient linkage foundation resolved by Batch 63; tenant recipe consumption preview resolved by Batch 64; tenant manual recipe consumption apply resolved by Batch 65; tenant supplier and purchase request foundation resolved by Batch 66; tenant purchase receiving stock intake resolved by Batch 67; tenant purchase invoice recording foundation resolved by Batch 68; tenant purchase invoice payment recording foundation resolved by Batch 69; tenant operations reporting foundation resolved by Batch 70; tenant audit logging and security hardening foundation resolved by Batch 71; production readiness checklist documented by Batch 72.', 'Tenant admin foundation current status');
   assertIncludes(blocker, 'Batch 50 adds first-owner provisioning and restaurant staff login.', 'Tenant admin doc Batch 50 update');
   assertIncludes(blocker, 'Batch 51 adds tenant-scoped menu/gallery management.', 'Tenant admin doc Batch 51 update');
   assertIncludes(blocker, 'Batch 52 adds tenant-scoped profile/settings management.', 'Tenant admin doc Batch 52 update');
@@ -4234,6 +4234,155 @@ function checkTenantAuditLoggingSecurityHardening() {
   assertIncludes(blocker, 'Batch 71 adds tenant-scoped audit logging for high-value tenant staff admin writes.', 'Tenant admin doc Batch 71 behavior');
 }
 
+function checkProductionReadinessSecurityChecklist() {
+  const readme = read('README.md');
+  const blocker = read('docs/TENANT_ADMIN_ACCESS_FOUNDATION_BLOCKER.md');
+  const packageJson = read('package.json');
+  const middleware = read('middleware.js');
+  const nextConfig = read('next.config.mjs');
+  const auditHelper = read('src/lib/tenant-audit.js');
+  const migrationDirs = fs.readdirSync(path.join(root, 'prisma/migrations'));
+  const readinessPath = path.join(root, 'docs/PRODUCTION_READINESS_CHECKLIST.md');
+  const secretsPath = path.join(root, 'docs/SECRETS_ROTATION_RUNBOOK.md');
+  const deploymentPath = path.join(root, 'docs/DEPLOYMENT_RUNBOOK.md');
+  const securityPath = path.join(root, 'docs/SECURITY_HARDENING_CHECKLIST.md');
+
+  assert(fs.existsSync(readinessPath), 'Batch 72 production readiness checklist is missing');
+  assert(fs.existsSync(secretsPath), 'Batch 72 secrets rotation runbook is missing');
+  assert(fs.existsSync(deploymentPath), 'Batch 72 deployment runbook is missing');
+  assert(fs.existsSync(securityPath), 'Batch 72 security hardening checklist is missing');
+
+  const readiness = read('docs/PRODUCTION_READINESS_CHECKLIST.md');
+  const secrets = read('docs/SECRETS_ROTATION_RUNBOOK.md');
+  const deployment = read('docs/DEPLOYMENT_RUNBOOK.md');
+  const security = read('docs/SECURITY_HARDENING_CHECKLIST.md');
+  const batch72Docs = `${readiness}\n${secrets}\n${deployment}\n${security}`;
+
+  assertIncludes(readiness, 'Core operations foundation through Batch 71 is complete', 'Production readiness core foundation summary');
+  assertIncludes(readiness, '20260613160000_add_restaurant_audit_logs', 'Production readiness migration status through Batch 71');
+  for (const envName of ['DATABASE_URL', 'ADMIN_JWT_SECRET', 'RESTAURANT_STAFF_JWT_SECRET', 'COOKIE_DOMAIN', 'NEXT_PUBLIC_BASE_URL', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']) {
+    assertIncludes(readiness, envName, `Production readiness env variable ${envName}`);
+  }
+  for (const command of ['npm ci', 'npx prisma generate', 'npm run lint', 'npm run build', 'node scripts/smoke-hardening.js']) {
+    assertIncludes(readiness, command, `Production readiness predeploy command ${command}`);
+  }
+  assertIncludes(readiness, 'prisma migrate deploy only in a deploy gate', 'Production readiness deploy gate boundary');
+  assertIncludes(readiness, 'tenant admin login checks', 'Production readiness tenant admin checks');
+  assertIncludes(readiness, 'public tenant ordering and reservation checks', 'Production readiness public tenant checks');
+  assertIncludes(readiness, 'audit log visibility checks', 'Production readiness audit checks');
+  assertIncludes(readiness, 'rollback notes', 'Production readiness rollback notes');
+
+  assertIncludes(secrets, 'Do not paste DATABASE_URL into chat or transcripts', 'Secrets runbook chat secret boundary');
+  assertIncludes(secrets, 'process-scoped environment variable', 'Secrets runbook process scoped env');
+  assertIncludes(secrets, 'Never write production DATABASE_URL to the repo', 'Secrets runbook no repo database URL');
+  assertIncludes(secrets, 'Verify old credentials are revoked', 'Secrets runbook revocation check');
+  assertIncludes(secrets, 'Verify app boot after rotation', 'Secrets runbook boot check');
+  assertIncludes(secrets, 'Verify `_prisma_migrations` after deploy', 'Secrets runbook migration verification');
+
+  assertIncludes(deployment, 'PR merge gate', 'Deployment runbook PR merge gate');
+  assertIncludes(deployment, 'fast-forward local main', 'Deployment runbook local main fast-forward');
+  assertIncludes(deployment, '$secureDatabaseUrl = Read-Host "Paste DATABASE_URL for this process only" -AsSecureString', 'Deployment runbook secure PowerShell input');
+  assertIncludes(deployment, 'npx.cmd prisma migrate deploy', 'Deployment runbook Windows npx fallback');
+  assertIncludes(deployment, 'No seed unless explicitly planned', 'Deployment runbook seed boundary');
+  assertIncludes(deployment, 'row-count verification for newly introduced tables', 'Deployment runbook row count verification');
+
+  assertIncludes(security, 'Tenant/staff auth boundaries', 'Security checklist tenant auth section');
+  assertIncludes(security, 'Platform admin separation', 'Security checklist platform separation');
+  assertIncludes(security, 'DB-backed `requireRestaurantStaffAccess`', 'Security checklist DB-backed staff auth');
+  assertIncludes(security, 'middleware remains lightweight and does not import Prisma', 'Security checklist middleware boundary');
+  for (const cookieToken of ['httpOnly', 'sameSite', 'secure in production', 'path scoping']) {
+    assertIncludes(security, cookieToken, `Security checklist cookie token ${cookieToken}`);
+  }
+  assertIncludes(security, 'no raw Prisma errors to clients', 'Security checklist raw Prisma boundary');
+  assertIncludes(security, 'no DATABASE_URL in logs', 'Security checklist DATABASE_URL logs boundary');
+  assertIncludes(security, 'no AdminUser usage in tenant APIs', 'Security checklist tenant AdminUser boundary');
+  assertIncludes(security, 'no RestaurantUser usage in platform APIs unless clearly intended', 'Security checklist platform RestaurantUser boundary');
+  assertIncludes(security, 'no cross-tenant reads or writes', 'Security checklist cross-tenant boundary');
+  assertIncludes(security, 'public write APIs scoped by restaurantSlug and restaurantId', 'Security checklist public write scoping');
+  assertIncludes(security, 'future rate-limiting/WAF', 'Security checklist rate limiting future note');
+  assertIncludes(security, 'future external logging/SIEM', 'Security checklist SIEM future note');
+
+  assertIncludes(readme, 'Production readiness and security checklist docs added.', 'README Batch 72 note');
+  assertIncludes(readme, 'Core restaurant operations foundation is complete through tenant audit logs.', 'README Batch 72 core complete note');
+  assertIncludes(blocker, 'Batch 72 adds production readiness, deployment, secrets rotation, and security checklist documentation.', 'Tenant admin doc Batch 72 note');
+  assertIncludes(blocker, 'core operations foundation is complete through Batch 71', 'Tenant admin doc core operations complete note');
+
+  assertNotIncludes(batch72Docs, 'postgres://', 'Batch 72 docs must not include postgres URL examples');
+  assertNotIncludes(batch72Docs, 'postgresql://', 'Batch 72 docs must not include PostgreSQL URL examples');
+  assertNotIncludes(batch72Docs, 'DATABASE_URL=', 'Batch 72 docs must not assign DATABASE_URL');
+  assertNotIncludes(batch72Docs, 'DATABASE_URL="', 'Batch 72 docs must not assign quoted DATABASE_URL');
+  assertNotIncludes(batch72Docs, 'sk_live_', 'Batch 72 docs must not include live secret examples');
+  assertNotIncludes(batch72Docs, 'sk_test_', 'Batch 72 docs must not include test secret examples');
+  assertNotIncludes(batch72Docs, '-----BEGIN', 'Batch 72 docs must not include private key examples');
+
+  assertNotIncludes(middleware, 'prisma', 'Batch 72 middleware must not import Prisma');
+  for (const secretToken of ['password', 'passwordHash', 'session', 'cookie', 'token', 'DATABASE_URL', 'secret']) {
+    assertIncludes(auditHelper, secretToken, `Batch 72 audit helper redacts ${secretToken}`);
+  }
+
+  const tenantApiFiles = [];
+  const collectRouteFiles = (relativePath) => {
+    const fullPath = path.join(root, relativePath);
+    for (const entry of fs.readdirSync(fullPath, { withFileTypes: true })) {
+      const childRelativePath = path.join(relativePath, entry.name);
+      if (entry.isDirectory()) {
+        collectRouteFiles(childRelativePath);
+      } else if (entry.name === 'route.js') {
+        tenantApiFiles.push(childRelativePath.replace(/\\/g, '/'));
+      }
+    }
+  };
+  collectRouteFiles('src/app/api/restaurant-admin');
+  for (const tenantApiFile of tenantApiFiles) {
+    const source = read(tenantApiFile);
+    if (!tenantApiFile.endsWith('/login/route.js') && !tenantApiFile.endsWith('/logout/route.js')) {
+      assert(source.includes('requireRestaurantStaffAccess') || source.includes('requireRestaurantStaffOwnerAccess'), `Tenant API ${tenantApiFile} staff auth missing`);
+    }
+    assertNotIncludes(source, 'requireAdmin', `Tenant API ${tenantApiFile} platform admin auth`);
+    assertNotIncludes(source, 'AdminUser', `Tenant API ${tenantApiFile} AdminUser boundary`);
+  }
+
+  const platformApiSources = [
+    'src/app/api/admin',
+    'src/app/api/platform',
+  ].filter((relativePath) => fs.existsSync(path.join(root, relativePath))).map((relativePath) => {
+    const files = [];
+    const collect = (pathToRead) => {
+      for (const entry of fs.readdirSync(path.join(root, pathToRead), { withFileTypes: true })) {
+        const child = path.join(pathToRead, entry.name);
+        if (entry.isDirectory()) collect(child);
+        if (entry.isFile() && entry.name.endsWith('.js')) files.push(read(child));
+      }
+    };
+    collect(relativePath);
+    return files.join('\n');
+  }).join('\n');
+  assertNotIncludes(platformApiSources, 'requireRestaurantStaffAccess', 'Platform admin APIs must not use restaurant staff auth');
+
+  const publicWriteSource = [
+    read('src/app/api/orders/route.js'),
+    read('src/app/api/orders/tenant-cancel/route.js'),
+    read('src/app/api/reservations/route.js'),
+    read('src/app/api/reservations/tenant-cancel/route.js'),
+  ].join('\n');
+  assertIncludes(publicWriteSource, 'restaurantSlug', 'Public write APIs restaurantSlug scope');
+  assertIncludes(publicWriteSource, 'restaurantId', 'Public write APIs restaurantId scope');
+
+  assertIncludes(nextConfig, 'async headers()', 'Batch 72 security headers configured');
+  assertIncludes(nextConfig, 'X-Content-Type-Options', 'Batch 72 nosniff security header');
+  assertIncludes(nextConfig, 'Referrer-Policy', 'Batch 72 referrer policy header');
+  assertIncludes(nextConfig, 'Permissions-Policy', 'Batch 72 permissions policy header');
+  assertIncludes(nextConfig, 'X-Frame-Options', 'Batch 72 frame options header');
+  assertNotIncludes(nextConfig, 'Content-Security-Policy', 'Batch 72 should not add strict CSP');
+
+  assert(!migrationDirs.some((migrationDir) => /batch.72|production.readiness|security.checklist|202606.*readiness/i.test(migrationDir)), 'Batch 72 should not add a Prisma migration');
+  assertNotIncludes(packageJson, 'sentry', 'Batch 72 should not add Sentry dependency');
+  assertNotIncludes(packageJson, 'datadog', 'Batch 72 should not add Datadog dependency');
+  assertNotIncludes(packageJson, 'stripe', 'Batch 72 should not add Stripe dependency');
+  assertNotIncludes(packageJson, 'nodemailer', 'Batch 72 should not add email dependency');
+  assertIncludes(packageJson, '"db:seed": "prisma db seed"', 'Batch 72 should not add a new seed script');
+}
+
 function checkGatewayLeadAdminManagement() {
   const packageJson = read('package.json');
   const schema = read('prisma/schema.prisma');
@@ -5460,6 +5609,7 @@ const checks = [
   checkTenantPurchaseInvoicePaymentRecordingFoundation,
   checkTenantOperationsReportingFoundation,
   checkTenantAuditLoggingSecurityHardening,
+  checkProductionReadinessSecurityChecklist,
   checkGatewayLeadAdminManagement,
   checkGatewayLeadWorkflowPolish,
   checkAdminSeparationAndDemoBranding,

@@ -255,6 +255,10 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 - Audit logs are tenant-scoped, read-only for OWNER and MANAGER staff, and sanitize sensitive metadata.
 - High-value tenant staff writes record audit entries for staff management, profile/settings, inventory, recipe consumption apply, purchase requests/receiving, purchase invoices/payments, order status, and reservation status.
 - External logging/SIEM, alerting, compliance exports, advanced analytics, email/WhatsApp alerts, billing, domains, CRM, payroll, accounting/tax automation, production secrets rotation, and vendor sending remain future work.
+- Production readiness and security checklist docs added.
+- Core restaurant operations foundation is complete through tenant audit logs.
+- Production readiness, secrets rotation, deployment, and security hardening runbooks are available under `docs/`.
+- Real payment processing, refunds, billing/subscriptions, custom domains, CRM, email/WhatsApp, payroll, advanced analytics, onboarding polish, external logging/SIEM, alerting, and compliance exports remain future work.
 - Demo order behavior remains available at `/public/order` and `/r/demo-restaurant/order`.
 - No order deletion, payment workflow, inventory consumption, recipe consumption, email sending, or WhatsApp sending was added.
 
@@ -322,6 +326,7 @@ Production-ready Next.js (App Router) restaurant automation demo with Tailwind C
 
 ## Production Notes
 
+- Review `docs/PRODUCTION_READINESS_CHECKLIST.md`, `docs/SECRETS_ROTATION_RUNBOOK.md`, `docs/DEPLOYMENT_RUNBOOK.md`, and `docs/SECURITY_HARDENING_CHECKLIST.md` before production rollout.
 - Rotate leaked credentials immediately if this repo history contained secrets.
 - Use a strong `ADMIN_JWT_SECRET` with at least 32 random characters.
 - Use a separate strong `RESTAURANT_STAFF_JWT_SECRET` for restaurant staff sessions.
